@@ -25,7 +25,7 @@ impl VerificationMailTransporter for VerificationMailer {
 
 pub(in crate::transport) struct SmtpInternal;
 
-static MB: Lazy<Mailbox> = Lazy::new(|| "stellar authentication service <support@shuttle.pub>".parse().expect("cannot parse `MailBox`"));
+static MB: Lazy<Mailbox> = Lazy::new(|| "Stellar <support@shuttle.pub>".parse().expect("cannot parse `MailBox`"));
 
 impl SmtpInternal {
     pub async fn send(code: &VerificationCode, address: &Address, mailer: &SmtpPool) -> Result<(), DriverError> {

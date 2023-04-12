@@ -92,7 +92,7 @@ impl<T> VerifyAccountAdaptor for VerifyAccountInteractor<T>
         if !nonverified.is_match_verification_code(&code) {
             return Err(ApplicationError::InvalidValue { 
                 method: "2FA code verify", 
-                value: "verification code"
+                value: "verification code".into()
             });
         };
 

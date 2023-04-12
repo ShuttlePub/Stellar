@@ -1,10 +1,3 @@
-//! **Caution.**
-//! 
-//! This Claim represents the `username` in RFC7662. 
-//! 
-//! Note that I have already used the `UserName` 
-//! namespace and have changed it to `ClientName` instead.
-
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]

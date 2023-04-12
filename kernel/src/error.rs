@@ -9,7 +9,7 @@ pub enum KernelError {
     #[error("invalid value `{value}` in the following {method}.")]
     InvalidValue {
         method: &'static str,
-        value: &'static str
+        value: String
     },
     #[error("failed cryption in argon password hasing. : {0:?}")]
     Cryption(argon2::password_hash::Error),

@@ -1,41 +1,18 @@
-mod active;
-mod scope;
-mod client_id;
-mod client_name;
-mod exp;
-mod iat;
-mod nbf;
-mod sub;
-mod aud;
-mod iss;
-
 use std::time::Duration;
 
-pub use self::{
-    active::*,
-    scope::*,
-    client_id::*,
-    client_name::*,
-    exp::*,
-    iat::*,
-    nbf::*,
-    sub::*,
-    aud::*,
-    iss::*
-};
-
+use destructure::Destructure;
+use rand::{distributions::Alphanumeric, prelude::Distribution};
 use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-use super::update_time::UpdateTime;
+use super::{UpdateTime, UserId, Scopes, ClientId, ExpiredIn, IssuedAt, NotBefore, Subject, Audience, Issuer, RedirectUri};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize, destructure::Destructure)]
-pub struct TokenState {
-    active: Active,
-    scope: Scope,
+pub struct AccessTokenContext {
+    scope: Scopes,
     client_id: ClientId,
-    username: ClientName,
+    account: UserId,
     exp: ExpiredIn,
     iat: IssuedAt,
     nbf: NotBefore,
@@ -44,21 +21,13 @@ pub struct TokenState {
     iss: Issuer
 }
 
-impl TokenState {
-    pub fn active(&self) -> &Active {
-        &self.active
-    }
-
-    pub fn scope(&self) -> &Scope {
+impl AccessTokenContext {
+    pub fn scope(&self) -> &Scopes {
         &self.scope
     }
 
     pub fn client_id(&self) -> &ClientId {
         &self.client_id
-    }
-
-    pub fn client_name(&self) -> &ClientName {
-        &self.username
     }
 
     pub fn expired_in(&self) -> &ExpiredIn {
@@ -87,45 +56,51 @@ impl TokenState {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
-pub struct TokenId(Uuid);
+pub struct AccessTokenId(String);
 
-impl TokenId {
-    pub fn new(id: impl Into<Uuid>) -> Self {
+impl AccessTokenId {
+    pub fn new(id: impl Into<String>) -> Self {
         Self(id.into())
     }
 }
 
-impl From<TokenId> for Uuid {
-    fn from(origin: TokenId) -> Self {
+impl From<AccessTokenId> for String {
+    fn from(origin: AccessTokenId) -> Self {
         origin.0
     }
 }
 
-impl AsRef<Uuid> for TokenId {
-    fn as_ref(&self) -> &Uuid {
+impl AsRef<str> for AccessTokenId {
+    fn as_ref(&self) -> &str {
         &self.0
     }
 }
 
-impl Default for TokenId {
+impl Default for AccessTokenId {
     fn default() -> Self {
-        Self(Uuid::new_v4())
+        let id = Alphanumeric.sample_iter(&mut rand::thread_rng())
+            .take(32)
+            .map(char::from)
+            .collect::<String>();
+        Self::new(id)
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize, destructure::Destructure)]
-pub struct Token {
-    id: TokenId,
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize, Destructure)]
+pub struct AccessToken {
+    id: AccessTokenId,
     date: UpdateTime,
-    state: TokenState
+    ctx: AccessTokenContext
 }
 
-impl Token {
+impl AccessToken {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        id: impl Into<Uuid>,
+        id: impl Into<String>,
+        created_at: impl Into<OffsetDateTime>,
+        updated_at: impl Into<OffsetDateTime>,
         linked_client: impl Into<Uuid>,
-        user_name: impl Into<String>,
+        account: impl Into<Uuid>,
         scoped: impl Into<Vec<String>>,
         issuer: impl Into<String>,
         audience: impl Into<String>,
@@ -133,16 +108,15 @@ impl Token {
         expired_in: impl Into<Duration>,
     ) -> Self {
         Self { 
-            id: TokenId::new(id), 
+            id: AccessTokenId::new(id), 
             date: UpdateTime::new(
-                OffsetDateTime::now_utc(), 
-                OffsetDateTime::now_utc()
+                created_at,
+                updated_at
             ), 
-            state: TokenState { 
-                active: Active::default(), 
-                scope: Scope::new(scoped), 
+            ctx: AccessTokenContext { 
+                scope: Scopes::new(scoped), 
                 client_id: ClientId::new(linked_client),
-                username: ClientName::new(user_name), 
+                account: UserId::new(account),
                 exp: ExpiredIn::new(expired_in),
                 iat: IssuedAt::default(), 
                 nbf: NotBefore::default(), 
@@ -151,5 +125,127 @@ impl Token {
                 iss: Issuer::new(issuer)
             }
         }
+    }
+
+    pub fn id(&self) -> &AccessTokenId {
+        &self.id
+    }
+
+    pub fn date(&self) -> &UpdateTime {
+        &self.date
+    }
+
+    pub fn context(&self) -> &AccessTokenContext {
+        &self.ctx
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
+pub struct AuthorizeTokenId(String);
+
+impl AuthorizeTokenId {
+    pub fn new(id: impl Into<String>) -> Self {
+        Self(id.into())
+    }
+}
+
+impl From<AuthorizeTokenId> for String {
+    fn from(origin: AuthorizeTokenId) -> Self {
+        origin.0
+    }
+}
+
+impl AsRef<str> for AuthorizeTokenId {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl Default for AuthorizeTokenId {
+    fn default() -> Self {
+        let id = Alphanumeric.sample_iter(&mut rand::thread_rng())
+            .take(32)
+            .map(char::from)
+            .collect::<String>();
+        Self::new(id)
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize, Destructure)]
+pub struct AuthorizeTokenContext {
+    account: UserId,
+    client_id: ClientId,
+    scope: Scopes,
+    redirect_uri: RedirectUri,
+    expired_in: ExpiredIn,
+}
+
+impl AuthorizeTokenContext {
+    pub fn account(&self) -> &UserId {
+        &self.account
+    }
+
+    pub fn client_id(&self) -> &ClientId {
+        &self.client_id
+    }
+    
+    pub fn scope(&self) -> &Scopes {
+        &self.scope
+    }
+
+    pub fn redirect_uri(&self) -> &RedirectUri {
+        &self.redirect_uri
+    }
+
+    pub fn expired_in(&self) -> &ExpiredIn {
+        &self.expired_in
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize, Destructure)]
+pub struct AuthorizeToken {
+    id: AuthorizeTokenId,
+    date: UpdateTime,
+    ctx: AuthorizeTokenContext
+}
+
+impl AuthorizeToken {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        id: impl Into<String>,
+        created_at: impl Into<OffsetDateTime>,
+        updated_at: impl Into<OffsetDateTime>,
+        account: impl Into<Uuid>,
+        client_id: impl Into<Uuid>,
+        scope: impl Into<Vec<String>>,
+        redirect_uri: impl Into<String>,
+        expired_in: impl Into<Duration>
+    ) -> Self {
+        Self { 
+            id: AuthorizeTokenId::new(id),
+            date: UpdateTime::new(
+                created_at,
+                updated_at
+            ),
+            ctx: AuthorizeTokenContext { 
+                account: UserId::new(account),
+                client_id: ClientId::new(client_id),
+                scope: Scopes::new(scope),
+                redirect_uri: RedirectUri::new(redirect_uri),
+                expired_in: ExpiredIn::new(expired_in)
+            }
+        }
+    }
+
+    pub fn id(&self) -> &AuthorizeTokenId {
+        &self.id
+    }
+
+    pub fn date(&self) -> &UpdateTime {
+        &self.date
+    }
+
+    pub fn context(&self) -> &AuthorizeTokenContext {
+        &self.ctx
     }
 }

@@ -1,28 +1,28 @@
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Default)]
-pub struct Scope(Vec<String>);
+pub struct Scopes(Vec<String>);
 
-impl Scope {
+impl Scopes {
     pub fn new(scoped: impl Into<Vec<String>>) -> Self {
         Self(scoped.into())
     }
 }
 
-impl From<Scope> for Vec<String> {
-    fn from(origin: Scope) -> Self {
+impl From<Scopes> for Vec<String> {
+    fn from(origin: Scopes) -> Self {
         origin.0
     }
 }
 
-impl AsRef<[String]> for Scope {
+impl AsRef<[String]> for Scopes {
     fn as_ref(&self) -> &[String] {
         &self.0
     }
 }
 
 // RFC7662 2.2. Introspection Response `scope`
-impl Serialize for Scope {
+impl Serialize for Scopes {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
       where S: serde::Serializer {
         let scoped = self.0
@@ -32,7 +32,7 @@ impl Serialize for Scope {
 }
 
 // RFC7662 2.2. Introspection Response `scope`
-impl<'de> Deserialize<'de> for Scope {
+impl<'de> Deserialize<'de> for Scopes {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
       where D: serde::Deserializer<'de> {
         let raw: &str = Deserialize::deserialize(deserializer)?;

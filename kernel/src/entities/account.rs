@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use argon2::{password_hash::SaltString, Argon2, PasswordHasher, PasswordVerifier, PasswordHash};
 use once_cell::sync::Lazy;
 use rand::{distributions::Alphanumeric, prelude::Distribution, rngs::OsRng};
@@ -10,7 +12,7 @@ use crate::KernelError;
 
 use super::UpdateTime;
 
-#[derive(Debug, Clone, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct UserId(Uuid);
 
 impl UserId {
@@ -37,7 +39,13 @@ impl Default for UserId {
     }
 }
 
-#[derive(Debug, Clone, Hash, Serialize, Deserialize)]
+impl Display for UserId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Address(String);
 
 impl Address {
@@ -58,7 +66,7 @@ impl AsRef<str> for Address {
     }
 }
 
-#[derive(Debug, Clone, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct UserName(String);
 
 impl UserName {
@@ -81,7 +89,7 @@ impl AsRef<str> for UserName {
 
 static ARGON: Lazy<Argon2> = Lazy::new(Argon2::default);
 
-#[derive(Debug, Clone, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Password(String);
 
 impl Password {

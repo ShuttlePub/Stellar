@@ -11,7 +11,7 @@ pub enum ApplicationError {
     #[error("invalid value `{value}` in the following {method}.")]
     InvalidValue {
         method: &'static str,
-        value: &'static str
+        value: String
     },
     #[error("failed verification `{id}:{entity}` in following {method}.")]
     Verification {
