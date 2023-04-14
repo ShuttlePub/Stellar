@@ -5,6 +5,8 @@ pub enum DriverError {
     #[error(transparent)]
     SqlX(#[from] sqlx::Error),
     #[error(transparent)]
+    Migration(#[from] sqlx::migrate::MigrateError),
+    #[error(transparent)]
     DeadPool(anyhow::Error),
     #[error(transparent)]
     Redis(#[from] deadpool_redis::redis::RedisError),
@@ -18,6 +20,7 @@ impl From<DriverError> for KernelError {
     fn from(origin: DriverError) -> Self {
         match origin {
             DriverError::SqlX(e) => KernelError::Driver(anyhow::Error::new(e)),
+            DriverError::Migration(e) => KernelError::Driver(anyhow::Error::new(e)),
             DriverError::DeadPool(e) => KernelError::Driver(e),
             DriverError::Redis(e) => KernelError::Driver(anyhow::Error::new(e)),
             DriverError::Lettre(e) => KernelError::Driver(e),
