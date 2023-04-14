@@ -21,7 +21,7 @@ CREATE TYPE access AS ENUM ('confidential', 'public');
 CREATE TABLE scopes(
   id          UUID NOT NULL PRIMARY KEY,
   client      UUID NOT NULL,
-  access      access      NOT NULL
+  access      access      NOT NULL,
   method      VARCHAR(64) NOT NULL,
   description TEXT,
   FOREIGN KEY (client) REFERENCES clients(id) ON DELETE CASCADE
