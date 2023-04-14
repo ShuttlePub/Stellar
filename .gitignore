@@ -1,3 +1,5 @@
 /target
+/logs
+/.vscode
 .env
 private.env
