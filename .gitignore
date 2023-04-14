@@ -2,4 +2,5 @@
 /logs
 /.vscode
 .env
-private.env
+.env.docker
+.env.private

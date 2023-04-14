@@ -32,6 +32,9 @@ async fn main() -> anyhow::Result<()> {
         .serve(app.into_make_service())
         .with_graceful_shutdown(exit())
         .await?;
+
+    tracing::info!("Stellar Started");
+
     Ok(())
 }
 
