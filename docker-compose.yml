@@ -32,10 +32,6 @@ services:
     env_file:
       - .env.docker
 
-networks:
-  default:
-    name: "stellar-net"
-
 volumes:
   db-data:
   cache-data:

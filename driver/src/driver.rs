@@ -59,7 +59,7 @@ impl SmtpDriver {
 
     fn lettre_env_setup() -> (String, String, String) {
         dotenvy::dotenv().ok();
-        dotenvy::from_filename("private.env").ok();
+        dotenvy::from_filename(".env.private").ok();
         let relay = dotenvy::var("RELAY_SERVER_URL")
             .expect("`RELAY_SERVER_URL` does not set! This value required.");
         let cred_address = dotenvy::var("SMTP_CREDENTIAL_ADDRESS")

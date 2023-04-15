@@ -1,7 +1,8 @@
 use std::net::SocketAddr;
 
-use axum::{Router, Server, routing::post};
+use axum::{Router, Server, routing::{post, get}, response::IntoResponse, http::StatusCode};
 use server::{InteractionHandler, routes::{signup_prepare, signup, verify}};
+use tower_http::trace::TraceLayer;
 use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -10,7 +11,8 @@ async fn main() -> anyhow::Result<()> {
     let (non_blocking_appender, _guard) = tracing_appender::non_blocking(appender);
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer()
-            .with_filter(tracing_subscriber::EnvFilter::new(std::env::var("RUST_LOG").unwrap_or_else(|_| "driver=debug,server=debug".into())))
+            .with_filter(tracing_subscriber::EnvFilter::new(std::env::var("RUST_LOG")
+                .unwrap_or_else(|_| "driver=debug,server=debug,tower_http=debug,hyper=debug,lettre=debug,sqlx=debug".into())))
             .with_filter(tracing_subscriber::filter::LevelFilter::DEBUG))
         .with(tracing_subscriber::fmt::Layer::default()
             .with_writer(non_blocking_appender)
@@ -19,23 +21,29 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let handler = InteractionHandler::inject().await?;
-    
+
     let app = Router::new()
+        .route("/healthcheck", get(healthcheck))
         .route("/signup", post(signup_prepare))
         .route("/signup/:ticket", post(signup))
         .route("/verify/:ticket", post(verify))
+        .layer(TraceLayer::new_for_http())
         .with_state(handler);
 
-    let bind = SocketAddr::from(([127, 0, 0, 1], 3854));
+    let bind = SocketAddr::from(([0, 0, 0, 0], 3854));
+
+    tracing::info!("Stellar Starting...");
 
     Server::bind(&bind)
         .serve(app.into_make_service())
         .with_graceful_shutdown(exit())
         .await?;
 
-    tracing::info!("Stellar Started");
-
     Ok(())
+}
+
+async fn healthcheck() -> impl IntoResponse {
+    StatusCode::ACCEPTED
 }
 
 async fn exit() {
