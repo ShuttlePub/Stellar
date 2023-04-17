@@ -35,12 +35,23 @@ use crate::{
 #[derive(Clone)]
 pub struct CreateNonVerifiedAccountInteractor<T1, T2> {
     kvs: T1,
-    mail: T2
+
+    #[cfg(not(debug_assertions))]
+    mail: T2,
+    
+    #[cfg(debug_assertions)]
+    _disabled: std::marker::PhantomData<T2>
 }
 
 impl<T1, T2> CreateNonVerifiedAccountInteractor<T1, T2> {
+    #[cfg(not(debug_assertions))]
     pub fn new(kvs: T1, mail: T2) -> Self {
         Self { kvs, mail }
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn new(kvs: T1) -> Self {
+        Self { kvs, _disabled: std::marker::PhantomData }
     }
 }
 
@@ -56,7 +67,12 @@ impl<T1, T2> CreateNonVerifiedAccountAdaptor for CreateNonVerifiedAccountInterac
         let non_verified = NonVerifiedAccount::new(ticket, address, code);
         
         self.kvs.create(&non_verified).await?;
+
+        #[cfg(not(debug_assertions))]
         self.mail.send(non_verified.code(), non_verified.address()).await?;
+
+        #[cfg(debug_assertions)]
+        println!("{:?}", non_verified.code());
 
         Ok(non_verified.into())
     }
