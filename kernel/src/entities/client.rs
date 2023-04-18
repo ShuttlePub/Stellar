@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use super::{ClientId, ClientName, RedirectUri, Scopes, ClientTypes, ClientDescription};
 
+#[deprecated]
 #[derive(Debug, Clone, Hash, Deserialize, Serialize, Destructure)]
 pub struct Client {
     id: ClientId,
