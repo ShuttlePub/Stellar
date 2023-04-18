@@ -1,3 +1,4 @@
+mod client_desc;
 mod client_id;
 mod client_name;
 mod client_secret;
@@ -12,6 +13,7 @@ mod aud;
 mod iss;
 
 pub use self::{
+    client_desc::*,
     client_id::*,
     client_name::*,
     client_secret::*,

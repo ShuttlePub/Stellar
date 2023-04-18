@@ -2,6 +2,7 @@ use destructure::Destructure;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 
+use super::{ClientId, ClientName, RedirectUri, Scopes, ClientTypes, ClientDescription};
 
 #[derive(Debug, Clone, Hash, Deserialize, Serialize, Destructure)]
 pub struct Client {
