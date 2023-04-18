@@ -1,0 +1,28 @@
+version: '3'
+services:
+  postgres_db:
+    image: postgres:15.2-alpine
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: stellar
+      POSTGRES_USER: stellar123
+      POSTGRES_PASSWORD: stellar456
+      POSTGRES_HOST_AUTH_METHOD: trust
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+  redis:
+    image: redis:7.0.9-alpine
+    volumes:
+      - cache-data:/data
+    ports:
+      - "6379:6379"
+
+volumes:
+  db-data:
+  cache-data:
