@@ -4,7 +4,7 @@ mod verify;
 mod auth;
 
 pub use self::{
-    signup::prepare::*,
+    client::*,
     signup::*,
     verify::*,
     auth::*
