@@ -2,28 +2,6 @@ use destructure::Destructure;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 
-use super::{ClientId, ClientName, RedirectUri, Scopes, ClientTypes};
-
-#[derive(Debug, Clone, Hash, Deserialize, Serialize)]
-pub struct ClientDescription(String);
-
-impl ClientDescription {
-    pub fn new(description: impl Into<String>) -> Self {
-        Self(description.into())
-    }
-}
-
-impl From<ClientDescription> for String {
-    fn from(origin: ClientDescription) -> Self {
-        origin.0
-    }
-}
-
-impl AsRef<str> for ClientDescription {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
 
 #[derive(Debug, Clone, Hash, Deserialize, Serialize, Destructure)]
 pub struct Client {
