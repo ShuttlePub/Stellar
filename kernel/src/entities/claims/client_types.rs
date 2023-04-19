@@ -25,3 +25,12 @@ impl From<ClientTypes> for Option<ClientSecret> {
         }
     }
 }
+
+impl From<ClientTypes> for Option<String> {
+    fn from(value: ClientTypes) -> Self {
+        match value {
+            ClientTypes::Confidential(secret) => Some(secret.into()),
+            ClientTypes::Public => None,
+        }
+    }
+}
