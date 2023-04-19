@@ -56,3 +56,12 @@ impl From<ScopedObject> for ScopeDto {
         }
     }
 }
+
+#[derive(Debug)]
+pub struct RegisterClientDto {
+    pub name: String,
+    pub desc: String,
+    pub uris: Vec<String>,
+    pub secret: Option<String>,
+    pub scopes: Vec<ScopeDto>
+}
