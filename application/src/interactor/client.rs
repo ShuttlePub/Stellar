@@ -1,7 +1,27 @@
-use kernel::{repository::ClientRegistry, entities::{Client, ClientId, ClientName, ClientDescription, RedirectUri, ClientTypes, Scopes, Method, MethodDescription}};
+use kernel::{
+    repository::ClientRegistry, 
+    entities::{
+        Client, 
+        ClientId, 
+        ClientName, 
+        ClientTypes, 
+        ClientDescription, 
+        RedirectUri, 
+        Scopes, 
+        Method, 
+        MethodDescription
+    }
+};
 use uuid::Uuid;
 
-use crate::{adaptor::client::RegisterClientAdaptor, transfer::client::{ClientDto, RegisterClientDto}, ApplicationError};
+use crate::{
+    adaptor::client::RegisterClientAdaptor, 
+    transfer::client::{
+        ClientDto, 
+        RegisterClientDto
+    }, 
+    ApplicationError
+};
 
 #[derive(Clone)]
 pub struct RegisterClientInteractor<T> {
