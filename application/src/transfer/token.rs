@@ -47,7 +47,7 @@ impl From<AuthorizeToken> for AuthorizeTokenDto {
             updated_at: updated_at.into(),
             account: account.into(),
             client_id: client_id.into(),
-            scope: scopes.into_iter().map(|method: Method| method.into()).collect(),
+            scope: Vec::from(scopes).into_iter().map(|method: Method| method.into()).collect(),
             redirect_uri: redirect_uri.into(),
             expired_in: expired_in.into()
         }
@@ -125,7 +125,7 @@ impl From<AccessToken> for AccessTokenDto {
             updated_at: updated_at.into(),
             client: client_id.into(),
             account: account.into(), 
-            scope: scope.into_iter().map(|method: Method| method.into()).collect(), 
+            scope: Vec::from(scope).into_iter().map(|method: Method| method.into()).collect(), 
             issuer: iss.into(), 
             audience: aud.into(), 
             subject: sub.into(), 

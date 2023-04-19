@@ -1,3 +1,4 @@
+use destructure::Destructure;
 use serde::{Serialize, Deserialize};
 
 use crate::KernelError;
@@ -29,6 +30,14 @@ impl From<Scopes> for Vec<ScopedObject> {
     }
 }
 
+impl From<Scopes> for Vec<(String, String)> {
+    fn from(value: Scopes) -> Self {
+        value.0.into_iter()
+            .map(|object| object.into())
+            .collect()
+    }
+}
+
 impl From<Scopes> for Vec<Method> {
     fn from(value: Scopes) -> Self {
         value.0.into_iter()
@@ -37,16 +46,7 @@ impl From<Scopes> for Vec<Method> {
     }
 }
 
-impl IntoIterator for Scopes {
-    type Item = Method;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        Vec::from(self).into_iter()
-    }
-}
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, Destructure)]
 pub struct ScopedObject {
     method: Method,
     description: MethodDescription
@@ -59,6 +59,12 @@ impl ScopedObject {
 
     pub fn description(&self) -> &MethodDescription {
         &self.description
+    }
+}
+
+impl From<ScopedObject> for (String, String) {
+    fn from(value: ScopedObject) -> Self {
+        (value.method.into(), value.description.into())
     }
 }
 
