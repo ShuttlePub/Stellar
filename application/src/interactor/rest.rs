@@ -8,7 +8,8 @@ use crate::{
             CreateNonVerifiedAccountAdaptor, 
             CreateAccountAdaptor, 
             UpdateAccountAdaptor, 
-            DeleteAccountAdaptor, VerifyAccountAdaptor
+            DeleteAccountAdaptor, 
+            ApproveAccountAdaptor
         }
     }, 
     transfer::account::{
@@ -38,7 +39,7 @@ impl<T1, T2, T3, T4, T5> RestInteractor<T1, T2, T3, T4, T5> {
 #[async_trait::async_trait]
 impl<T1, T2, T3, T4, T5> RestAdaptor for RestInteractor<T1, T2, T3, T4, T5>
   where T1: CreateNonVerifiedAccountAdaptor,
-        T2: VerifyAccountAdaptor,
+        T2: ApproveAccountAdaptor,
         T3: CreateAccountAdaptor,
         T4: UpdateAccountAdaptor,
         T5: DeleteAccountAdaptor
@@ -47,8 +48,8 @@ impl<T1, T2, T3, T4, T5> RestAdaptor for RestInteractor<T1, T2, T3, T4, T5>
         self.nvac.create(user).await
     }
 
-    async fn verify_account(&self, ticket: &str, code: &str) -> Result<String, ApplicationError> {
-        self.acv.verify(ticket, code).await
+    async fn approve_account(&self, ticket: &str, code: &str) -> Result<String, ApplicationError> {
+        self.acv.approve(ticket, code).await
     }
 
     async fn create_account(&self, ticket: &str, create: CreateAccountDto) -> Result<AccountDto, ApplicationError> {

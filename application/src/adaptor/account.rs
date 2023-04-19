@@ -17,8 +17,8 @@ pub trait CreateNonVerifiedAccountAdaptor: 'static + Send + Sync {
 }
 
 #[async_trait::async_trait]
-pub trait VerifyAccountAdaptor: 'static + Send + Sync {
-    async fn verify(&self, id: &str, code: &str) -> Result<String, ApplicationError>;
+pub trait ApproveAccountAdaptor: 'static + Send + Sync {
+    async fn approve(&self, id: &str, code: &str) -> Result<String, ApplicationError>;
 }
 
 #[async_trait::async_trait]

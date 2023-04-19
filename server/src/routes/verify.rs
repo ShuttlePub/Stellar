@@ -25,7 +25,7 @@ pub async fn verify(
     Json(form): Json<UserInput>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let valid = handler.as_ref()
-        .verify_account(&ticket.id, &form.code)
+        .approve_account(&ticket.id, &form.code)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let res = Response {

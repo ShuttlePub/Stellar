@@ -22,7 +22,9 @@ use crate::{
     adaptor::account::{
         CreateAccountAdaptor, 
         CreateNonVerifiedAccountAdaptor, 
-        UpdateAccountAdaptor, DeleteAccountAdaptor, VerifyAccountAdaptor
+        UpdateAccountAdaptor, 
+        DeleteAccountAdaptor, 
+        ApproveAccountAdaptor
     },
     transfer::account::{
         CreateAccountDto, 
@@ -79,21 +81,21 @@ impl<T1, T2> CreateNonVerifiedAccountAdaptor for CreateNonVerifiedAccountInterac
 }
 
 #[derive(Clone)]
-pub struct VerifyAccountInteractor<T> {
+pub struct ApproveAccountInteractor<T> {
     kvs: T
 }
 
-impl<T> VerifyAccountInteractor<T> {
+impl<T> ApproveAccountInteractor<T> {
     pub fn new(kvs: T) -> Self {
         Self { kvs }
     }
 }
 
 #[async_trait::async_trait]
-impl<T> VerifyAccountAdaptor for VerifyAccountInteractor<T>
+impl<T> ApproveAccountAdaptor for ApproveAccountInteractor<T>
   where T: NonVerifiedAccountRepository
 {
-    async fn verify(&self, id: &str, code: &str) -> Result<String, ApplicationError> {
+    async fn approve(&self, id: &str, code: &str) -> Result<String, ApplicationError> {
         let id = TicketId::new(id);
         let code = VerificationCode::new(code);
 

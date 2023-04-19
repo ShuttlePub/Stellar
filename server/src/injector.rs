@@ -1,6 +1,6 @@
 use application::interactor::{
     CreateNonVerifiedAccountInteractor, 
-    VerifyAccountInteractor,
+    ApproveAccountInteractor,
     CreateAccountInteractor, 
     UpdateAccountInteractor, 
     DeleteAccountInteractor, 
@@ -23,7 +23,7 @@ use crate::ServerError;
 #[allow(dead_code)]
 type Handler = RestInteractor<
     CreateNonVerifiedAccountInteractor<NonVerifiedAccountDataBase, VerificationMailer>,
-    VerifyAccountInteractor<NonVerifiedAccountDataBase>,
+    ApproveAccountInteractor<NonVerifiedAccountDataBase>,
     CreateAccountInteractor<AccountDataBase, NonVerifiedAccountDataBase>,
     UpdateAccountInteractor<AccountDataBase>,
     DeleteAccountInteractor<AccountDataBase>
@@ -53,7 +53,7 @@ impl InteractionHandler {
 
         #[cfg(debug_assertions)]
         let nvacc = CreateNonVerifiedAccountInteractor::new(nvac_repo.clone());
-        let acv = VerifyAccountInteractor::new(nvac_repo.clone());
+        let acv = ApproveAccountInteractor::new(nvac_repo.clone());
         let acc = CreateAccountInteractor::new(ac_repo.clone(), nvac_repo);
         let acu = UpdateAccountInteractor::new(ac_repo.clone());
         let acd = DeleteAccountInteractor::new(ac_repo);
