@@ -1,8 +1,14 @@
-use crate::ApplicationError;
+use crate::{
+    ApplicationError, 
+    transfer::client::{
+        ClientDto,
+        RegisterClientDto
+    }
+};
 
 #[async_trait::async_trait]
 pub trait RegisterClientAdaptor: 'static + Sync + Send {
-    async fn register(&self) -> Result<(), ApplicationError>;
+    async fn register(&self, register: RegisterClientDto) -> Result<ClientDto, ApplicationError>;
 }
 
 #[async_trait::async_trait]
