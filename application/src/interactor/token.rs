@@ -11,10 +11,11 @@ use kernel::{
         AuthorizeToken, 
         AuthorizeTokenId, 
         UserId, 
-        Scopes, 
+        Scopes,
+        Method,
         RedirectUri, 
         DestructAccount, 
-        ClientTypes
+        ClientTypes,
     }
 };
 
@@ -105,7 +106,10 @@ impl<T1, T2, T3> CreateAuthorizeTokenAdaptor for CreateAuthorizeTokenInteractor<
         let created_at = OffsetDateTime::now_utc();
         let updated_at = created_at;
         let client_id = ClientId::new(Uuid::new_v4());
-        let scope = Scopes::new(scope);
+        let mut scopes = Scopes::default();
+        for object in scope.into_iter() {
+            scopes.add(Method::try_from(object)?)
+        }
         let redirect_uri = RedirectUri::new(redirect_uri);
         let expired_in = Duration::from_secs(600);
 
@@ -115,7 +119,7 @@ impl<T1, T2, T3> CreateAuthorizeTokenAdaptor for CreateAuthorizeTokenInteractor<
             updated_at, 
             account_id, 
             client_id, 
-            scope, 
+            scopes, 
             redirect_uri, 
             expired_in
         );

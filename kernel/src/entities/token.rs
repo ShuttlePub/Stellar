@@ -101,7 +101,7 @@ impl AccessToken {
         updated_at: impl Into<OffsetDateTime>,
         linked_client: impl Into<Uuid>,
         account: impl Into<Uuid>,
-        scoped: impl Into<Vec<String>>,
+        scoped: impl Into<Scopes>,
         issuer: impl Into<String>,
         audience: impl Into<String>,
         subject: impl Into<String>,
@@ -114,7 +114,7 @@ impl AccessToken {
                 updated_at
             ), 
             ctx: AccessTokenContext { 
-                scope: Scopes::new(scoped), 
+                scope: scoped.into(), 
                 client_id: ClientId::new(linked_client),
                 account: UserId::new(account),
                 exp: ExpiredIn::new(expired_in),
@@ -175,7 +175,7 @@ impl Default for AuthorizeTokenId {
 pub struct AuthorizeTokenContext {
     account: UserId,
     client_id: ClientId,
-    scope: Scopes,
+    scopes: Scopes,
     redirect_uri: RedirectUri,
     expired_in: ExpiredIn,
 }
@@ -189,8 +189,8 @@ impl AuthorizeTokenContext {
         &self.client_id
     }
     
-    pub fn scope(&self) -> &Scopes {
-        &self.scope
+    pub fn scopes(&self) -> &Scopes {
+        &self.scopes
     }
 
     pub fn redirect_uri(&self) -> &RedirectUri {
@@ -217,7 +217,7 @@ impl AuthorizeToken {
         updated_at: impl Into<OffsetDateTime>,
         account: impl Into<Uuid>,
         client_id: impl Into<Uuid>,
-        scope: impl Into<Vec<String>>,
+        scope: impl Into<Scopes>,
         redirect_uri: impl Into<String>,
         expired_in: impl Into<Duration>
     ) -> Self {
@@ -230,7 +230,7 @@ impl AuthorizeToken {
             ctx: AuthorizeTokenContext { 
                 account: UserId::new(account),
                 client_id: ClientId::new(client_id),
-                scope: Scopes::new(scope),
+                scopes: scope.into(),
                 redirect_uri: RedirectUri::new(redirect_uri),
                 expired_in: ExpiredIn::new(expired_in)
             }

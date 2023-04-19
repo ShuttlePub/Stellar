@@ -1,46 +1,176 @@
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Default)]
-pub struct Scopes(Vec<String>);
+use crate::KernelError;
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Scopes(Vec<ScopedObject>);
 
 impl Scopes {
-    pub fn new(scoped: impl Into<Vec<String>>) -> Self {
-        Self(scoped.into())
+    pub fn add(&mut self, object: impl Into<ScopedObject>) {
+        self.0.push(object.into());
     }
 }
 
-impl From<Scopes> for Vec<String> {
-    fn from(origin: Scopes) -> Self {
-        origin.0
+impl Default for Scopes {
+    fn default() -> Self {
+        Self(Vec::new())
     }
 }
 
-impl AsRef<[String]> for Scopes {
-    fn as_ref(&self) -> &[String] {
+impl AsRef<[ScopedObject]> for Scopes {
+    fn as_ref(&self) -> &[ScopedObject] {
         &self.0
     }
 }
 
-// RFC7662 2.2. Introspection Response `scope`
-impl Serialize for Scopes {
+impl From<Scopes> for Vec<ScopedObject> {
+    fn from(value: Scopes) -> Self {
+        value.0
+    }
+}
+
+impl From<Scopes> for Vec<Method> {
+    fn from(value: Scopes) -> Self {
+        value.0.into_iter()
+            .map(|object| object.method)
+            .collect()
+    }
+}
+
+impl IntoIterator for Scopes {
+    type Item = Method;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Vec::from(self).into_iter()
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScopedObject {
+    method: Method,
+    description: MethodDescription
+}
+
+impl ScopedObject {
+    pub fn method(&self) -> &Method {
+        &self.method
+    }
+
+    pub fn description(&self) -> &MethodDescription {
+        &self.description
+    }
+}
+
+impl From<Method> for ScopedObject {
+    fn from(value: Method) -> Self {
+        Self { 
+            method: value, 
+            description: MethodDescription::default()
+        }
+    }
+}
+
+impl From<(Method, MethodDescription)> for ScopedObject {
+    fn from(value: (Method, MethodDescription)) -> Self {
+        Self { method: value.0, description: value.1 }
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct Method(String, String);
+
+impl Method {
+    pub fn new(
+        resource: impl Into<String>, 
+        method: impl Into<String>
+    ) -> Self {
+        Self(resource.into(), method.into())
+    }
+
+    pub fn resource(&self) -> &str {
+        &self.0
+    }
+
+    pub fn method(&self) -> &str {
+        &self.1
+    }
+}
+
+impl From<Method> for String {
+    fn from(value: Method) -> Self {
+        format!("{}:{}", value.0, value.1)
+    }
+}
+
+impl TryFrom<String> for Method {
+    type Error = KernelError;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let separated = value.split(':')
+            .collect::<Vec<_>>();
+        if separated.len() <= 1 || separated.len() > 2 {
+            return Err(KernelError::InvalidValue { 
+                method: "`Method` try_from String", 
+                value: format!("{}", value)
+            });
+        }
+        Ok(Self::new(separated[0], separated[1]))
+    }
+}
+
+impl Serialize for Method {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
       where S: serde::Serializer {
-        let scoped = self.0
-            .join(" ");
+        let scoped = format!("{}:{}", self.0, self.1);
         serializer.serialize_str(&scoped)
     }
 }
 
-// RFC7662 2.2. Introspection Response `scope`
-impl<'de> Deserialize<'de> for Scopes {
+impl<'de> Deserialize<'de> for Method {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
       where D: serde::Deserializer<'de> {
         let raw: &str = Deserialize::deserialize(deserializer)?;
-        let scoped = raw.split(' ')
+        let scoped = raw.split(':')
             .fuse()
             .filter(|emptiness| !emptiness.is_empty())
-            .map(Into::into)
-            .collect::<Vec<String>>();
-        Ok(Self(scoped))
+            .collect::<Vec<_>>();
+        Ok(Self::new(scoped[0], scoped[1]))
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct MethodDescription(String);
+
+impl MethodDescription {
+    pub fn new(desc: impl Into<String>) -> Self {
+        Self(desc.into())
+    }
+}
+
+impl From<MethodDescription> for String {
+    fn from(value: MethodDescription) -> Self {
+        value.0
+    }
+}
+
+impl AsRef<str> for MethodDescription {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::{Method, MethodDescription, Scopes};
+
+    #[test]
+    fn new_scope() -> anyhow::Result<()> {
+        let mut scopes = Scopes::default();
+        scopes.add(Method::new("stellar", "read"));
+        scopes.add((
+            Method::new("test", "read"), 
+            MethodDescription::new("test client read")
+        ));
+        Ok(())
     }
 }

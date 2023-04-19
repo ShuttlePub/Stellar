@@ -1,8 +1,12 @@
 use kernel::entities::{
-    AuthorizeToken,
+    Method,
     DestructUpdateTime,
-    DestructAuthorizeTokenContext,
-    DestructAuthorizeToken, AccessToken, DestructAccessToken, DestructAccessTokenContext
+    AuthorizeToken,
+    DestructAuthorizeToken,
+    DestructAuthorizeTokenContext, 
+    AccessToken, 
+    DestructAccessToken, 
+    DestructAccessTokenContext,
 };
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -33,7 +37,7 @@ impl From<AuthorizeToken> for AuthorizeTokenDto {
         let DestructAuthorizeTokenContext {
             account,
             client_id,
-            scope,
+            scopes,
             redirect_uri,
             expired_in,
         } = ctx.into_destruct();
@@ -43,7 +47,7 @@ impl From<AuthorizeToken> for AuthorizeTokenDto {
             updated_at: updated_at.into(),
             account: account.into(),
             client_id: client_id.into(),
-            scope: scope.into(),
+            scope: scopes.into_iter().map(|method: Method| method.into()).collect(),
             redirect_uri: redirect_uri.into(),
             expired_in: expired_in.into()
         }
@@ -121,7 +125,7 @@ impl From<AccessToken> for AccessTokenDto {
             updated_at: updated_at.into(),
             client: client_id.into(),
             account: account.into(), 
-            scope: scope.into(), 
+            scope: scope.into_iter().map(|method: Method| method.into()).collect(), 
             issuer: iss.into(), 
             audience: aud.into(), 
             subject: sub.into(), 
