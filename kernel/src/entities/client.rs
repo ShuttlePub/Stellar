@@ -2,7 +2,14 @@ use destructure::Destructure;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 
-use super::{ClientId, ClientName, ClientDescription, RedirectUri, Scopes, ClientTypes};
+use super::{
+    ClientId, 
+    ClientName,
+    ClientTypes, 
+    ClientDescription, 
+    RedirectUri, 
+    Scopes, 
+};
 
 /// Client information based on RFC6749.
 /// 
