@@ -7,6 +7,7 @@ pub struct ClientDto {
     pub name: String,
     pub desc: String,
     pub uris: Option<Vec<String>>,
+    pub owner: Uuid,
     pub types: Option<String>,
     pub scopes: Vec<ScopeDto>
 }
@@ -24,6 +25,7 @@ impl From<Client> for ClientDto {
             name,
             desc,
             uris,
+            owner,
             types,
             scopes,
         } = value.into_destruct();
@@ -36,6 +38,7 @@ impl From<Client> for ClientDto {
                     .map(Into::into)
                     .collect::<Vec<String>>()
                 ), 
+            owner: owner.into(),
             types: types.into(), 
             scopes: Vec::from(scopes).into_iter()
                         .map(|obj: ScopedObject| ScopeDto::from(obj))
@@ -62,6 +65,7 @@ pub struct RegisterClientDto {
     pub name: String,
     pub desc: String,
     pub uris: Vec<String>,
+    pub owner: Uuid,
     pub secret: Option<String>,
     pub scopes: Vec<ScopeDto>
 }

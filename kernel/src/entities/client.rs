@@ -8,7 +8,7 @@ use super::{
     ClientTypes, 
     ClientDescription, 
     RedirectUri, 
-    Scopes, 
+    Scopes, UserId, 
 };
 
 /// Client information based on RFC6749.
@@ -34,6 +34,10 @@ pub struct Client {
     /// 
     /// Reference [RFC6749 Section 2.1](https://www.rfc-editor.org/rfc/rfc6749#section-2.1)
     types: ClientTypes,
+    /// Identifier of the user who owns this client.
+    /// 
+    /// The client **must** have a Stellar account.
+    owner: UserId,
     /// A set of scopes allowed to users defined by the client.
     /// 
     /// Reference [RFC6749 Section 3.3](https://www.rfc-editor.org/rfc/rfc6749#section-3.3)
@@ -47,6 +51,7 @@ impl Client {
         name: impl Into<String>,
         desc: impl Into<String>,
         uris: impl Into<Option<Vec<RedirectUri>>>,
+        owner: impl Into<Uuid>,
         secret: impl Into<Option<String>>,
         scopes: impl Into<Scopes>,
     ) -> Self {
@@ -55,6 +60,7 @@ impl Client {
             name: ClientName::new(name),
             desc: ClientDescription::new(desc), 
             uris: uris.into(), 
+            owner: UserId::new(owner),
             types: ClientTypes::new(secret), 
             scopes: scopes.into()
         }
@@ -74,6 +80,10 @@ impl Client {
 
     pub fn uris(&self) -> &Option<Vec<RedirectUri>> {
         &self.uris
+    }
+
+    pub fn owner(&self) -> &UserId {
+        &self.owner
     }
 
     pub fn types(&self) -> &ClientTypes {

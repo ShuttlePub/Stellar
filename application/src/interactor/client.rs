@@ -1,5 +1,8 @@
 use kernel::{
-    repository::ClientRegistry, 
+    repository::{
+        ClientRegistry, 
+        AccountRepository
+    }, 
     entities::{
         Client, 
         ClientId, 
@@ -9,7 +12,9 @@ use kernel::{
         RedirectUri, 
         Scopes, 
         Method, 
-        MethodDescription
+        MethodDescription, 
+        UserId, 
+        DestructAccount
     }
 };
 use uuid::Uuid;
@@ -24,29 +29,44 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct RegisterClientInteractor<T> {
-    registry: T
+pub struct RegisterClientInteractor<T1, T2> {
+    registry: T1,
+    accounts: T2
 }
 
-impl<T> RegisterClientInteractor<T> {
-    pub fn new(registry: T) -> Self {
-        Self { registry }
+impl<T1, T2> RegisterClientInteractor<T1, T2> {
+    pub fn new(registry: T1, accounts: T2) -> Self {
+        Self { registry, accounts }
     }
 }
 
 #[async_trait::async_trait]
-impl<T> RegisterClientAdaptor for RegisterClientInteractor<T>
-  where T: ClientRegistry
+impl<T1, T2> RegisterClientAdaptor for RegisterClientInteractor<T1, T2>
+  where T1: ClientRegistry,
+        T2: AccountRepository
 {
     async fn register(&self, register: RegisterClientDto) -> Result<ClientDto, ApplicationError> {
         let RegisterClientDto { 
             name, 
             desc, 
             uris, 
+            owner,
             secret, 
             scopes 
         } = register;
 
+        let owner = UserId::new(owner);
+
+        let Some(owner) = self.accounts.find_by_id(&owner).await? else {
+            return Err(ApplicationError::NotFound { 
+                method: "account registration", 
+                entity: "client", 
+                id: format!("{:?}", owner)
+            });
+        };
+
+        let DestructAccount { id, ..} = owner.into_destruct();
+        let owner = id;
         let id = ClientId::new(Uuid::new_v4());
         let name = ClientName::new(name);
         let desc = ClientDescription::new(desc);
@@ -69,6 +89,7 @@ impl<T> RegisterClientAdaptor for RegisterClientInteractor<T>
             name,
             desc,
             uris,
+            owner,
             types,
             scoped
         );
