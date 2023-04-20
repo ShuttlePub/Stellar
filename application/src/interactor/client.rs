@@ -76,13 +76,12 @@ impl<T1, T2> RegisterClientAdaptor for RegisterClientInteractor<T1, T2>
         let types = ClientTypes::new(secret);
 
         let mut scoped = Scopes::default();
-        scopes.into_iter()
-            .for_each(|scoping| 
-                scoped.add((
-                    Method::new(name.as_ref(), scoping.method), 
-                    MethodDescription::new(scoping.description)
-                ))
-            );
+        scopes.into_iter().for_each(|scoping| 
+            scoped.add((
+                Method::new(name.as_ref(), scoping.method), 
+                MethodDescription::new(scoping.description)
+            ))
+        );
 
         let client = Client::new(
             id,
