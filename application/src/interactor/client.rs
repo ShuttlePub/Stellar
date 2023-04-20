@@ -59,8 +59,8 @@ impl<T1, T2> RegisterClientAdaptor for RegisterClientInteractor<T1, T2>
 
         let Some(owner) = self.accounts.find_by_id(&owner).await? else {
             return Err(ApplicationError::NotFound { 
-                method: "account registration", 
-                entity: "client", 
+                method: "client registration", 
+                entity: "account", 
                 id: format!("{:?}", owner)
             });
         };
