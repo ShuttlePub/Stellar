@@ -40,8 +40,8 @@ impl From<Client> for ClientDto {
                 ), 
             owner: owner.into(),
             types: types.into(), 
-            scopes: Vec::from(scopes).into_iter()
-                        .map(|obj: ScopedObject| ScopeDto::from(obj))
+            scopes: Vec::<ScopedObject>::from(scopes).into_iter()
+                        .map(ScopeDto::from)
                         .collect()
         }
     }

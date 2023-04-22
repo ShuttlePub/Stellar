@@ -3,18 +3,12 @@ use serde::{Serialize, Deserialize};
 
 use crate::KernelError;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct Scopes(Vec<ScopedObject>);
 
 impl Scopes {
     pub fn add(&mut self, object: impl Into<ScopedObject>) {
         self.0.push(object.into());
-    }
-}
-
-impl Default for Scopes {
-    fn default() -> Self {
-        Self(Vec::new())
     }
 }
 
@@ -117,7 +111,7 @@ impl TryFrom<String> for Method {
         if separated.len() <= 1 || separated.len() > 2 {
             return Err(KernelError::InvalidValue { 
                 method: "`Method` try_from String", 
-                value: format!("{}", value)
+                value: value.to_string()
             });
         }
         Ok(Self::new(separated[0], separated[1]))

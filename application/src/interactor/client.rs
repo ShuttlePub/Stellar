@@ -71,7 +71,7 @@ impl<T1, T2> RegisterClientAdaptor for RegisterClientInteractor<T1, T2>
         let name = ClientName::new(name);
         let desc = ClientDescription::new(desc);
         let uris = uris.into_iter()
-            .map(|uri| RedirectUri::new(uri))
+            .map(RedirectUri::new)
             .collect::<Vec<_>>();
         let types = ClientTypes::new(secret);
 
