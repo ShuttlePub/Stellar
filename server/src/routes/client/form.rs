@@ -1,5 +1,6 @@
-use serde::Deserialize;
+use std::str::FromStr;
 
+use serde::Deserialize;
 
 #[allow(unused)]
 /// Reference RFC7591
@@ -38,17 +39,28 @@ impl Default for TokenEndPointAuthMethod {
     }
 }
 
-impl<'de> Deserialize<'de> for TokenEndPointAuthMethod {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-      where D: serde::Deserializer<'de>
-    {
-        Ok(match Deserialize::deserialize(deserializer)? {
+impl FromStr for TokenEndPointAuthMethod {
+    /// Even if an invalid value exists, 
+    /// it is returned as described in the Default Trait, 
+    /// so errors can be ignored.
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
             "client_secret_post" => Self::ClientSecretPost,
             "client_secret_basic" => Self::ClientSecretBasic,
             "private_key_jwt" => Self::PrivateKeyJWT,
             "none" => Self::None,
             _ => Self::default()
-         })
+        })
+    }
+}
+
+impl<'de> Deserialize<'de> for TokenEndPointAuthMethod {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+      where D: serde::Deserializer<'de>
+    {
+        // See L74 comment.
+        Ok(Self::from_str(Deserialize::deserialize(deserializer)?).unwrap())
     }
 }
 
@@ -69,11 +81,13 @@ impl Default for GrantTypes {
     }
 }
 
-impl<'de> Deserialize<'de> for GrantTypes {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-      where D: serde::Deserializer<'de> 
-    {   
-        Ok(match Deserialize::deserialize(deserializer)? {
+impl FromStr for GrantTypes {
+    /// Even if an invalid value exists, 
+    /// it is returned as described in the Default Trait, 
+    /// so errors can be ignored.
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {            
+        Ok(match s {
             "authorization_code" => Self::AuthorizationCode,
             "implicit" => Self::Implicit,
             "password" => Self::Password,
@@ -81,8 +95,17 @@ impl<'de> Deserialize<'de> for GrantTypes {
             "refresh_token" => Self::RefreshToken,
             "urn:ietf:params:oauth:grant-type:jwt-bearer" => Self::JWTBearer,
             "urn:ietf:params:oauth:grant-type:saml2-bearer" => Self::Saml2Bearer,
-            _ => Self::default()
+            _ => Self::default() // Here it is.
         })
+    }
+}
+
+impl<'de> Deserialize<'de> for GrantTypes {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+      where D: serde::Deserializer<'de> 
+    {
+        // See L74 comment.
+        Ok(Self::from_str(Deserialize::deserialize(deserializer)?).unwrap())
     }
 }
 
