@@ -10,6 +10,7 @@ pub async fn authorization(
     Ok(())
 }
 
+#[allow(unused)]
 #[derive(Deserialize, Debug)]
 pub struct AuthorizationGrantQuery {
     response_type: String,
