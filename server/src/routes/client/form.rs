@@ -6,7 +6,7 @@ use serde::Deserialize;
 /// Reference RFC7591
 #[derive(Deserialize, Debug)]
 pub struct RegistrationForm {
-    response_code: Vec<String>,
+    redirect_uris: Vec<String>,
     #[serde(rename = "token_endpoint_auth_method")]
     tepam: TokenEndPointAuthMethod,
     grant_types: Vec<GrantTypes>,
