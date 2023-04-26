@@ -56,10 +56,11 @@ impl FromStr for TokenEndPointAuthMethod {
 }
 
 impl<'de> Deserialize<'de> for TokenEndPointAuthMethod {
+    //noinspection DuplicatedCode
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
       where D: serde::Deserializer<'de>
     {
-        // See L74 comment.
+        // See L43 comment.
         Ok(Self::from_str(Deserialize::deserialize(deserializer)?).unwrap())
     }
 }
@@ -101,6 +102,7 @@ impl FromStr for GrantTypes {
 }
 
 impl<'de> Deserialize<'de> for GrantTypes {
+    //noinspection DuplicatedCode
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
       where D: serde::Deserializer<'de> 
     {
