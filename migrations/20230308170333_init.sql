@@ -1,6 +1,6 @@
 CREATE TABLE users(
   user_id UUID         NOT NULL PRIMARY KEY,
-  address VARCHAR(128) NOT NULL,
+  address VARCHAR(128) NOT NULL UNIQUE,
   name    VARCHAR(128) NOT NULL,
   pass    VARCHAR(256) NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
