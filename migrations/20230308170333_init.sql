@@ -1,13 +1,11 @@
 CREATE TABLE users(
-  id      UUID         NOT NULL,
+  user_id UUID         NOT NULL PRIMARY KEY,
   address VARCHAR(128) NOT NULL,
   name    VARCHAR(128) NOT NULL,
   pass    VARCHAR(256) NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-  verified_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-
-  PRIMARY KEY (id, address)
+  verified_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
 
 CREATE TYPE TEP_AM
@@ -29,73 +27,78 @@ CREATE TYPE GRANT_TYPE
     'urn:ietf:params:oauth:grant-type:saml2-bearer'
   );
 
-CREATE TABLE __client(
-  id             UUID           NOT NULL PRIMARY KEY,
-  redirect_uris  VARCHAR(512)[] NOT NULL UNIQUE,
-  auth_method    TEP_AM         NOT NULL,
-  grant_type     GRANT_TYPE[]   NOT NULL,
-  response_types VARCHAR(512)[] NOT NULL,
-  client_name    VARCHAR(256)   NOT NULL,
-  client_uri     VARCHAR(512),
-  logo_uri       VARCHAR(512),
-  scopes         VARCHAR(128)[] NOT NULL,
-  req_scopes     VARCHAR(128)[],
-  contacts       VARCHAR(128)[] NOT NULL,
-  tos_uri        VARCHAR(512)   NOT NULL,
-  policy_uri     VARCHAR(512)   NOT NULL,
-  jwks           JSONB          NOT NULL,
-  software_id    VARCHAR(256),
-  software_ver   VARCHAR(128)
-);
+CREATE TYPE RESPONSE_TYPE
+  AS ENUM (
+    'code',
+    'token'
+  );
 
-CREATE TABLE ___clients(
-  id          UUID         NOT NULL,
+CREATE TABLE clients(
+  client_id   UUID         NOT NULL PRIMARY KEY ,
   client_name VARCHAR(256) NOT NULL UNIQUE,
-  PRIMARY KEY(id, client_name)
+
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
 
 CREATE TABLE client_metadata(
-  id             UUID           NOT NULL PRIMARY KEY,
+  meta_id        UUID           NOT NULL PRIMARY KEY,
+  owner          UUID           NOT NULL,
   client_id      UUID           NOT NULL,
   client_uri     VARCHAR(512),
   logo_uri       VARCHAR(512),
   contact        VARCHAR(128)[] NOT NULL,
   tos_uri        VARCHAR(512)   NOT NULL,
   policy_uri     VARCHAR(512)   NOT NULL,
-  FOREIGN KEY (client_id) REFERENCES ___clients(id) ON DELETE CASCADE
+
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+
+  FOREIGN KEY (owner)     REFERENCES users(user_id)     ON DELETE CASCADE,
+  FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
 );
 
 CREATE TABLE client_cert(
-  -- TODO: Impl client authorization registry.
+  cert_id        UUID            NOT NULL PRIMARY KEY ,
+  client_id      UUID            NOT NULL,
+  auth_method    TEP_AM          NOT NULL,
+  grant_types    GRANT_TYPE[]    NOT NULL,
+  response_types RESPONSE_TYPE[] NOT NULL,
+  jwks           JSONB           CHECK ( jwks_uri IS NULL ), -- ─┬─ MUST NOT both be present in the same request or response.
+  jwks_uri       VARCHAR(512)    CHECK ( jwks IS NULL ),     -- ─┘
+
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+
+  FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
 );
 
 CREATE TABLE redirect_uris(
-  id        UUID NOT NULL,
+  uri_id    UUID         NOT NULL PRIMARY KEY,
+  client_id UUID         NOT NULL,
   uri       VARCHAR(512) NOT NULL,
-  client_id UUID NOT NULL,
-  PRIMARY KEY (id, uri),
-  FOREIGN KEY (client_id) REFERENCES ___clients(id) ON DELETE CASCADE
+
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+
+  UNIQUE (uri, client_id),
+  FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
 );
 
 CREATE TABLE scopes(
-  id          UUID         NOT NULL PRIMARY KEY,
+  scope_id    UUID         NOT NULL PRIMARY KEY,
   client_id   UUID         NOT NULL,
   method      VARCHAR(64)  NOT NULL,
   description VARCHAR(256) NOT NULL,
 
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+
   UNIQUE (method, client_id),
-  FOREIGN KEY (client_id) REFERENCES ___clients(id) ON DELETE CASCADE
+  FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
 );
 
--- Will deprecate.
-CREATE TABLE clients(
-  id           UUID         NOT NULL PRIMARY KEY,
-  name         VARCHAR(128) NOT NULL,
-  description  TEXT,
-  redirect_uri VARCHAR(256) NOT NULL,
-  secret       VARCHAR(256)
-);
-
+-- Will Change.
 CREATE TABLE token(
   id      UUID NOT NULL PRIMARY KEY,
   account UUID NOT NULL,
@@ -111,10 +114,11 @@ CREATE TABLE token(
   not_before TIMESTAMPTZ  NOT NULL DEFAULT clock_timestamp(),
   subject    VARCHAR(128) NOT NULL,
 
-  FOREIGN KEY (account) REFERENCES users(id)   ON DELETE CASCADE,
-  FOREIGN KEY (client)  REFERENCES clients(id) ON DELETE CASCADE
+  FOREIGN KEY (account) REFERENCES users(user_id)     ON DELETE CASCADE,
+  FOREIGN KEY (client)  REFERENCES clients(client_id) ON DELETE CASCADE
 );
 
+-- Will deprecated. change for scopes
 CREATE TABLE token_scope(
   id       UUID          NOT NULL PRIMARY KEY,
   token_id UUID          NOT NULL,
