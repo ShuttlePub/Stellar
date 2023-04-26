@@ -3,7 +3,7 @@ use std::fmt::Display;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct ClientId(Uuid);
 
 impl ClientId {

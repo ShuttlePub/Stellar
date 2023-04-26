@@ -12,7 +12,7 @@ use crate::KernelError;
 
 use super::UpdateTime;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct UserId(Uuid);
 
 impl UserId {
