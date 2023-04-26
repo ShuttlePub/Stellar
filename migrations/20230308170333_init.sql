@@ -42,7 +42,6 @@ CREATE TABLE clients(
 );
 
 CREATE TABLE client_metadata(
-  meta_id        UUID           NOT NULL PRIMARY KEY,
   owner          UUID           NOT NULL,
   client_id      UUID           NOT NULL,
   client_uri     VARCHAR(512),
@@ -54,13 +53,14 @@ CREATE TABLE client_metadata(
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
 
+  PRIMARY KEY (owner, client_id),
+
   FOREIGN KEY (owner)     REFERENCES users(user_id)     ON DELETE CASCADE,
   FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
 );
 
 CREATE TABLE client_cert(
-  cert_id        UUID            NOT NULL PRIMARY KEY ,
-  client_id      UUID            NOT NULL,
+  client_id      UUID            NOT NULL PRIMARY KEY,
   auth_method    TEP_AM          NOT NULL,
   grant_types    GRANT_TYPE[]    NOT NULL,
   response_types RESPONSE_TYPE[] NOT NULL,
@@ -74,19 +74,17 @@ CREATE TABLE client_cert(
 );
 
 CREATE TABLE redirect_uris(
-  uri_id    UUID         NOT NULL PRIMARY KEY,
   client_id UUID         NOT NULL,
   uri       VARCHAR(512) NOT NULL,
 
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
 
-  UNIQUE (uri, client_id),
+  PRIMARY KEY (uri, client_id),
   FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
 );
 
 CREATE TABLE scopes(
-  scope_id    UUID         NOT NULL PRIMARY KEY,
   client_id   UUID         NOT NULL,
   method      VARCHAR(64)  NOT NULL,
   description VARCHAR(256) NOT NULL,
@@ -94,35 +92,6 @@ CREATE TABLE scopes(
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
 
-  UNIQUE (method, client_id),
+  PRIMARY KEY (method, client_id),
   FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
-);
-
--- Will Change.
-CREATE TABLE token(
-  id      UUID NOT NULL PRIMARY KEY,
-  account UUID NOT NULL,
-  client  UUID NOT NULL,
-
-  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-
-  issuer     VARCHAR(128) NOT NULL,
-  audience   VARCHAR(128) NOT NULL,
-  expired_in TIMESTAMPTZ  NOT NULL,
-  issued_at  TIMESTAMPTZ  NOT NULL DEFAULT clock_timestamp(),
-  not_before TIMESTAMPTZ  NOT NULL DEFAULT clock_timestamp(),
-  subject    VARCHAR(128) NOT NULL,
-
-  FOREIGN KEY (account) REFERENCES users(user_id)     ON DELETE CASCADE,
-  FOREIGN KEY (client)  REFERENCES clients(client_id) ON DELETE CASCADE
-);
-
--- Will deprecated. change for scopes
-CREATE TABLE token_scope(
-  id       UUID          NOT NULL PRIMARY KEY,
-  token_id UUID          NOT NULL,
-  scoped   VARCHAR(32)[] NOT NULL,
-
-  FOREIGN KEY (token_id) REFERENCES token(id) ON DELETE CASCADE
 );
