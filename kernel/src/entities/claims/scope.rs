@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use destructure::Destructure;
 use serde::{Serialize, Deserialize};
 
@@ -176,5 +177,37 @@ mod test {
             MethodDescription::new("test client read")
         ));
         Ok(())
+    }
+}
+
+
+
+
+
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct _Scopes(HashMap<_ScopeMethod, _ScopeDescription>);
+
+impl _Scopes {
+    pub fn new(values: impl Into<Vec<(_ScopeMethod, _ScopeDescription)>>) -> Self {
+        Self(HashMap::from_iter(values.into().into_iter()))
+    }
+}
+
+#[derive(Debug, Clone, Hash, Eq, PartialEq, Deserialize, Serialize)]
+pub struct _ScopeMethod(String);
+
+impl _ScopeMethod {
+    pub fn new(method: impl Into<String>) -> Self {
+        Self(method.into())
+    }
+}
+
+#[derive(Debug, Clone, Hash, Eq, PartialEq, Deserialize, Serialize)]
+pub struct _ScopeDescription(Option<String>);
+
+impl _ScopeDescription {
+    pub fn new<S: Into<String>, O: Into<Option<S>>>(desc: O) -> Self {
+        Self(desc.into().map(Into::into))
     }
 }
