@@ -24,5 +24,37 @@ impl Jwks {
             }
         }
     }
+
+    pub fn is_uri(&self) -> bool {
+        match self {
+            Jwks::Uri(_) => true,
+            Jwks::Key(_) => false
+        }
+    }
 }
 
+impl TryFrom<Jwks> for String {
+    type Error = KernelError;
+    fn try_from(value: Jwks) -> Result<Self, Self::Error> {
+        match value {
+            Jwks::Uri(url) => Ok(url),
+            Jwks::Key(_) => Err(KernelError::InvalidValue {
+                method: "try convert to url string",
+                value: "this value is jwk object.".to_string(),
+            })
+        }
+    }
+}
+
+impl TryFrom<Jwks> for JsonWebKey {
+    type Error = KernelError;
+    fn try_from(value: Jwks) -> Result<Self, Self::Error> {
+        match value {
+            Jwks::Key(key) => Ok(key),
+            Jwks::Uri(_) => Err(KernelError::InvalidValue {
+                method: "try convert to jwk",
+                value: "this value is uri.".to_string(),
+            })
+        }
+    }
+}
