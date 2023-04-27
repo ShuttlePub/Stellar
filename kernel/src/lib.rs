@@ -6,6 +6,12 @@ mod error;
 pub use self::error::KernelError;
 
 #[cfg(feature = "jsonwebkey")]
-pub use jsonwebkey;
 #[cfg(feature = "url")]
-pub use url;
+pub mod external {
+    #[cfg(feature = "jsonwebkey")]
+    pub use jsonwebkey::*;
+    #[cfg(feature = "url")]
+    pub use url::*;
+    #[cfg(feature = "uuid")]
+    pub use uuid::*;
+}
