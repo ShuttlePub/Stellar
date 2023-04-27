@@ -1,4 +1,14 @@
+use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RedirectUris(HashSet<RedirectUri>);
+
+impl RedirectUris {
+    pub fn new(uris: impl Into<Vec<RedirectUri>>) -> Self {
+        Self(uris.into().into_iter().collect())
+    }
+}
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct RedirectUri(String);

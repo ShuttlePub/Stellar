@@ -3,12 +3,23 @@ use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 
 use super::{
-    ClientId, 
+    ClientId,
     ClientName,
-    ClientTypes, 
-    ClientDescription, 
-    RedirectUri, 
-    Scopes, UserId, 
+    ClientTypes,
+    ClientUri,
+    ClientDescription,
+    RedirectUri,
+    Scopes,
+    _Scopes,
+    UserId,
+    GrantTypes,
+    ResponseTypes,
+    TokenEndPointAuthMethod,
+    LogoUri,
+    TermsUri,
+    Contacts,
+    Jwks,
+    PolicyUri
 };
 
 #[deprecated]
@@ -94,4 +105,28 @@ impl Client {
     pub fn scopes(&self) -> &Scopes {
         &self.scopes
     }
+}
+
+/// Client.
+///
+/// Reference:
+/// [RFC6749](https://www.rfc-editor.org/rfc/rfc6749#section-2)
+/// [RFC7591](https://www.rfc-editor.org/rfc/rfc7591#section-2)
+#[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
+pub struct _Client {
+    id: ClientId,
+    name: ClientName,
+    uri: ClientUri,
+    desc: ClientDescription,
+    types: ClientTypes,
+    logo: LogoUri,
+    terms: TermsUri,
+    owner: UserId,
+    policy: PolicyUri,
+    auth_method: TokenEndPointAuthMethod,
+    grant_types: GrantTypes,
+    response_types: ResponseTypes,
+    scopes: _Scopes,
+    contact: Contacts,
+    jwks: Jwks
 }
