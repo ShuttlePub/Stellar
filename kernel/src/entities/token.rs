@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use super::{UpdateTime, UserId, Scopes, ClientId, ExpiredIn, IssuedAt, NotBefore, Subject, Audience, Issuer, RedirectUri};
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize, destructure::Destructure)]
+#[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
 pub struct AccessTokenContext {
     scope: Scopes,
     client_id: ClientId,
@@ -77,6 +77,7 @@ impl AsRef<str> for AccessTokenId {
 }
 
 impl Default for AccessTokenId {
+    //noinspection DuplicatedCode
     fn default() -> Self {
         let id = Alphanumeric.sample_iter(&mut rand::thread_rng())
             .take(32)
@@ -86,7 +87,7 @@ impl Default for AccessTokenId {
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize, Destructure)]
+#[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
 pub struct AccessToken {
     id: AccessTokenId,
     date: UpdateTime,
@@ -162,6 +163,7 @@ impl AsRef<str> for AuthorizeTokenId {
 }
 
 impl Default for AuthorizeTokenId {
+    //noinspection DuplicatedCode
     fn default() -> Self {
         let id = Alphanumeric.sample_iter(&mut rand::thread_rng())
             .take(32)
@@ -171,7 +173,7 @@ impl Default for AuthorizeTokenId {
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize, Destructure)]
+#[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
 pub struct AuthorizeTokenContext {
     account: UserId,
     client_id: ClientId,
@@ -202,7 +204,7 @@ impl AuthorizeTokenContext {
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize, Destructure)]
+#[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
 pub struct AuthorizeToken {
     id: AuthorizeTokenId,
     date: UpdateTime,

@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use rand::{distributions::Alphanumeric, prelude::Distribution};
 use serde::{Serialize, Deserialize};
 use destructure::Destructure;

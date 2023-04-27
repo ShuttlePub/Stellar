@@ -1,8 +1,10 @@
 use std::str::FromStr;
 use jsonwebkey::JsonWebKey;
+use serde::{Deserialize, Serialize};
 use url::Url;
 use crate::KernelError;
 
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Jwks {
     Uri(String),
     Key(JsonWebKey)
