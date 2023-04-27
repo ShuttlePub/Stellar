@@ -3,6 +3,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::KernelError;
 
+#[deprecated]
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct Scopes(Vec<ScopedObject>);
 
@@ -40,6 +41,7 @@ impl From<Scopes> for Vec<Method> {
     }
 }
 
+#[deprecated]
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, Destructure)]
 pub struct ScopedObject {
     method: Method,
@@ -64,8 +66,8 @@ impl From<ScopedObject> for (String, String) {
 
 impl From<Method> for ScopedObject {
     fn from(value: Method) -> Self {
-        Self { 
-            method: value, 
+        Self {
+            method: value,
             description: MethodDescription::default()
         }
     }
@@ -77,12 +79,13 @@ impl From<(Method, MethodDescription)> for ScopedObject {
     }
 }
 
+#[deprecated]
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Method(String, String);
 
 impl Method {
     pub fn new(
-        resource: impl Into<String>, 
+        resource: impl Into<String>,
         method: impl Into<String>
     ) -> Self {
         Self(resource.into(), method.into())
@@ -109,8 +112,8 @@ impl TryFrom<String> for Method {
         let separated = value.split(':')
             .collect::<Vec<_>>();
         if separated.len() <= 1 || separated.len() > 2 {
-            return Err(KernelError::InvalidValue { 
-                method: "`Method` try_from String", 
+            return Err(KernelError::InvalidValue {
+                method: "`Method` try_from String",
                 value: value.to_string()
             });
         }
@@ -138,6 +141,7 @@ impl<'de> Deserialize<'de> for Method {
     }
 }
 
+#[deprecated]
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct MethodDescription(String);
 
@@ -168,7 +172,7 @@ mod test {
         let mut scopes = Scopes::default();
         scopes.add(Method::new("stellar", "read"));
         scopes.add((
-            Method::new("test", "read"), 
+            Method::new("test", "read"),
             MethodDescription::new("test client read")
         ));
         Ok(())
