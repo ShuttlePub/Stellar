@@ -20,8 +20,6 @@ pub struct RegistrationForm {
     policy_uri: String,
     jwks_uri: String, // ───┬─ Fixme: MUST NOT both be present in the same request or response.
     jwks: String,     // ───┘
-    software_id: String,
-    software_version: String
 }
 
 #[derive(Debug)]
