@@ -1,22 +1,29 @@
 use serde::{Deserialize, Serialize};
+use url::Url;
+use crate::KernelError;
 
 #[derive(Debug, Clone, Hash, Deserialize, Serialize)]
-pub struct TermsUri(String);
+pub struct TermsUri(Url);
 
 impl TermsUri {
-    pub fn new(uri: impl Into<String>) -> Self {
-        Self(uri.into())
+    pub fn new(uri: impl AsRef<str>) -> Result<Self, KernelError> {
+        let uri = uri.as_ref();
+        Ok(Self(Url::parse(uri)
+            .map_err(|e| KernelError::InvalidValue {
+                method: "TermsUri init",
+                value: format!("value: {:?}, serde: {:?}", uri, e),
+            })?))
     }
 }
 
 impl From<TermsUri> for String {
     fn from(value: TermsUri) -> Self {
-        value.0
+        value.0.into()
     }
 }
 
 impl AsRef<str> for TermsUri {
     fn as_ref(&self) -> &str {
-        &self.0
+        self.0.as_ref()
     }
 }

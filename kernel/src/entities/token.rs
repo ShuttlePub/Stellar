@@ -108,21 +108,21 @@ impl AccessToken {
         subject: impl Into<String>,
         expired_in: impl Into<Duration>,
     ) -> Self {
-        Self { 
-            id: AccessTokenId::new(id), 
+        Self {
+            id: AccessTokenId::new(id),
             date: UpdateTime::new(
                 created_at,
                 updated_at
-            ), 
-            ctx: AccessTokenContext { 
-                scope: scoped.into(), 
-                client_id: ClientId::new(linked_client),
+            ),
+            ctx: AccessTokenContext {
+                scope: scoped.into(),
+                client_id: ClientId::new_at_now(linked_client),
                 account: UserId::new(account),
                 exp: ExpiredIn::new(expired_in),
-                iat: IssuedAt::default(), 
-                nbf: NotBefore::default(), 
+                iat: IssuedAt::default(),
+                nbf: NotBefore::default(),
                 sub: Subject::new(subject),
-                aud: Audience::new(audience), 
+                aud: Audience::new(audience),
                 iss: Issuer::new(issuer)
             }
         }
@@ -231,7 +231,7 @@ impl AuthorizeToken {
             ),
             ctx: AuthorizeTokenContext { 
                 account: UserId::new(account),
-                client_id: ClientId::new(client_id),
+                client_id: ClientId::new_at_now(client_id),
                 scopes: scope.into(),
                 redirect_uri: RedirectUri::new(redirect_uri),
                 expired_in: ExpiredIn::new(expired_in)
