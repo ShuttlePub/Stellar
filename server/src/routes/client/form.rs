@@ -18,8 +18,8 @@ pub struct RegistrationForm {
     contacts: Vec<String>,
     tos_uri: String,
     policy_uri: String,
-    jwks_uri: String, // ───┬─ Fixme: MUST NOT both be present in the same request or response.
-    jwks: String,     // ───┘
+    jwks_uri: Option<String>, // ─┬─ MUST NOT both be present in the same request or response.
+    jwks: Option<String>,     // ─┘
 }
 
 #[derive(Debug)]
