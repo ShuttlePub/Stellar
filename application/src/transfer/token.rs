@@ -8,8 +8,7 @@ use kernel::entities::{
     DestructAccessToken, 
     DestructAccessTokenContext,
 };
-use time::OffsetDateTime;
-use uuid::Uuid;
+use kernel::external::{OffsetDateTime, Uuid};
 
 #[derive(Debug)]
 pub struct AuthorizeTokenDto {

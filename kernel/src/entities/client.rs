@@ -43,7 +43,7 @@ pub struct Client {
     response_types: ResponseTypes,
     scopes: Scopes,
     contact: Contacts,
-    jwks: Jwks
+    jwks: Option<Jwks>
 }
 
 impl Client {
@@ -63,7 +63,7 @@ impl Client {
         response_types: impl Into<Vec<ResponseType>>,
         scopes: impl Into<Vec<(ScopeMethod, ScopeDescription)>>,
         contacts: impl Into<Vec<String>>,
-        jwk: impl Into<String>
+        jwk: impl Into<Option<String>>
     ) -> Result<Self, KernelError> {
         Ok(Self {
             id: ClientId::new_at_now(id),
@@ -84,7 +84,9 @@ impl Client {
                 .map(Address::new)
                 .collect::<Vec<_>>()
             ),
-            jwks: Jwks::new(jwk)?
+            jwks: jwk.into()
+                .map(Jwks::new)
+                .transpose()?
         })
     }
 }

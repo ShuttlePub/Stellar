@@ -12,9 +12,12 @@ impl Contacts {
     }
 }
 
-impl From<Contacts> for Vec<Address> {
-    fn from(value: Contacts) -> Self {
-        value.0.into_iter().collect()
+impl IntoIterator for Contacts {
+    type Item = Address;
+    type IntoIter = std::collections::hash_set::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }
 

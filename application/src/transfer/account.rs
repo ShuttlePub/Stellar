@@ -1,6 +1,5 @@
 use kernel::entities::{Account, DestructAccount, DestructUpdateTime, NonVerifiedAccount, DestructNonVerifiedAccount};
-use time::OffsetDateTime;
-use uuid::Uuid;
+use kernel::external::{OffsetDateTime, Uuid};
 
 #[derive(Debug)]
 pub struct AccountDto {

@@ -10,9 +10,12 @@ impl ResponseTypes {
     }
 }
 
-impl From<ResponseTypes> for Vec<ResponseType> {
-    fn from(value: ResponseTypes) -> Self {
-        value.0.into_iter().collect()
+impl IntoIterator for ResponseTypes {
+    type Item = ResponseType;
+    type IntoIter = std::collections::hash_set::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }
 
