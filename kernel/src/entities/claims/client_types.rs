@@ -1,5 +1,4 @@
 use serde::{Serialize, Deserialize};
-
 use super::ClientSecret;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
@@ -21,15 +20,6 @@ impl From<ClientTypes> for Option<ClientSecret> {
     fn from(origin: ClientTypes) -> Self {
         match origin {
             ClientTypes::Confidential(secret) => Some(secret),
-            ClientTypes::Public => None,
-        }
-    }
-}
-
-impl From<ClientTypes> for Option<String> {
-    fn from(value: ClientTypes) -> Self {
-        match value {
-            ClientTypes::Confidential(secret) => Some(secret.into()),
             ClientTypes::Public => None,
         }
     }
