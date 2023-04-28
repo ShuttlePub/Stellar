@@ -27,8 +27,6 @@ dependencies = [
  "async-trait",
  "kernel",
  "thiserror",
- "time",
- "uuid",
 ]
 
 [[package]]

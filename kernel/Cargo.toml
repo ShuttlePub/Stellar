@@ -23,6 +23,7 @@ anyhow = "1"
 
 [features]
 jsonwebkey = []
-url = []
+url  = []
 uuid = []
-re-export = ["jsonwebkey", "url", "uuid"]
+time = []
+re-export = ["jsonwebkey", "url", "uuid", "time"]
