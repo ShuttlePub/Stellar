@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - check
+      - cargo-deny
     steps:
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
