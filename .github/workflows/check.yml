@@ -11,11 +11,11 @@ on:
 jobs:
   check:
     uses: ShuttlePub/workflows/.github/workflows/check.yml@main
-    with:
-      gen_coverage: true
-    secrets: inherit
   cargo-deny:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: EmbarkStudios/cargo-deny-action@v1
+  coverage:
+    uses: ShuttlePub/workflows/.github/workflows/coverage.yml@main
+    secrets: inherit
