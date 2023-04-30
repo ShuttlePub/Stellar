@@ -163,8 +163,8 @@ impl From<ResponseTypeDomain> for ResponseTypeDto {
 
 #[derive(Debug)]
 pub struct ScopeDto {
-    method: String,
-    description: Option<String>
+    pub method: String,
+    pub description: Option<String>
 }
 
 impl From<(ScopeMethod, ScopeDescription)> for ScopeDto {
@@ -203,5 +203,5 @@ pub struct RegisterClientDto {
     pub response_types: Vec<ResponseTypeDto>,
     pub scopes: Vec<ScopeDto>,
     pub contacts: Vec<String>,
-    pub jwk: JwksDto
+    pub jwk: Option<String>
 }

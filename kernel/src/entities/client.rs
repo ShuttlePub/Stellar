@@ -1,8 +1,16 @@
 use destructure::Destructure;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
-use crate::entities::{Address, GrantType, ResponseType, ScopeDescription, ScopeMethod};
-use crate::KernelError;
+use crate::{
+    KernelError,
+    entities::{
+        Address,
+        GrantType,
+        ResponseType,
+        ScopeDescription,
+        ScopeMethod
+    }
+};
 
 use super::{
     ClientId,
@@ -49,11 +57,11 @@ pub struct Client {
 impl Client {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        id: impl Into<Uuid>,
+        id: impl Into<ClientId>,
         name: impl Into<String>,
         uri: impl AsRef<str>,
         desc: impl Into<String>,
-        secret: impl Into<Option<String>>,
+        types: impl Into<ClientTypes>,
         logo: impl AsRef<str>,
         terms: impl AsRef<str>,
         owner: impl Into<Uuid>,
@@ -62,15 +70,15 @@ impl Client {
         grant_types: impl Into<Vec<GrantType>>,
         response_types: impl Into<Vec<ResponseType>>,
         scopes: impl Into<Vec<(ScopeMethod, ScopeDescription)>>,
-        contacts: impl Into<Vec<String>>,
+        contacts: impl Into<Vec<Address>>,
         jwk: impl Into<Option<String>>
     ) -> Result<Self, KernelError> {
         Ok(Self {
-            id: ClientId::new_at_now(id),
+            id: id.into(),
             name: ClientName::new(name),
             uri: ClientUri::new(uri)?,
             desc: ClientDescription::new(desc),
-            types: ClientTypes::new(secret),
+            types: types.into(),
             logo: LogoUri::new(logo)?,
             terms: TermsUri::new(terms)?,
             owner: UserId::new(owner),
@@ -81,7 +89,6 @@ impl Client {
             scopes: Scopes::new(scopes),
             contact: Contacts::new(contacts.into()
                 .into_iter()
-                .map(Address::new)
                 .collect::<Vec<_>>()
             ),
             jwks: jwk.into()

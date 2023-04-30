@@ -14,8 +14,7 @@ use kernel::{
     transporter::VerificationMailTransporter, 
     KernelError
 };
-use time::OffsetDateTime;
-use uuid::Uuid;
+use kernel::external::{OffsetDateTime, Uuid};
 
 use crate::{
     ApplicationError, 
@@ -254,7 +253,7 @@ impl<T> DeleteAccountAdaptor for DeleteAccountInteractor<T>
             .map_err(|e| match e {
                 KernelError::Cryption(e) => ApplicationError::External(anyhow::Error::new(e)),
                 KernelError::InvalidPassword(_) => ApplicationError::Verification { 
-                    method: "on update in verification",
+                    method: "on delete in verification",
                     entity: "account",
                     id: id.as_ref().to_string()
                 },

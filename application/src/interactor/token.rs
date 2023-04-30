@@ -12,15 +12,13 @@ use kernel::{
         AuthorizeTokenId, 
         UserId, 
         Scopes,
-        Method,
+        ScopeMethod,
         RedirectUri, 
         DestructAccount, 
         ClientTypes,
     }
 };
-
-use time::OffsetDateTime;
-use uuid::Uuid;
+use kernel::external::Uuid;
 
 use crate::{
     ApplicationError,
@@ -76,7 +74,7 @@ impl<T1, T2, T3> CreateAuthorizeTokenAdaptor for CreateAuthorizeTokenInteractor<
             })
         };
 
-        let client_id = ClientId::new(client_id);
+        let client_id = ClientId::new_at_now(client_id);
 
         if scope.iter().any(|scoped| scoped == "refresh_token") {
             if let Some(request) = client_secret {

@@ -3,29 +3,20 @@ use kernel::{
         ClientRegistry, 
         AccountRepository
     }, 
-    entities::{
-        Client, 
-        ClientId, 
-        ClientName, 
-        ClientTypes, 
-        ClientDescription, 
-        RedirectUri, 
-        Scopes, 
-        Method, 
-        MethodDescription, 
-        UserId, 
-        DestructAccount
-    }
+
 };
-use uuid::Uuid;
+use kernel::entities::{Address, Client, ClientDescription, ClientId, ClientName, ClientSecret, ClientTypes, ClientUri, Contacts, GrantType, GrantTypes, Jwks, LogoUri, PolicyUri, ResponseType, ResponseTypes, ScopeDescription, ScopeMethod, Scopes, TermsUri, TokenEndPointAuthMethod, UserId};
 
 use crate::{
     adaptor::client::RegisterClientAdaptor, 
     transfer::client::{
         ClientDto, 
-        RegisterClientDto
+        RegisterClientDto,
+        GrantTypeDto,
+        ResponseTypeDto,
+        TokenEndPointAuthMethodDto
     }, 
-    ApplicationError
+    ApplicationError,
 };
 
 #[derive(Clone)]
@@ -46,52 +37,99 @@ impl<T1, T2> RegisterClientAdaptor for RegisterClientInteractor<T1, T2>
         T2: AccountRepository
 {
     async fn register(&self, register: RegisterClientDto) -> Result<ClientDto, ApplicationError> {
-        let RegisterClientDto { 
-            name, 
-            desc, 
-            uris, 
-            owner,
-            secret, 
-            scopes 
-        } = register;
-
-        let owner = UserId::new(owner);
-
-        let Some(owner) = self.accounts.find_by_id(&owner).await? else {
-            return Err(ApplicationError::NotFound { 
-                method: "client registration", 
-                entity: "account", 
-                id: format!("{:?}", owner)
-            });
-        };
-
-        let DestructAccount { id, ..} = owner.into_destruct();
-        let owner = id;
-        let id = ClientId::new(Uuid::new_v4());
-        let name = ClientName::new(name);
-        let desc = ClientDescription::new(desc);
-        let uris = uris.into_iter()
-            .map(RedirectUri::new)
-            .collect::<Vec<_>>();
-        let types = ClientTypes::new(secret);
-
-        let mut scoped = Scopes::default();
-        scopes.into_iter().for_each(|scoping| 
-            scoped.add((
-                Method::new(name.as_ref(), scoping.method), 
-                MethodDescription::new(scoping.description)
-            ))
-        );
-
-        let client = Client::new(
+        let RegisterClientDto {
             id,
             name,
-            desc,
-            uris,
-            owner,
+            client_uri,
+            description,
+            logo_uri,
+            tos_uri,
+            owner_id,
+            policy_uri,
+            auth_method,
+            grant_types,
+            response_types,
+            scopes,
+            contacts,
+            jwk
+        } = register;
+
+        let owner = UserId::new(owner_id);
+
+        let Some(owner) = self.accounts.find_by_id(&owner).await? else {
+            return Err(ApplicationError::NotFound {
+                method: "find_by_id",
+                entity: "account",
+                id: owner.to_string(),
+            })
+        };
+
+        let owner = owner.into_destruct();
+
+        let types = match auth_method {
+            TokenEndPointAuthMethodDto::ClientSecretPost |
+            TokenEndPointAuthMethodDto::ClientSecretBasic |
+            TokenEndPointAuthMethodDto::PrivateKeyJWK => ClientSecret::default().into(),
+            TokenEndPointAuthMethodDto::None => ClientTypes::new(None)
+        };
+
+        let client_id = ClientId::new_at_now(id);
+        let name = ClientName::new(name);
+        let client_uri = ClientUri::new(client_uri)?;
+        let client_desc = ClientDescription::new(description);
+        let logo_uri = LogoUri::new(logo_uri)?;
+        let tos_uri = TermsUri::new(tos_uri)?;
+        let policy_uri = PolicyUri::new(policy_uri)?;
+        let auth_method = match auth_method {
+            TokenEndPointAuthMethodDto::ClientSecretPost => TokenEndPointAuthMethod::ClientSecretPost,
+            TokenEndPointAuthMethodDto::ClientSecretBasic => TokenEndPointAuthMethod::ClientSecretBasic,
+            TokenEndPointAuthMethodDto::None => TokenEndPointAuthMethod::None,
+            TokenEndPointAuthMethodDto::PrivateKeyJWK => TokenEndPointAuthMethod::PrivateKeyJWK
+        };
+        let grant_types = grant_types.into_iter()
+            .map(|types| match types {
+                GrantTypeDto::AuthorizationCode => GrantType::AuthorizationCode,
+                GrantTypeDto::Implicit => GrantType::Implicit,
+                GrantTypeDto::Password => GrantType::Password,
+                GrantTypeDto::ClientCredentials => GrantType::ClientCredentials,
+                GrantTypeDto::RefreshToken => GrantType::RefreshToken,
+                GrantTypeDto::JWTBearer => GrantType::JWTBearer,
+                GrantTypeDto::Saml2Bearer => GrantType::Saml2Bearer
+            })
+            .collect::<GrantTypes>();
+        let response_types = response_types.into_iter()
+            .map(|types| match types {
+                ResponseTypeDto::Code => ResponseType::Code,
+                ResponseTypeDto::Token => ResponseType::Token
+            })
+            .collect::<ResponseTypes>();
+        let scopes = scopes.into_iter()
+            .map(|scope| (
+                ScopeMethod::new(scope.method),
+                ScopeDescription::new(scope.description)
+            ))
+            .collect::<Scopes>();
+        let contacts = contacts.into_iter()
+            .map(Address::new)
+            .collect::<Contacts>();
+
+        let client = Client::new(
+            client_id,
+            name,
+            client_uri,
+            client_desc,
             types,
-            scoped
-        );
+            logo_uri,
+            tos_uri,
+            owner.id,
+            policy_uri,
+            auth_method,
+            grant_types,
+            response_types,
+            scopes,
+            contacts,
+            jwk
+        )?;
 
         self.registry.register(&client).await?;
 

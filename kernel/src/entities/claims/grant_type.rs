@@ -10,12 +10,26 @@ impl GrantTypes {
     }
 }
 
+impl From<GrantTypes> for Vec<GrantType> {
+    fn from(values: GrantTypes) -> Self {
+        values.into_iter().collect()
+    }
+}
+
 impl IntoIterator for GrantTypes {
     type Item = GrantType;
     type IntoIter = std::collections::hash_set::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
+    }
+}
+
+impl FromIterator<GrantType> for GrantTypes {
+    fn from_iter<T: IntoIterator<Item = GrantType>>(iter: T) -> Self {
+        let v = iter.into_iter()
+            .collect::<Vec<GrantType>>();
+        Self::new(v)
     }
 }
 

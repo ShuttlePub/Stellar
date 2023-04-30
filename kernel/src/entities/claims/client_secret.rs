@@ -1,5 +1,6 @@
 use std::time::UNIX_EPOCH;
 use destructure::Destructure;
+use rand::distributions::{Alphanumeric, Distribution};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
@@ -12,10 +13,10 @@ pub struct ClientSecret {
 }
 
 impl ClientSecret {
-    pub fn new(secret: impl Into<String>) -> Self {
+    pub fn new(secret: impl Into<String>, exp: impl Into<OffsetDateTime>) -> Self {
         Self {
             secret: secret.into(),
-            expires_at: OffsetDateTime::now_utc()
+            expires_at: exp.into()
         }
     }
 
@@ -36,9 +37,28 @@ impl ClientSecret {
     }
 }
 
+impl From<ClientSecret> for (String, OffsetDateTime) {
+    fn from(value: ClientSecret) -> Self {
+        (value.secret, value.expires_at)
+    }
+}
+
+impl Default for ClientSecret {
+    fn default() -> Self {
+        Self::new(
+            Alphanumeric.sample_iter(&mut rand::thread_rng())
+                .take(64)
+                .map(char::from)
+                .collect::<String>(),
+            OffsetDateTime::now_utc()
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use rand::distributions::{Alphanumeric, Distribution};
+    use time::OffsetDateTime;
     use crate::entities::ClientSecret;
 
     #[test]
@@ -47,7 +67,7 @@ mod tests {
             .take(64)
             .map(char::from)
             .collect::<String>();
-        let secret = ClientSecret::new(code);
+        let secret = ClientSecret::new(code, OffsetDateTime::now_utc());
         let exp = secret.expires_at_as_u64();
         println!("{:?}", exp);
         Ok(())

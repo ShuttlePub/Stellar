@@ -1,5 +1,4 @@
-use uuid::Uuid;
-
+use kernel::external::Uuid;
 use crate::{
     ApplicationError, 
     adaptor::{

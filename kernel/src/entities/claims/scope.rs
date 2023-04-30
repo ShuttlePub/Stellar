@@ -10,12 +10,26 @@ impl Scopes {
     }
 }
 
+impl From<Scopes> for Vec<(ScopeMethod, ScopeDescription)> {
+    fn from(values: Scopes) -> Self {
+        values.into_iter().collect()
+    }
+}
+
 impl IntoIterator for Scopes {
     type Item = (ScopeMethod, ScopeDescription);
     type IntoIter = std::collections::hash_map::IntoIter<ScopeMethod, ScopeDescription>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
+    }
+}
+
+impl FromIterator<(ScopeMethod, ScopeDescription)> for Scopes {
+    fn from_iter<T: IntoIterator<Item=(ScopeMethod, ScopeDescription)>>(iter: T) -> Self {
+        let v = iter.into_iter()
+            .collect::<Vec<(ScopeMethod, ScopeDescription)>>();
+        Self::new(v)
     }
 }
 
@@ -44,7 +58,7 @@ impl AsRef<str> for ScopeMethod {
 pub struct ScopeDescription(Option<String>);
 
 impl ScopeDescription {
-    pub fn new<S: Into<String>, O: Into<Option<S>>>(desc: O) -> Self {
+    pub fn new(desc: impl Into<Option<String>>) -> Self {
         Self(desc.into().map(Into::into))
     }
 }
