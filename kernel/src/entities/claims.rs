@@ -13,6 +13,8 @@ mod scope;
 mod pass;
 mod policy_uri;
 mod redirect;
+mod regi_access_token;
+mod regi_endpoint;
 mod response_type;
 mod exp;
 mod logo_uri;
@@ -41,6 +43,8 @@ pub use self::{
     pass::*,
     policy_uri::*,
     redirect::*,
+    regi_endpoint::*,
+    regi_access_token::*,
     response_type::*,
     exp::*,
     logo_uri::*,

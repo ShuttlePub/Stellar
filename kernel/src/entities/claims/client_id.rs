@@ -37,3 +37,9 @@ impl Display for ClientId {
         write!(f, "id: {}, iat: {}", self.id, self.issued_at)
     }
 }
+
+impl From<ClientId> for Uuid {
+    fn from(value: ClientId) -> Self {
+        value.id
+    }
+}
