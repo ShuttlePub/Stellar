@@ -1,4 +1,4 @@
-use uuid::Uuid;
+use kernel::external::Uuid;
 
 use crate::{
     ApplicationError,
@@ -11,6 +11,7 @@ use crate::{
     }, 
 };
 
+#[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
 pub trait RestAdaptor: 'static + Send + Sync {
     async fn prepare_user_verification(&self, user: CreateNonVerifiedAccountDto) -> Result<NonVerifiedAccountDto, ApplicationError>;

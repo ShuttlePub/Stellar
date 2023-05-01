@@ -3,6 +3,7 @@ use crate::{
     KernelError
 };
 
+#[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
 pub trait AccountRepository: 'static + Sync + Send {
     async fn create(&self, create: &Account) -> Result<(), KernelError>;
@@ -12,6 +13,7 @@ pub trait AccountRepository: 'static + Sync + Send {
     async fn find_by_id(&self, id: &UserId) -> Result<Option<Account>, KernelError>;
 }
 
+#[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
 pub trait NonVerifiedAccountRepository: 'static + Sync + Send {
     async fn create(&self, create: &NonVerifiedAccount) -> Result<(), KernelError>;
