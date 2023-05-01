@@ -11,6 +11,7 @@ use crate::{
         ScopeMethod
     }
 };
+use crate::entities::{RegistrationAccessToken, RegistrationEndPoint};
 
 use super::{
     ClientId,
@@ -51,7 +52,9 @@ pub struct Client {
     response_types: ResponseTypes,
     scopes: Scopes,
     contact: Contacts,
-    jwks: Option<Jwks>
+    jwks: Option<Jwks>,
+    conf_token: RegistrationAccessToken,
+    conf_endpoint: RegistrationEndPoint,
 }
 
 impl Client {
@@ -71,7 +74,9 @@ impl Client {
         response_types: impl Into<Vec<ResponseType>>,
         scopes: impl Into<Vec<(ScopeMethod, ScopeDescription)>>,
         contacts: impl Into<Vec<Address>>,
-        jwk: impl Into<Option<String>>
+        jwk: impl Into<Option<String>>,
+        conf_access_token: impl Into<String>,
+        conf_endpoint: impl Into<String>,
     ) -> Result<Self, KernelError> {
         Ok(Self {
             id: id.into(),
@@ -93,7 +98,9 @@ impl Client {
             ),
             jwks: jwk.into()
                 .map(Jwks::new)
-                .transpose()?
+                .transpose()?,
+            conf_token: RegistrationAccessToken::new(conf_access_token),
+            conf_endpoint: RegistrationEndPoint::new(conf_endpoint)
         })
     }
 }
