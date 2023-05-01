@@ -9,11 +9,11 @@ use crate::KernelError;
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize, Destructure)]
 pub struct ClientSecret {
     secret: String,
-    expires_at: OffsetDateTime
+    expires_at: Option<OffsetDateTime>
 }
 
 impl ClientSecret {
-    pub fn new(secret: impl Into<String>, exp: impl Into<OffsetDateTime>) -> Self {
+    pub fn new(secret: impl Into<String>, exp: impl Into<Option<OffsetDateTime>>) -> Self {
         Self {
             secret: secret.into(),
             expires_at: exp.into()
@@ -24,12 +24,12 @@ impl ClientSecret {
         &self.secret
     }
 
-    pub fn expires_at(&self) -> &OffsetDateTime {
+    pub fn expires_at(&self) -> &Option<OffsetDateTime> {
         &self.expires_at
     }
 
-    pub fn expires_at_as_u64(&self) -> u64 {
-        (UNIX_EPOCH - self.expires_at).abs().whole_seconds() as u64
+    pub fn expires_at_as_u64(&self) -> Option<u64> {
+        ((UNIX_EPOCH - self.expires_at?).abs().whole_seconds() as u64).into()
     }
 
     pub fn verify(&self, _secret: impl Into<String>) -> Result<(), KernelError> {
@@ -37,7 +37,7 @@ impl ClientSecret {
     }
 }
 
-impl From<ClientSecret> for (String, OffsetDateTime) {
+impl From<ClientSecret> for (String, Option<OffsetDateTime>) {
     fn from(value: ClientSecret) -> Self {
         (value.secret, value.expires_at)
     }
