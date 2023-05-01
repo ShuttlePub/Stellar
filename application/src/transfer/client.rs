@@ -31,7 +31,9 @@ pub struct ClientDto {
     pub response_types: Vec<ResponseTypeDto>,
     pub scopes: Vec<ScopeDto>,
     pub contacts: Vec<String>,
-    pub jwks: Option<JwksDto>
+    pub jwks: Option<JwksDto>,
+    pub conf_access_token: String,
+    pub conf_endpoint: String
 }
 
 impl From<Client> for ClientDto {
@@ -51,7 +53,9 @@ impl From<Client> for ClientDto {
             response_types,
             scopes,
             contact,
-            jwks
+            jwks,
+            conf_token,
+            conf_endpoint,
         } = value.into_destruct();
 
         let DestructClientId {
@@ -62,11 +66,8 @@ impl From<Client> for ClientDto {
         let confidential: Option<ClientSecret> = types.into();
         let confidential = match confidential {
             Some(secret) => {
-                let DestructClientSecret {
-                    secret,
-                    expires_at
-                } = secret.into_destruct();
-                (Some(secret), Some(expires_at))
+                let DestructClientSecret { secret, expires_at } = secret.into_destruct();
+                (Some(secret), expires_at)
             }
             None => (None, None)
         };
@@ -97,11 +98,13 @@ impl From<Client> for ClientDto {
                 .map(Into::into)
                 .collect(),
             jwks: jwks.map(Into::into),
+            conf_access_token: conf_token.into(),
+            conf_endpoint: conf_endpoint.into()
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TokenEndPointAuthMethodDto {
     ClientSecretPost,
     ClientSecretBasic,
