@@ -7,6 +7,8 @@ license = "AGPL-3.0-or-later"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+mockall = "0.11"
+dotenvy = "0.15"
 argon2 = { version = "0.5", features = ["std"] }
 rand = "0.8.5"
 uuid = { version = "1.3", features = ["serde", "v4"] }
@@ -22,6 +24,7 @@ thiserror = "1"
 anyhow = "1"
 
 [features]
+mock = []
 jsonwebkey = []
 url  = []
 uuid = []
