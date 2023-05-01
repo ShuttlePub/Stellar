@@ -104,7 +104,7 @@ impl From<Client> for ClientDto {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum TokenEndPointAuthMethodDto {
     ClientSecretPost,
     ClientSecretBasic,
