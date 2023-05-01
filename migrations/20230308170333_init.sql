@@ -73,7 +73,7 @@ CREATE TABLE client_cert(
   FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
 );
 
-CREATE TABLE redirect_uris(
+CREATE TABLE client_redirect_uris(
   client_id UUID         NOT NULL,
   uri       VARCHAR(512) NOT NULL,
 
@@ -84,7 +84,7 @@ CREATE TABLE redirect_uris(
   FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
 );
 
-CREATE TABLE scopes(
+CREATE TABLE client_scopes(
   client_id   UUID         NOT NULL,
   method      VARCHAR(64)  NOT NULL,
   description VARCHAR(256) NOT NULL,
@@ -93,5 +93,17 @@ CREATE TABLE scopes(
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
 
   PRIMARY KEY (method, client_id),
+  FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
+);
+
+-- Referenced RFC7592 Dynamic Client Registration Management Protocol
+CREATE TABLE client_configuration_policy(
+  client_id UUID         NOT NULL PRIMARY KEY,
+  endpoint  VARCHAR(32) NOT NULL UNIQUE,
+  token     VARCHAR(64)  NOT NULL UNIQUE,
+
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+
   FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
 );
