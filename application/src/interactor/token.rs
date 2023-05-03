@@ -1,3 +1,6 @@
+// Todo: impl to remove.
+#![allow(unused)]
+
 use kernel::{
     repository::{
         AuthorizeTokenRepository, 

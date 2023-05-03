@@ -46,6 +46,7 @@ mod tests {
     use url::Url;
     use crate::entities::RegistrationEndPoint;
 
+    #[ignore ="Unit testing is not possible because of the use of environment variables."]
     #[test]
     fn endpoint_test() -> anyhow::Result<()> {
         let endpoint = RegistrationEndPoint::default();
