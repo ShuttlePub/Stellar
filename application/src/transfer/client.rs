@@ -29,6 +29,7 @@ pub struct ClientDto {
     pub auth_method: TokenEndPointAuthMethodDto,
     pub grant_types: Vec<GrantTypeDto>,
     pub response_types: Vec<ResponseTypeDto>,
+    pub redirect_uris: Vec<String>,
     pub scopes: Vec<ScopeDto>,
     pub contacts: Vec<String>,
     pub jwks: Option<JwksDto>,
@@ -51,6 +52,7 @@ impl From<Client> for ClientDto {
             auth_method,
             grant_types,
             response_types,
+            redirect_uris,
             scopes,
             contact,
             jwks,
@@ -95,6 +97,9 @@ impl From<Client> for ClientDto {
                 .map(Into::into)
                 .collect(),
             contacts: contact.into_iter()
+                .map(Into::into)
+                .collect(),
+            redirect_uris: redirect_uris.into_iter()
                 .map(Into::into)
                 .collect(),
             jwks: jwks.map(Into::into),
@@ -204,6 +209,7 @@ pub struct RegisterClientDto {
     pub auth_method: TokenEndPointAuthMethodDto,
     pub grant_types: Vec<GrantTypeDto>,
     pub response_types: Vec<ResponseTypeDto>,
+    pub redirect_uris: Vec<String>,
     pub scopes: Vec<ScopeDto>,
     pub contacts: Vec<String>,
     pub jwk: Option<String>

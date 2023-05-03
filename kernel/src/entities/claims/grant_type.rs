@@ -8,6 +8,10 @@ impl GrantTypes {
     pub fn new(types: impl Into<Vec<GrantType>>) -> Self {
         Self(types.into().into_iter().collect())
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &GrantType> {
+        self.0.iter()
+    }
 }
 
 impl From<GrantTypes> for Vec<GrantType> {
@@ -54,4 +58,18 @@ pub enum GrantType {
     RefreshToken,
     JWTBearer,
     Saml2Bearer
+}
+
+impl AsRef<str> for GrantType {
+    fn as_ref(&self) -> &str {
+        match self {
+            GrantType::AuthorizationCode => "authorization_code",
+            GrantType::Implicit => "implicit",
+            GrantType::Password => "password",
+            GrantType::ClientCredentials => "client_credentials",
+            GrantType::RefreshToken => "refresh_token",
+            GrantType::JWTBearer => "jwt_bearer",
+            GrantType::Saml2Bearer => "saml2_bearer"
+        }
+    }
 }

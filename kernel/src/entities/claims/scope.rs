@@ -8,11 +8,21 @@ impl Scopes {
     pub fn new(values: impl Into<Vec<(ScopeMethod, ScopeDescription)>>) -> Self {
         Self(HashMap::from_iter(values.into().into_iter()))
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&ScopeMethod, &ScopeDescription)> {
+        self.0.iter()
+    }
 }
 
 impl From<Scopes> for Vec<(ScopeMethod, ScopeDescription)> {
     fn from(values: Scopes) -> Self {
         values.into_iter().collect()
+    }
+}
+
+impl AsRef<HashMap<ScopeMethod, ScopeDescription>> for Scopes {
+    fn as_ref(&self) -> &HashMap<ScopeMethod, ScopeDescription> {
+        &self.0
     }
 }
 

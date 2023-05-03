@@ -3,6 +3,7 @@ use jsonwebkey::JsonWebKey;
 use serde::{Deserialize, Serialize};
 use url::Url;
 use crate::KernelError;
+use try_ref::TryAsRef;
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Jwks {
@@ -50,6 +51,32 @@ impl TryFrom<Jwks> for JsonWebKey {
     type Error = KernelError;
     fn try_from(value: Jwks) -> Result<Self, Self::Error> {
         match value {
+            Jwks::Key(key) => Ok(key),
+            Jwks::Uri(_) => Err(KernelError::InvalidValue {
+                method: "try convert to jwk",
+                value: "this value is uri.".to_string(),
+            })
+        }
+    }
+}
+
+impl TryAsRef<str> for Jwks {
+    type Error = KernelError;
+    fn try_as_ref(&self) -> Result<&str, Self::Error> {
+        match self {
+            Jwks::Uri(url) => Ok(url),
+            Jwks::Key(_) => Err(KernelError::InvalidValue {
+                method: "try convert to url string",
+                value: "this value is jwk object.".to_string(),
+            })
+        }
+    }
+}
+
+impl TryAsRef<JsonWebKey> for Jwks {
+    type Error = KernelError;
+    fn try_as_ref(&self) -> Result<&JsonWebKey, Self::Error> {
+        match self {
             Jwks::Key(key) => Ok(key),
             Jwks::Uri(_) => Err(KernelError::InvalidValue {
                 method: "try convert to jwk",

@@ -14,6 +14,13 @@ impl ClientTypes {
             None => Self::Public
         }
     }
+    
+    pub fn as_ref(&self) -> Option<&ClientSecret> {
+        match self {
+            ClientTypes::Confidential(secret) => Some(secret),
+            ClientTypes::Public => None
+        }
+    }
 }
 
 impl From<ClientSecret> for ClientTypes {

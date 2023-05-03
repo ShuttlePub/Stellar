@@ -27,7 +27,7 @@ impl AccountRepository for AccountDataBase {
     async fn create(&self, create: &Account) -> Result<(), KernelError> {
         let mut con = self.pool.acquire().await
             .map_err(DriverError::SqlX)?;
-        PgInternal::create(create, &mut con).await?;
+        PgAccountInternal::create(create, &mut con).await?;
 
         Ok(())
     }
@@ -35,7 +35,7 @@ impl AccountRepository for AccountDataBase {
     async fn update(&self, update: &Account) -> Result<(), KernelError> {
         let mut con = self.pool.acquire().await
             .map_err(DriverError::SqlX)?;
-        PgInternal::update(update, &mut con).await?;
+        PgAccountInternal::update(update, &mut con).await?;
 
         Ok(())
     }
@@ -43,7 +43,7 @@ impl AccountRepository for AccountDataBase {
     async fn delete(&self, delete: &UserId) -> Result<(), KernelError> {
         let mut con = self.pool.acquire().await
             .map_err(DriverError::SqlX)?;
-        PgInternal::delete(delete, &mut con).await?;
+        PgAccountInternal::delete(delete, &mut con).await?;
 
         Ok(())
     }
@@ -51,12 +51,12 @@ impl AccountRepository for AccountDataBase {
     async fn find_by_id(&self, id: &UserId) -> Result<Option<Account>, KernelError> {
         let mut con = self.pool.acquire().await
             .map_err(DriverError::SqlX)?;
-        let found = PgInternal::find_by_id(id, &mut con).await?;
+        let found = PgAccountInternal::find_by_id(id, &mut con).await?;
         Ok(found)
     }
 }
 
-pub(in crate::database) struct PgInternal;
+pub(in crate::database) struct PgAccountInternal;
 
 #[allow(dead_code)]
 #[derive(sqlx::FromRow)]
@@ -70,7 +70,7 @@ pub(in crate::database) struct AccountRow {
     updated_at: OffsetDateTime
 }
 
-impl PgInternal {
+impl PgAccountInternal {
     pub async fn create(create: &Account, con: &mut PgConnection) -> Result<(), DriverError> {
         sqlx::query(r#"
             INSERT INTO users (

@@ -10,6 +10,10 @@ impl Contacts {
     pub fn new(adr: impl Into<Vec<Address>>) -> Self {
         Self(adr.into().into_iter().collect())
     }
+    
+    pub fn as_ref_vec(&self) -> Vec<&str> {
+        self.0.iter().map(AsRef::as_ref).collect()
+    }
 }
 
 impl From<Contacts> for Vec<Address> {
@@ -37,11 +41,5 @@ impl FromIterator<Address> for Contacts {
 impl From<Contacts> for HashSet<Address> {
     fn from(value: Contacts) -> Self {
         value.0
-    }
-}
-
-impl AsRef<HashSet<Address>> for Contacts {
-    fn as_ref(&self) -> &HashSet<Address> {
-        &self.0
     }
 }

@@ -5,7 +5,7 @@ use kernel::{
     }, 
 
 };
-use kernel::entities::{Address, Client, ClientDescription, ClientId, ClientName, ClientSecret, ClientTypes, ClientUri, Contacts, GrantType, GrantTypes, LogoUri, PolicyUri, RegistrationAccessToken, RegistrationEndPoint, ResponseType, ResponseTypes, ScopeDescription, ScopeMethod, Scopes, TermsUri, TokenEndPointAuthMethod, UserId};
+use kernel::entities::{Address, Client, ClientDescription, ClientId, ClientName, ClientSecret, ClientTypes, ClientUri, Contacts, GrantType, GrantTypes, LogoUri, PolicyUri, RedirectUri, RedirectUris, RegistrationAccessToken, RegistrationEndPoint, ResponseType, ResponseTypes, ScopeDescription, ScopeMethod, Scopes, TermsUri, TokenEndPointAuthMethod, UserId};
 
 use crate::{
     adaptor::client::RegisterClientAdaptor, 
@@ -49,6 +49,7 @@ impl<T1, T2> RegisterClientAdaptor for RegisterClientInteractor<T1, T2>
             auth_method,
             grant_types,
             response_types,
+            redirect_uris,
             scopes,
             contacts,
             jwk
@@ -104,6 +105,10 @@ impl<T1, T2> RegisterClientAdaptor for RegisterClientInteractor<T1, T2>
             })
             .collect::<ResponseTypes>();
 
+        let redirect_uris = redirect_uris.into_iter()
+            .map(RedirectUri::new)
+            .collect::<RedirectUris>();
+
         let scopes = scopes.into_iter()
             .map(|scope| (
                 ScopeMethod::new(scope.method),
@@ -131,6 +136,7 @@ impl<T1, T2> RegisterClientAdaptor for RegisterClientInteractor<T1, T2>
             auth_method,
             grant_types,
             response_types,
+            redirect_uris,
             scopes,
             contacts,
             jwk,
@@ -205,6 +211,12 @@ mod tests {
         let auth_method = TokenEndPointAuthMethodDto::ClientSecretPost;
         let grant_types = vec![GrantTypeDto::AuthorizationCode];
         let response_types = vec![ResponseTypeDto::Code];
+        let redirect_uris = vec![
+            "https://test.client.example.com/callback",
+            "https://test.client.example.com/callback2"
+        ].into_iter()
+         .map(Into::into)
+         .collect::<Vec<String>>();
         let scopes = vec![
             ("read", Some("base user data read")),
             ("write", Some("base user data write")),
@@ -230,6 +242,7 @@ mod tests {
             auth_method,
             grant_types,
             response_types,
+            redirect_uris,
             scopes,
             contacts,
             jwk: None,

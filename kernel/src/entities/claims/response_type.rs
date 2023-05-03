@@ -8,6 +8,10 @@ impl ResponseTypes {
     pub fn new(types: impl Into<Vec<ResponseType>>) -> Self {
         Self(types.into().into_iter().collect())
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &ResponseType> {
+        self.0.iter()
+    }
 }
 
 impl From<ResponseTypes> for Vec<ResponseType> {
@@ -49,4 +53,13 @@ impl AsRef<HashSet<ResponseType>> for ResponseTypes {
 pub enum ResponseType {
     Code,
     Token
+}
+
+impl AsRef<str> for ResponseType {
+    fn as_ref(&self) -> &str {
+        match self {
+            ResponseType::Code => "code",
+            ResponseType::Token => "token"
+        }
+    }
 }

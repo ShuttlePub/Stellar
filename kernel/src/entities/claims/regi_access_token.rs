@@ -25,10 +25,10 @@ impl AsRef<str> for RegistrationAccessToken {
 impl Default for RegistrationAccessToken {
     fn default() -> Self {
         Self::new(
-            Alphanumeric.sample_iter(&mut rand::thread_rng())
-                .take(64)
+            format!("reg-{}", Alphanumeric.sample_iter(&mut rand::thread_rng())
+                .take(60)
                 .map(char::from)
-                .collect::<String>()
+                .collect::<String>())
         )
     }
 }

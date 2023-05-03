@@ -34,8 +34,9 @@ CREATE TYPE RESPONSE_TYPE
   );
 
 CREATE TABLE clients(
-  client_id   UUID         NOT NULL PRIMARY KEY ,
-  client_name VARCHAR(256) NOT NULL UNIQUE,
+  client_id     UUID         NOT NULL PRIMARY KEY,
+  client_id_iat TIMESTAMPTZ  NOT NULL,
+  client_name   VARCHAR(256) NOT NULL UNIQUE,
 
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
@@ -60,12 +61,14 @@ CREATE TABLE client_metadata(
 );
 
 CREATE TABLE client_cert(
-  client_id      UUID            NOT NULL PRIMARY KEY,
-  auth_method    TEP_AM          NOT NULL,
-  grant_types    GRANT_TYPE[]    NOT NULL,
-  response_types RESPONSE_TYPE[] NOT NULL,
-  jwks           JSONB           CHECK ( jwks_uri IS NULL ), -- ─┬─ MUST NOT both be present in the same request or response.
-  jwks_uri       VARCHAR(512)    CHECK ( jwks IS NULL ),     -- ─┘
+  client_id         UUID            NOT NULL PRIMARY KEY,
+  client_secret     VARCHAR(64)     CHECK ( client_secret_exp IS NULL ),
+  client_secret_exp TIMESTAMPTZ     CHECK ( client_secret IS NULL ),
+  auth_method       TEP_AM          NOT NULL,
+  grant_types       GRANT_TYPE[]    NOT NULL,
+  response_types    RESPONSE_TYPE[] NOT NULL,
+  jwks              JSONB           CHECK ( jwks_uri IS NOT NULL ), -- ─┬─ MUST NOT both be present in the same request or response.
+  jwks_uri          VARCHAR(512)    CHECK ( jwks IS NOT NULL ),     -- ─┘
 
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
@@ -87,7 +90,7 @@ CREATE TABLE client_redirect_uris(
 CREATE TABLE client_scopes(
   client_id   UUID         NOT NULL,
   method      VARCHAR(64)  NOT NULL,
-  description VARCHAR(256) NOT NULL,
+  description VARCHAR(256),
 
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
@@ -99,7 +102,7 @@ CREATE TABLE client_scopes(
 -- Referenced RFC7592 Dynamic Client Registration Management Protocol
 CREATE TABLE client_configuration_policy(
   client_id UUID         NOT NULL PRIMARY KEY,
-  endpoint  VARCHAR(32) NOT NULL UNIQUE,
+  endpoint  VARCHAR(32)  NOT NULL UNIQUE,
   token     VARCHAR(64)  NOT NULL UNIQUE,
 
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
