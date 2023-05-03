@@ -62,13 +62,13 @@ CREATE TABLE client_metadata(
 
 CREATE TABLE client_cert(
   client_id         UUID            NOT NULL PRIMARY KEY,
-  client_secret     VARCHAR(64)     CHECK ( client_secret_exp IS NULL ),
-  client_secret_exp TIMESTAMPTZ     CHECK ( client_secret IS NULL ),
+  client_secret     VARCHAR(64)     CHECK ( client_secret_exp IS NOT NULL ),
+  client_secret_exp TIMESTAMPTZ     CHECK ( client_secret IS NOT NULL ),
   auth_method       TEP_AM          NOT NULL,
   grant_types       GRANT_TYPE[]    NOT NULL,
   response_types    RESPONSE_TYPE[] NOT NULL,
-  jwks              JSONB           CHECK ( jwks_uri IS NOT NULL ), -- ─┬─ MUST NOT both be present in the same request or response.
-  jwks_uri          VARCHAR(512)    CHECK ( jwks IS NOT NULL ),     -- ─┘
+  jwks              JSONB           CHECK ( jwks_uri IS NULL ), -- ─┬─ MUST NOT both be present in the same request or response.
+  jwks_uri          VARCHAR(512)    CHECK ( jwks IS NULL ),     -- ─┘
 
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),

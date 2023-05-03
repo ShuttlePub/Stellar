@@ -6,8 +6,7 @@ use kernel::{
 use deadpool_redis::Connection as RedisConnection;
 use deadpool_redis::redis;
 use sqlx::{Pool, Postgres, PgConnection};
-use time::OffsetDateTime;
-use uuid::Uuid;
+use kernel::external::{OffsetDateTime, Uuid};
 
 use crate::DriverError;
 
@@ -74,7 +73,7 @@ impl PgAccountInternal {
     pub async fn create(create: &Account, con: &mut PgConnection) -> Result<(), DriverError> {
         sqlx::query(r#"
             INSERT INTO users (
-                id,
+                user_id,
                 address,
                 name,
                 pass,

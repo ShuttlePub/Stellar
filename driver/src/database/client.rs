@@ -1,5 +1,3 @@
-use futures::{StreamExt, TryStreamExt};
-use futures::future::ready;
 use sqlx::{PgConnection, Pool, Postgres};
 use kernel::entities::{Client, ClientId};
 use kernel::external::JsonWebKey;
@@ -23,10 +21,14 @@ impl ClientRegistry for ClientDataBase {
     async fn register(&self, client: &Client) -> Result<(), KernelError> {
         let mut transaction = self.pool.begin().await
             .map_err(DriverError::SqlX)?;
-        PgClientInternal::insert(client, &mut transaction).await?;
 
+        if let Err(r) = PgClientInternal::insert(client, &mut transaction).await {
+            transaction.rollback().await
+                .map_err(DriverError::SqlX)?;
+            return Err(KernelError::Driver(anyhow::Error::msg("failed transaction in client registration.")))
+        }
 
-        todo!()
+        Ok(())
     }
 
     async fn delete(&self, id: &ClientId) -> Result<(), KernelError> {
@@ -109,9 +111,9 @@ impl PgClientInternal {
               $1,
               $2,
               $3,
-              $4,
-              $5,
-              $6,
+              $4::TEP_AM,
+              $5::GRANT_TYPE[],
+              $6::RESPONSE_TYPE[],
               $7,
               $8
             )
@@ -157,10 +159,150 @@ impl PgClientInternal {
         .execute(&mut *con)
         .await?;
 
+        // language=SQL
+        sqlx::query(r#"
+            INSERT INTO client_scopes(
+              client_id,
+              method,
+              description
+            )
+            SELECT
+              $1,
+              * FROM UNNEST(
+                  $2::VARCHAR[],
+                  $3::VARCHAR[]
+                )
+        "#)
+        .bind(client.id().id())
+        .bind(client.scopes().iter()
+            .map(|(method, _)| method)
+            .map(AsRef::as_ref)
+            .collect::<Vec<_>>())
+        .bind(client.scopes().iter()
+            .map(|(_, desc)| desc)
+            .map(TryAsRef::<str>::try_as_ref)
+            .map(Result::ok)
+            .collect::<Vec<_>>())
+        .execute(&mut *con)
+        .await?;
 
-        let st = futures::stream::iter(client.scopes().iter());
+        // language=SQL
+        sqlx::query(r#"
+            INSERT INTO client_configuration_policy(
+              client_id, endpoint, token
+            ) VALUES (
+              $1, $2, $3
+            )
+        "#)
+        .bind(client.id().id())
+        .bind(client.conf_endpoint().as_ref())
+        .bind(client.conf_token().as_ref())
+        .execute(&mut *con)
+        .await?;
 
+        Ok(())
+    }
+}
 
-        todo!()
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+    use sqlx::{Pool, Postgres};
+    use sqlx::postgres::PgPoolOptions;
+    use kernel::entities::{Account, Address, Client, ClientId, ClientSecret, ClientTypes, Contacts, GrantType, RedirectUri, RedirectUris, RegistrationAccessToken, RegistrationEndPoint, ResponseType, ScopeDescription, ScopeMethod, Scopes, TokenEndPointAuthMethod, UserId};
+    use kernel::external::{OffsetDateTime, Uuid};
+    use crate::database::account::PgAccountInternal;
+    use crate::database::client::PgClientInternal;
+
+    async fn test_pool() -> anyhow::Result<Pool<Postgres>> {
+        dotenvy::dotenv().ok();
+
+        let url = dotenvy::var("PG_DATABASE_URL")
+            .expect("`DATABASE_URL` is not set. This is a required environment variable.");
+        let pool = PgPoolOptions::new()
+            .max_connections(4)
+            .idle_timeout(Duration::new(5, 0))
+            .connect(&url)
+            .await?;
+
+        Ok(pool)
+    }
+
+    #[ignore = "It depends on Postgres and does not work as is."]
+    #[tokio::test]
+    async fn pg_insert() -> anyhow::Result<()> {
+        let pool = test_pool().await?;
+
+        let mut transaction = pool.begin().await?;
+
+        let client_id = ClientId::new_at_now(Uuid::new_v4());
+        let client_name = "Test Client";
+        let client_uri = "https://test.client.example.com/";
+        let client_desc = "TEST CLIENT!";
+        let client_type = ClientTypes::new(ClientSecret::default());
+        let logo_uri = "https://test.client.example.com/logo";
+        let tos_uri = "https://test.client.example.com/terms";
+        let owner_id = UserId::default();
+        let policy_uri = "https://test.client.example.com/policy";
+        let auth_method = TokenEndPointAuthMethod::ClientSecretPost;
+        let grant_types = vec![GrantType::AuthorizationCode];
+        let response_types = vec![ResponseType::Code];
+        let redirect_uris = vec![
+            "https://test.client.example.com/callback",
+            "https://test.client.example.com/callback2"
+        ].into_iter()
+            .map(RedirectUri::new)
+            .collect::<RedirectUris>();
+        let scopes = vec![
+            ("read", Some("base user data read")),
+            ("write", Some("base user data write")),
+            ("phantom", None)
+        ].into_iter()
+            .map(|(method, desc)| (ScopeMethod::new(method), ScopeDescription::new(desc.map(ToOwned::to_owned))))
+            .collect::<Scopes>();
+        let contacts = vec!["test.user@client.com"]
+            .into_iter()
+            .map(Address::new)
+            .collect::<Contacts>();
+        let regi_token = RegistrationAccessToken::default();
+        let regi_endpoint = RegistrationEndPoint::default();
+
+        let dummy_account = Account::new(
+            owner_id,
+            "test.user@example.com",
+            "test user",
+            "test0000pAssw0rd",
+            OffsetDateTime::now_utc(),
+            OffsetDateTime::now_utc(),
+            OffsetDateTime::now_utc()
+        )?;
+
+        let reg = Client::new(
+            client_id,
+            client_name,
+            client_uri,
+            client_desc,
+            client_type,
+            logo_uri,
+            tos_uri,
+            owner_id,
+            policy_uri,
+            auth_method,
+            grant_types,
+            response_types,
+            redirect_uris,
+            scopes,
+            contacts,
+            None,
+            regi_token,
+            regi_endpoint
+        )?;
+
+        PgAccountInternal::create(&dummy_account, &mut transaction).await?;
+        PgClientInternal::insert(&reg, &mut transaction).await?;
+
+        transaction.rollback().await?;
+
+        Ok(())
     }
 }

@@ -168,4 +168,12 @@ impl Client {
     pub fn scopes(&self) -> &Scopes {
         &self.scopes
     }
+
+    pub fn conf_token(&self) -> &RegistrationAccessToken {
+        &self.conf_token
+    }
+
+    pub fn conf_endpoint(&self) -> &RegistrationEndPoint {
+        &self.conf_endpoint
+    }
 }

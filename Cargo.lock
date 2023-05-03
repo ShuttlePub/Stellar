@@ -400,10 +400,8 @@ dependencies = [
  "serde_json",
  "sqlx",
  "thiserror",
- "time",
  "tokio",
  "try-ref",
- "uuid",
 ]
 
 [[package]]

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
+use try_ref::TryAsRef;
+use crate::KernelError;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Scopes(HashMap<ScopeMethod, ScopeDescription>);
@@ -76,6 +78,19 @@ impl ScopeDescription {
 impl From<ScopeDescription> for Option<String>  {
     fn from(value: ScopeDescription) -> Self {
         value.0
+    }
+}
+
+impl TryAsRef<str> for ScopeDescription {
+    type Error = KernelError;
+    fn try_as_ref(&self) -> Result<&str, Self::Error> {
+        match self.0 {
+            Some(ref inner) => Ok(inner),
+            None => Err(KernelError::InvalidValue {
+                method: "try_as_ref",
+                value: "scope description".to_string(),
+            })
+        }
     }
 }
 
