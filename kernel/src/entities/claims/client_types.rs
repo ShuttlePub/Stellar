@@ -1,4 +1,6 @@
 use serde::{Serialize, Deserialize};
+use try_ref::TryAsRef;
+use crate::KernelError;
 use super::ClientSecret;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
@@ -14,13 +16,6 @@ impl ClientTypes {
             None => Self::Public
         }
     }
-    
-    pub fn as_ref(&self) -> Option<&ClientSecret> {
-        match self {
-            ClientTypes::Confidential(secret) => Some(secret),
-            ClientTypes::Public => None
-        }
-    }
 }
 
 impl From<ClientSecret> for ClientTypes {
@@ -34,6 +29,19 @@ impl From<ClientTypes> for Option<ClientSecret> {
         match origin {
             ClientTypes::Confidential(secret) => Some(secret),
             ClientTypes::Public => None,
+        }
+    }
+}
+
+impl TryAsRef<ClientSecret> for ClientTypes {
+    type Error = KernelError;
+    fn try_as_ref(&self) -> Result<&ClientSecret, Self::Error> {
+        match self {
+            ClientTypes::Confidential(secret) => { Ok(secret) },
+            ClientTypes::Public => Err(KernelError::InvalidValue {
+                method: "try_as_ref",
+                value: "client secret".to_string(),
+            })
         }
     }
 }
