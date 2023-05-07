@@ -77,8 +77,8 @@ CREATE TABLE client_cert(
 );
 
 CREATE TABLE client_redirect_uris(
-  client_id UUID         NOT NULL,
-  uri       VARCHAR(512) NOT NULL,
+  client_id UUID           NOT NULL,
+  uri       VARCHAR(512)[] NOT NULL,
 
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
@@ -88,14 +88,13 @@ CREATE TABLE client_redirect_uris(
 );
 
 CREATE TABLE client_scopes(
-  client_id   UUID         NOT NULL,
-  method      VARCHAR(64)  NOT NULL,
-  description VARCHAR(256),
+  client_id   UUID  NOT NULL,
+  scope       JSONB NOT NULL,
 
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
 
-  PRIMARY KEY (method, client_id),
+  PRIMARY KEY (client_id, scope),
   FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
 );
 
