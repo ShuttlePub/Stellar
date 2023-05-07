@@ -21,8 +21,8 @@ jsonwebkey = "0.3.5"
 url = { version = "2.3.1", features = ["serde"] }
 try-ref = "0.1"
 
-thiserror = "1"
-anyhow = "1"
+thiserror = { workspace = true }
+anyhow =  { workspace = true }
 
 [features]
 mock = []
