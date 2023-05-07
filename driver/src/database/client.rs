@@ -1,6 +1,8 @@
+use serde::Deserialize;
 use sqlx::{PgConnection, Pool, Postgres};
+use sqlx::types::Json;
 use kernel::entities::{Client, ClientId};
-use kernel::external::JsonWebKey;
+use kernel::external::{JsonWebKey, OffsetDateTime, Uuid};
 use kernel::KernelError;
 use kernel::repository::ClientRegistry;
 use try_ref::TryAsRef;
@@ -25,18 +27,44 @@ impl ClientRegistry for ClientDataBase {
         if let Err(r) = PgClientInternal::insert(client, &mut transaction).await {
             transaction.rollback().await
                 .map_err(DriverError::SqlX)?;
-            return Err(KernelError::Driver(anyhow::Error::msg("failed transaction in client registration.")))
+            return Err(KernelError::Driver(anyhow::Error::new(r)))
         }
+
+        transaction.commit().await
+            .map_err(DriverError::SqlX)?;
 
         Ok(())
     }
 
     async fn delete(&self, id: &ClientId) -> Result<(), KernelError> {
-        todo!()
+        let mut transaction = self.pool.begin().await
+            .map_err(DriverError::SqlX)?;
+        if let Err(r) = PgClientInternal::delete(id, &mut transaction).await {
+            transaction.rollback().await
+                .map_err(DriverError::SqlX)?;
+            return Err(KernelError::Driver(anyhow::Error::new(r)))
+        }
+
+        transaction.commit().await
+            .map_err(DriverError::SqlX)?;
+
+        Ok(())
     }
 
     async fn update(&self, client: &Client) -> Result<(), KernelError> {
-        todo!()
+        let mut transaction = self.pool.begin().await
+            .map_err(DriverError::SqlX)?;
+
+        if let Err(r) = PgClientInternal::update(client, &mut transaction).await {
+            transaction.rollback().await
+                .map_err(DriverError::SqlX)?;
+            return Err(KernelError::Driver(anyhow::Error::new(r)))
+        }
+
+        transaction.commit().await
+            .map_err(DriverError::SqlX)?;
+
+        Ok(())
     }
 
     async fn find_by_id(&self, id: &ClientId) -> Result<Option<Client>, KernelError> {
@@ -44,9 +72,39 @@ impl ClientRegistry for ClientDataBase {
     }
 }
 
+#[derive(sqlx::FromRow, Debug)]
+pub struct ClientRow {
+    pub client_id: Uuid,
+    pub client_id_iat: OffsetDateTime,
+    pub client_name: String,
+    pub client_uri: String,
+    pub logo_uri: String,
+    pub tos_uri: String,
+    pub policy_uri: String,
+    pub contact: Vec<String>,
+    pub client_secret: String,
+    pub client_secret_expire: OffsetDateTime,
+    pub auth_method: String,
+    pub grant_types: Vec<String>,
+    pub response_types: Vec<String>,
+    pub jwks: Option<Json<JsonWebKey>>,
+    pub jwks_uri: Option<String>,
+    pub redirect_uris: Vec<String>,
+    pub scope: Json<Vec<ScopeRow>>,
+    pub registration_token: String,
+    pub registration_endpoint: String
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ScopeRow {
+    pub method: String,
+    pub description: String
+}
+
 pub(in crate::database) struct PgClientInternal;
 
 impl PgClientInternal {
+    //noinspection DuplicatedCode
     async fn insert(client: &Client, con: &mut PgConnection) -> Result<(), DriverError> {
         // language=SQL
         sqlx::query(r#"
@@ -119,9 +177,9 @@ impl PgClientInternal {
             )
         "#)
         .bind(client.id().id())
-        .bind(client.types().as_ref()
+        .bind(client.types().try_as_ref().ok()
             .map(|secret| secret.secret()))
-        .bind(client.types().as_ref()
+        .bind(client.types().try_as_ref().ok()
             .map(|secret| secret.expires_at()))
         .bind(client.auth_method().as_ref())
         .bind(client.grant_types().iter()
@@ -151,6 +209,7 @@ impl PgClientInternal {
             ) VALUES (
               $1, $2
             )
+
         "#)
         .bind(client.id().id())
         .bind(client.redirect_uris().iter()
@@ -163,26 +222,15 @@ impl PgClientInternal {
         sqlx::query(r#"
             INSERT INTO client_scopes(
               client_id,
-              method,
-              description
+              scope
             )
             SELECT
               $1,
-              * FROM UNNEST(
-                  $2::VARCHAR[],
-                  $3::VARCHAR[]
-                )
+              $2
         "#)
         .bind(client.id().id())
-        .bind(client.scopes().iter()
-            .map(|(method, _)| method)
-            .map(AsRef::as_ref)
-            .collect::<Vec<_>>())
-        .bind(client.scopes().iter()
-            .map(|(_, desc)| desc)
-            .map(TryAsRef::<str>::try_as_ref)
-            .map(Result::ok)
-            .collect::<Vec<_>>())
+        .bind(serde_json::to_value(client.scopes())
+            .map_err(|e| KernelError::External(anyhow::Error::new(e)))?)
         .execute(&mut *con)
         .await?;
 
@@ -202,14 +250,173 @@ impl PgClientInternal {
 
         Ok(())
     }
+
+    async fn delete(id: &ClientId, con: &mut PgConnection) -> Result<(), DriverError> {
+        // language=SQL
+        sqlx::query(r#"
+            DELETE FROM clients WHERE client_id = $1
+        "#)
+        .bind(id.id())
+        .execute(&mut *con)
+        .await?;
+        Ok(())
+    }
+
+    //noinspection DuplicatedCode
+    async fn update(client: &Client, con: &mut PgConnection) -> Result<(), DriverError> {
+        // language=SQL
+        sqlx::query(r#"
+            UPDATE clients
+              SET
+                client_name = $1
+            WHERE
+              client_id = $2
+        "#)
+        .bind(client.name().as_ref())
+        .bind(client.id().id())
+        .execute(&mut *con)
+        .await?;
+
+        // language=SQL
+        sqlx::query(r#"
+            UPDATE client_metadata
+              SET
+                owner = $1,
+                client_uri = $2,
+                logo_uri = $3,
+                contact = $4,
+                tos_uri = $5,
+                policy_uri = $6
+            WHERE client_id = $7
+        "#)
+        .bind(client.owner().as_ref())
+        .bind(client.client_uri().as_ref())
+        .bind(client.logo_uri().as_ref())
+        .bind(client.contacts().as_ref_vec())
+        .bind(client.tos_uri().as_ref())
+        .bind(client.policy_uri().as_ref())
+        .bind(client.id().id())
+        .execute(&mut *con)
+        .await?;
+
+        // language=SQL
+        sqlx::query(r#"
+            UPDATE client_cert
+              SET
+                client_secret = $1,
+                client_secret_exp = $2,
+                auth_method = $3::TEP_AM,
+                grant_types = $4::GRANT_TYPE[],
+                response_types = $5::RESPONSE_TYPE[],
+                jwks_uri = $6,
+                jwks = $7
+            WHERE
+              client_id = $8
+        "#)
+        .bind(client.types().try_as_ref().ok()
+            .map(|secret| secret.secret()))
+        .bind(client.types().try_as_ref().ok()
+            .map(|secret| secret.expires_at()))
+        .bind(client.auth_method().as_ref())
+        .bind(client.grant_types().iter()
+            .map(AsRef::as_ref)
+            .collect::<Vec<_>>())
+        .bind(client.response_types().iter()
+            .map(AsRef::as_ref)
+            .collect::<Vec<_>>())
+        .bind(client.jwks().as_ref()
+            .filter(|key| key.is_uri())
+            .map(TryAsRef::<str>::try_as_ref)
+            .transpose()?)
+        .bind(client.jwks().as_ref()
+            .filter(|key| !key.is_uri())
+            .map(TryAsRef::<JsonWebKey>::try_as_ref)
+            .transpose()?
+            .map(serde_json::to_value)
+            .transpose()
+            .map_err(|e| KernelError::External(anyhow::Error::new(e)))?)
+        .bind(client.id().id())
+        .execute(&mut *con)
+        .await?;
+
+        // language=SQL
+        sqlx::query(r#"
+            UPDATE client_redirect_uris
+              SET
+                uri = $1
+            WHERE
+              client_id = $2
+        "#)
+        .bind(client.response_types().iter()
+            .map(AsRef::as_ref)
+            .collect::<Vec<_>>())
+        .bind(client.id().id())
+        .execute(&mut *con)
+        .await?;
+
+        // language=SQL
+        sqlx::query(r#"
+            UPDATE client_scopes
+              SET
+                scope = $1
+            WHERE
+              client_id = $2
+        "#)
+        .bind(serde_json::to_value(client.scopes())
+            .map_err(|e| KernelError::External(anyhow::Error::new(e)))?)
+        .bind(client.id().id())
+        .execute(&mut *con)
+        .await?;
+
+        Ok(())
+    }
+
+    async fn find_by_id(id: &ClientId, con: &mut PgConnection) -> Result<Option<Client>, DriverError> {
+        // language=SQL
+        sqlx::query_as::<_, ClientRow>(r#"
+            SELECT (
+              clients.client_id,
+              clients.client_id_iat,
+              clients.client_name,
+                   cm.owner,
+                   cm.client_uri,
+                   cm.logo_uri,
+                   cm.tos_uri,
+                   cm.policy_uri,
+                   cm.contact,
+                   cc.client_secret,
+                   cc.client_secret_exp,
+                   cc.auth_method,
+                   cc.grant_types,
+                   cc.response_types,
+                   cc.jwks,
+                   cc.jwks_uri,
+                   cru.uri,
+                   cs.scope,
+                   ccp.token,
+                   ccp.endpoint
+            )
+            FROM clients
+              LEFT JOIN client_metadata             cm  on clients.client_id = cm.client_id
+                   JOIN client_cert                 cc  on clients.client_id = cc.client_id
+                   JOIN client_scopes               cs  on clients.client_id = cs.client_id
+                   JOIN client_redirect_uris        cru on clients.client_id = cru.client_id
+                   JOIN client_configuration_policy ccp on clients.client_id = ccp.client_id
+            WHERE clients.client_id = $1
+        "#)
+        .bind(id.id())
+        .fetch_optional(&mut *con)
+        .await?;
+        todo!()
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
-    use sqlx::{Pool, Postgres};
+    use std::time::{Duration, Instant};
+    use sqlx::{PgConnection, Pool, Postgres};
     use sqlx::postgres::PgPoolOptions;
-    use kernel::entities::{Account, Address, Client, ClientId, ClientSecret, ClientTypes, Contacts, GrantType, RedirectUri, RedirectUris, RegistrationAccessToken, RegistrationEndPoint, ResponseType, ScopeDescription, ScopeMethod, Scopes, TokenEndPointAuthMethod, UserId};
+    use kernel::entities::{Account, Address, Client, ClientId, ClientSecret, ClientTypes, ClientUri, Contacts, GrantType, RedirectUri, RedirectUris, RegistrationAccessToken, RegistrationEndPoint, ResponseType, ScopeDescription, ScopeMethod, Scopes, TokenEndPointAuthMethod, UserId};
     use kernel::external::{OffsetDateTime, Uuid};
     use crate::database::account::PgAccountInternal;
     use crate::database::client::PgClientInternal;
@@ -228,13 +435,7 @@ mod tests {
         Ok(pool)
     }
 
-    #[ignore = "It depends on Postgres and does not work as is."]
-    #[tokio::test]
-    async fn pg_insert() -> anyhow::Result<()> {
-        let pool = test_pool().await?;
-
-        let mut transaction = pool.begin().await?;
-
+    async fn create_dummy_data(con: &mut PgConnection) -> anyhow::Result<Client> {
         let client_id = ClientId::new_at_now(Uuid::new_v4());
         let client_name = "Test Client";
         let client_uri = "https://test.client.example.com/";
@@ -298,11 +499,66 @@ mod tests {
             regi_endpoint
         )?;
 
-        PgAccountInternal::create(&dummy_account, &mut transaction).await?;
-        PgClientInternal::insert(&reg, &mut transaction).await?;
+        let timer = Instant::now();
+
+        PgAccountInternal::create(&dummy_account, con).await?;
+        PgClientInternal::insert(&reg, con).await?;
+
+        println!("account + client insert time: {}ms", timer.elapsed().as_millis());
+
+        Ok(reg)
+    }
+
+    #[ignore = "It depends on Postgres and does not work as is."]
+    #[tokio::test]
+    async fn pg_insert() -> anyhow::Result<()> {
+        let pool = test_pool().await?;
+
+        let mut transaction = pool.begin().await?;
+
+        create_dummy_data(&mut transaction).await?;
 
         transaction.rollback().await?;
 
         Ok(())
     }
+
+    #[ignore = "It depends on Postgres and does not work as is."]
+    #[tokio::test]
+    async fn pg_delete() -> anyhow::Result<()> {
+        let pool = test_pool().await?;
+
+        let mut transaction = pool.begin().await?;
+
+        let client = create_dummy_data(&mut transaction).await?;
+
+        PgClientInternal::delete(client.id(), &mut transaction).await?;
+
+        transaction.rollback().await?;
+
+        Ok(())
+    }
+
+    #[ignore = "It depends on Postgres and does not work as is."]
+    #[tokio::test]
+    async fn pg_update() -> anyhow::Result<()> {
+        let pool = test_pool().await?;
+
+        let mut transaction = pool.begin().await?;
+
+        let client = create_dummy_data(&mut transaction).await?;
+
+        let mut client = client.into_destruct();
+
+        client.uri = ClientUri::new("https://example.client.com/")?;
+
+        let client = client.freeze();
+
+        PgClientInternal::update(&client, &mut transaction).await?;
+
+        transaction.rollback().await?;
+
+        Ok(())
+    }
+
 }
