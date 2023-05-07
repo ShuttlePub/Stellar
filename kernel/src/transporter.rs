@@ -1,3 +1,7 @@
 mod mail;
+mod blacklist;
 
-pub use self::mail::*;
+pub use self::{
+    mail::*,
+    blacklist::*
+};
