@@ -13,6 +13,8 @@ pub enum DriverError {
     #[error(transparent)]
     Lettre(anyhow::Error),
     #[error(transparent)]
+    Reqwest(anyhow::Error),
+    #[error(transparent)]
     Kernel(#[from] KernelError)
 }
 
@@ -21,6 +23,7 @@ impl From<DriverError> for KernelError {
         match origin {
             DriverError::SqlX(e) => KernelError::Driver(anyhow::Error::new(e)),
             DriverError::Migration(e) => KernelError::Driver(anyhow::Error::new(e)),
+            DriverError::Reqwest(e) => KernelError::Driver(e),
             DriverError::DeadPool(e) => KernelError::Driver(e),
             DriverError::Redis(e) => KernelError::Driver(anyhow::Error::new(e)),
             DriverError::Lettre(e) => KernelError::Driver(e),
@@ -56,5 +59,11 @@ impl From<lettre::address::AddressError> for DriverError {
 impl From<lettre::error::Error> for DriverError {
     fn from(e: lettre::error::Error) -> Self {
         Self::Lettre(anyhow::Error::new(e))
+    }
+}
+
+impl From<reqwest::Error> for DriverError {
+    fn from(e: reqwest::Error) -> Self {
+        Self::Reqwest(anyhow::Error::new(e))
     }
 }
