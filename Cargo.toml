@@ -5,3 +5,7 @@ members = [
   "driver",
   "server"
 ]
+
+[workspace.dependencies]
+anyhow = "1"
+thiserror = "1"

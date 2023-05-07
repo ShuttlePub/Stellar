@@ -397,6 +397,7 @@ dependencies = [
  "lettre",
  "once_cell",
  "reqwest",
+ "serde",
  "serde_json",
  "sqlx",
  "thiserror",
