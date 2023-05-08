@@ -1,4 +1,4 @@
-use kernel::entities::{Account, DestructAccount, DestructUpdateTime, NonVerifiedAccount, DestructNonVerifiedAccount};
+use kernel::entities::{Account, DestructAccount, DestructLoggedAt, NonVerifiedAccount, DestructNonVerifiedAccount};
 use kernel::external::{OffsetDateTime, Uuid};
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ impl From<Account> for AccountDto {
             date,
             verified_at,
         } = origin.into_destruct();
-        let DestructUpdateTime {
+        let DestructLoggedAt {
             created_at,
             updated_at,
         } = date.into_destruct();
