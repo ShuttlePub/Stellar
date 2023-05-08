@@ -4,36 +4,36 @@ use crate::{transfer::token::{AuthorizeTokenDto, CreateAuthorizeTokenDto, Create
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
-pub trait CreateAuthorizeTokenAdaptor: 'static + Sync + Send {
+pub trait CreateAuthorizeTokenAdapter: 'static + Sync + Send {
     async fn create(&self, user: &Uuid, create: CreateAuthorizeTokenDto) -> Result<AuthorizeTokenDto, ApplicationError>;
 }
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
-pub trait CreateAuthorizeTokenImplicitFlowAdaptor: 'static + Sync + Send {
+pub trait CreateAuthorizeTokenImplicitFlowAdapter: 'static + Sync + Send {
     async fn create(&self, user: &Uuid, create: CreateAuthorizeTokenDto) -> Result<AuthorizeTokenDto, ApplicationError>;
 }
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
-pub trait DeleteAuthorizeTokenAdaptor: 'static + Sync + Send {
+pub trait DeleteAuthorizeTokenAdapter: 'static + Sync + Send {
     async fn delete(&self, id: &str) -> Result<(), ApplicationError>;
 }
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
-pub trait CreateAccessTokenAdaptor: 'static + Sync + Send {
+pub trait CreateAccessTokenAdapter: 'static + Sync + Send {
     async fn create(&self, create: CreateAccessTokenDto) -> Result<AccessTokenDto, ApplicationError>;
 }
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
-pub trait UpdateAccessTokenAdaptor: 'static + Sync + Send {
+pub trait UpdateAccessTokenAdapter: 'static + Sync + Send {
     async fn update(&self) -> Result<(), ApplicationError>;
 }
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
-pub trait DeleteAccessTokenAdaptor: 'static + Sync + Send {
+pub trait DeleteAccessTokenAdapter: 'static + Sync + Send {
     async fn delete(&self, id: &str) -> Result<(), ApplicationError>;
 }

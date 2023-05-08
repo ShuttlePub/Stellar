@@ -13,7 +13,7 @@ use crate::{
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
-pub trait RestAdaptor: 'static + Send + Sync {
+pub trait RestAdapter: 'static + Send + Sync {
     async fn prepare_user_verification(&self, user: CreateNonVerifiedAccountDto) -> Result<NonVerifiedAccountDto, ApplicationError>;
     async fn approve_account(&self, ticket: &str, code: &str) -> Result<String, ApplicationError>;
     async fn create_account(&self, ticket: &str, create: CreateAccountDto) -> Result<AccountDto, ApplicationError>;

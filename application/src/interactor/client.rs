@@ -8,14 +8,14 @@ use kernel::{
 use kernel::entities::{Address, Client, ClientDescription, ClientId, ClientName, ClientSecret, ClientTypes, ClientUri, Contacts, GrantType, GrantTypes, LogoUri, PolicyUri, RedirectUri, RedirectUris, RegistrationAccessToken, RegistrationEndPoint, ResponseType, ResponseTypes, ScopeDescription, ScopeMethod, Scopes, TermsUri, TokenEndPointAuthMethod, UserId};
 
 use crate::{
-    adaptor::client::RegisterClientAdaptor, 
+    adapter::client::RegisterClientAdapter,
     transfer::client::{
         ClientDto, 
         RegisterClientDto,
         GrantTypeDto,
         ResponseTypeDto,
         TokenEndPointAuthMethodDto
-    }, 
+    },
     ApplicationError,
 };
 
@@ -32,7 +32,7 @@ impl<T1, T2> RegisterClientInteractor<T1, T2> {
 }
 
 #[async_trait::async_trait]
-impl<T1, T2> RegisterClientAdaptor for RegisterClientInteractor<T1, T2>
+impl<T1, T2> RegisterClientAdapter for RegisterClientInteractor<T1, T2>
   where T1: ClientRegistry,
         T2: AccountRepository
 {
@@ -157,7 +157,7 @@ mod tests {
     use kernel::entities::Account;
     use kernel::external::{OffsetDateTime, Uuid};
     use kernel::repository::{MockAccountRepository, MockClientRegistry};
-    use crate::adaptor::client::RegisterClientAdaptor;
+    use crate::adapter::client::RegisterClientAdapter;
     use crate::interactor::RegisterClientInteractor;
     use crate::transfer::client::{GrantTypeDto, RegisterClientDto, ResponseTypeDto, ScopeDto, TokenEndPointAuthMethodDto};
 

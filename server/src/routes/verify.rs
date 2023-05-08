@@ -1,4 +1,4 @@
-use application::adaptor::rest::RestAdaptor;
+use application::adapter::rest::RestAdapter;
 use axum::{response::IntoResponse, http::StatusCode, extract::{State, Query}, Json};
 use serde::{Deserialize, Serialize};
 

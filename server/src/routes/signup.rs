@@ -1,4 +1,4 @@
-use application::{adaptor::rest::RestAdaptor, transfer::account::{CreateAccountDto, CreateNonVerifiedAccountDto, NonVerifiedAccountDto}};
+use application::{adapter::rest::RestAdapter, transfer::account::{CreateAccountDto, CreateNonVerifiedAccountDto, NonVerifiedAccountDto}};
 use axum::{response::IntoResponse, http::StatusCode, extract::{State, Query}, Json};
 use serde::{Deserialize, Serialize};
 

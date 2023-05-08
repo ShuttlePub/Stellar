@@ -17,13 +17,13 @@ use kernel::{
 use kernel::external::{OffsetDateTime, Uuid};
 
 use crate::{
-    ApplicationError, 
-    adaptor::account::{
-        CreateAccountAdaptor, 
-        CreateNonVerifiedAccountAdaptor, 
-        UpdateAccountAdaptor, 
-        DeleteAccountAdaptor, 
-        ApproveAccountAdaptor
+    ApplicationError,
+    adapter::account::{
+        CreateAccountAdapter,
+        CreateNonVerifiedAccountAdapter,
+        UpdateAccountAdapter,
+        DeleteAccountAdapter,
+        ApproveAccountAdapter
     },
     transfer::account::{
         CreateAccountDto, 
@@ -57,7 +57,7 @@ impl<T1, T2> CreateNonVerifiedAccountInteractor<T1, T2> {
 }
 
 #[async_trait::async_trait]
-impl<T1, T2> CreateNonVerifiedAccountAdaptor for CreateNonVerifiedAccountInteractor<T1, T2>
+impl<T1, T2> CreateNonVerifiedAccountAdapter for CreateNonVerifiedAccountInteractor<T1, T2>
   where T1: NonVerifiedAccountRepository,
         T2: VerificationMailTransporter
 {
@@ -91,7 +91,7 @@ impl<T> ApproveAccountInteractor<T> {
 }
 
 #[async_trait::async_trait]
-impl<T> ApproveAccountAdaptor for ApproveAccountInteractor<T>
+impl<T> ApproveAccountAdapter for ApproveAccountInteractor<T>
   where T: NonVerifiedAccountRepository
 {
     async fn approve(&self, id: &str, code: &str) -> Result<String, ApplicationError> {
@@ -134,7 +134,7 @@ impl<T1, T2> CreateAccountInteractor<T1, T2> {
 }
 
 #[async_trait::async_trait]
-impl<T1, T2> CreateAccountAdaptor for CreateAccountInteractor<T1, T2> 
+impl<T1, T2> CreateAccountAdapter for CreateAccountInteractor<T1, T2>
   where T1: AccountRepository,
         T2: NonVerifiedAccountRepository
 {
@@ -179,7 +179,7 @@ impl<T> UpdateAccountInteractor<T> {
 }
 
 #[async_trait::async_trait]
-impl<T> UpdateAccountAdaptor for UpdateAccountInteractor<T>
+impl<T> UpdateAccountAdapter for UpdateAccountInteractor<T>
   where T: AccountRepository
 {
     async fn update(&self, update: UpdateAccountDto) -> Result<AccountDto, ApplicationError> {
@@ -236,7 +236,7 @@ impl<T> DeleteAccountInteractor<T> {
 }
 
 #[async_trait::async_trait]
-impl<T> DeleteAccountAdaptor for DeleteAccountInteractor<T>
+impl<T> DeleteAccountAdapter for DeleteAccountInteractor<T>
   where T: AccountRepository
 {
     async fn delete(&self, pass: &str, delete: &Uuid) -> Result<(), ApplicationError> {

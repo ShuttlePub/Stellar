@@ -1,16 +1,16 @@
 use kernel::external::Uuid;
 use crate::{
-    ApplicationError, 
-    adaptor::{
-        rest::RestAdaptor,
+    ApplicationError,
+    adapter::{
+        rest::RestAdapter,
         account::{
-            CreateNonVerifiedAccountAdaptor, 
-            CreateAccountAdaptor, 
-            UpdateAccountAdaptor, 
-            DeleteAccountAdaptor, 
-            ApproveAccountAdaptor
+            CreateNonVerifiedAccountAdapter,
+            CreateAccountAdapter,
+            UpdateAccountAdapter,
+            DeleteAccountAdapter,
+            ApproveAccountAdapter
         }
-    }, 
+    },
     transfer::account::{
         CreateNonVerifiedAccountDto,
         NonVerifiedAccountDto, 
@@ -36,12 +36,12 @@ impl<T1, T2, T3, T4, T5> RestInteractor<T1, T2, T3, T4, T5> {
 }
 
 #[async_trait::async_trait]
-impl<T1, T2, T3, T4, T5> RestAdaptor for RestInteractor<T1, T2, T3, T4, T5>
-  where T1: CreateNonVerifiedAccountAdaptor,
-        T2: ApproveAccountAdaptor,
-        T3: CreateAccountAdaptor,
-        T4: UpdateAccountAdaptor,
-        T5: DeleteAccountAdaptor
+impl<T1, T2, T3, T4, T5> RestAdapter for RestInteractor<T1, T2, T3, T4, T5>
+  where T1: CreateNonVerifiedAccountAdapter,
+        T2: ApproveAccountAdapter,
+        T3: CreateAccountAdapter,
+        T4: UpdateAccountAdapter,
+        T5: DeleteAccountAdapter
 {
     async fn prepare_user_verification(&self, user: CreateNonVerifiedAccountDto) -> Result<NonVerifiedAccountDto, ApplicationError> {
         self.nvac.create(user).await

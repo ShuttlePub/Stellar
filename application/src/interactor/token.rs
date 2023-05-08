@@ -16,7 +16,7 @@ use crate::{
         CreateAuthorizeTokenDto,
         AuthorizeTokenDto
     },
-    adaptor::token::CreateAuthorizeTokenAdaptor
+    adapter::token::CreateAuthorizeTokenAdapter
 };
 
 #[derive(Clone)]
@@ -33,7 +33,7 @@ impl<T1, T2, T3> CreateAuthorizeTokenInteractor<T1, T2, T3> {
 }
 
 #[async_trait::async_trait]
-impl<T1, T2, T3> CreateAuthorizeTokenAdaptor for CreateAuthorizeTokenInteractor<T1, T2, T3>
+impl<T1, T2, T3> CreateAuthorizeTokenAdapter for CreateAuthorizeTokenInteractor<T1, T2, T3>
   where T1: AuthorizeTokenRepository,
         T2: ClientRegistry,
         T3: AccountRepository

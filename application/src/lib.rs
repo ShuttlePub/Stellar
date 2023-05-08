@@ -1,4 +1,4 @@
-pub mod adaptor;
+pub mod adapter;
 pub mod interactor;
 pub mod transfer;
 mod error;
