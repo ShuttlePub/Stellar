@@ -214,3 +214,20 @@ pub struct RegisterClientDto {
     pub contacts: Vec<String>,
     pub jwk: Option<String>
 }
+
+#[derive(Debug)]
+pub struct UpdateClientDto {
+    pub name: String,
+    pub client_uri: String,
+    pub description: String,
+    pub logo_uri: String,
+    pub tos_uri: String,
+    pub owner: Uuid,
+    pub policy_uri: String,
+    pub auth_method: TokenEndPointAuthMethodDto,
+    pub response_types: Vec<ResponseTypeDto>,
+    pub redirect_uris: Vec<String>,
+    pub scope: Vec<ScopeDto>,
+    pub contacts: Vec<String>,
+    pub jwks: Option<String>
+}

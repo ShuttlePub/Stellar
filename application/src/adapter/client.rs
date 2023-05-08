@@ -6,6 +6,7 @@ use crate::{
         RegisterClientDto
     }
 };
+use crate::transfer::client::UpdateClientDto;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
@@ -16,7 +17,7 @@ pub trait RegisterClientAdapter: 'static + Sync + Send {
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
 pub trait UpdateClientAdapter: 'static + Sync + Send {
-    async fn update(&self, client_id: &Uuid, client_secret: &str) -> Result<ClientDto, ApplicationError>;
+    async fn update(&self, id: &Uuid, cl_secret: &str, pass_phrase: &str, update: UpdateClientDto) -> Result<ClientDto, ApplicationError>;
 }
 
 #[cfg_attr(feature = "mock", mockall::automock)]

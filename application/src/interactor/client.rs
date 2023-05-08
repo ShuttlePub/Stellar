@@ -2,10 +2,36 @@ use kernel::{
     repository::{
         ClientRegistry, 
         AccountRepository
-    }, 
-
+    },
+    entities::{
+        Address,
+        Client,
+        ClientDescription,
+        ClientId,
+        ClientName,
+        ClientSecret,
+        ClientTypes,
+        ClientUri,
+        Contacts,
+        GrantType,
+        GrantTypes,
+        LogoUri,
+        PolicyUri,
+        RedirectUri,
+        RedirectUris,
+        RegistrationAccessToken,
+        RegistrationEndPoint,
+        ResponseType,
+        ResponseTypes,
+        ScopeDescription,
+        ScopeMethod,
+        Scopes,
+        TermsUri,
+        TokenEndPointAuthMethod,
+        UserId
+    },
+    external::Uuid,
 };
-use kernel::entities::{Address, Client, ClientDescription, ClientId, ClientName, ClientSecret, ClientTypes, ClientUri, Contacts, GrantType, GrantTypes, LogoUri, PolicyUri, RedirectUri, RedirectUris, RegistrationAccessToken, RegistrationEndPoint, ResponseType, ResponseTypes, ScopeDescription, ScopeMethod, Scopes, TermsUri, TokenEndPointAuthMethod, UserId};
 
 use crate::{
     adapter::client::RegisterClientAdapter,
@@ -18,6 +44,9 @@ use crate::{
     },
     ApplicationError,
 };
+
+use crate::adapter::client::UpdateClientAdapter;
+use crate::transfer::client::UpdateClientDto;
 
 #[derive(Clone)]
 pub struct RegisterClientInteractor<T1, T2> {
@@ -147,6 +176,66 @@ impl<T1, T2> RegisterClientAdapter for RegisterClientInteractor<T1, T2>
         self.registry.register(&client).await?;
 
         Ok(client.into())
+    }
+}
+
+#[derive(Clone)]
+pub struct UpdateClientInteractor<T1, T2> {
+    registry: T1,
+    accounts: T2,
+}
+
+impl<T1, T2> UpdateClientInteractor<T1, T2> {
+    pub fn new(registry: T1, accounts: T2) -> Self {
+        Self { registry, accounts }
+    }
+}
+
+#[async_trait::async_trait]
+impl<T1, T2> UpdateClientAdapter for UpdateClientInteractor<T1, T2>
+  where T1: ClientRegistry,
+        T2: AccountRepository
+{
+    async fn update(&self, id: &Uuid, cl_secret: &str, pass_phrase: &str, _update: UpdateClientDto) -> Result<ClientDto, ApplicationError> {
+        let client_id = ClientId::new_at_now(*id);
+
+        let Some(client) = self.registry.find_by_id(&client_id).await? else {
+            return Err(ApplicationError::NotFound {
+                method: "find_by_id",
+                entity: "client",
+                id: client_id.to_string(),
+            })
+        };
+
+        if let ClientTypes::Confidential(secret) = client.types() {
+            if let Err(e) = secret.verify(cl_secret) {
+                return Err(ApplicationError::Verification {
+                    method: "client_secret_verify",
+                    entity: "client",
+                    id: format!("{:?}, `in kernel`: {:?}", client_id, e),
+                })
+            }
+        }
+
+        let Some(owner_ac) = self.accounts.find_by_id(client.owner()).await? else {
+            return Err(ApplicationError::NotFound {
+                method: "find_by_id",
+                entity: "account",
+                id: client.owner().to_string(),
+            })
+        };
+
+        if let Err(e) = owner_ac.pass().verify(pass_phrase) {
+            return Err(ApplicationError::Verification {
+                method: "account_password_verify",
+                entity: "account",
+                id: format!("{:?}, `in kernel`: {:?}", owner_ac.id(), e),
+            })
+        }
+
+        // Todo: Client update
+
+        todo!()
     }
 }
 

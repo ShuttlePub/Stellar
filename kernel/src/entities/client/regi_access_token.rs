@@ -1,5 +1,6 @@
 use rand::distributions::{Alphanumeric, Distribution};
 use serde::{Deserialize, Serialize};
+use crate::KernelError;
 
 #[derive(Debug, Clone, Hash, Deserialize, Serialize)]
 pub struct RegistrationAccessToken(String);
@@ -7,6 +8,10 @@ pub struct RegistrationAccessToken(String);
 impl RegistrationAccessToken {
     pub fn new(token: impl Into<String>) -> Self {
         Self(token.into())
+    }
+
+    pub fn verify(&self, _phrase: impl Into<String>) -> Result<(), KernelError> {
+        todo!()
     }
 }
 
