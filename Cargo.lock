@@ -395,6 +395,7 @@ dependencies = [
  "futures",
  "kernel",
  "lettre",
+ "merge-opt",
  "once_cell",
  "reqwest",
  "serde",
@@ -1015,6 +1016,12 @@ name = "memchr"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
+
+[[package]]
+name = "merge-opt"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7097b8c1a24a610a6d4f9b127e4a3f069c273e326aae47bbd013d2d3b3e531e1"
 
 [[package]]
 name = "mime"
