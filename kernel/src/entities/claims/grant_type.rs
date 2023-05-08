@@ -1,5 +1,7 @@
 use std::collections::HashSet;
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use crate::KernelError;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GrantTypes(HashSet<GrantType>);
@@ -58,6 +60,32 @@ pub enum GrantType {
     RefreshToken,
     JWTBearer,
     Saml2Bearer
+}
+
+impl TryFrom<String> for GrantType {
+    type Error = KernelError;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        GrantType::from_str(value.as_str())
+    }
+}
+
+impl FromStr for GrantType {
+    type Err = KernelError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "authorization_code" => Self::AuthorizationCode,
+            "implicit" => Self::Implicit,
+            "password" => Self::Password,
+            "client_credentials" => Self::ClientCredentials,
+            "refresh_token" => Self::RefreshToken,
+            "jwt_bearer" => Self::JWTBearer,
+            "saml2_bearer" => Self::Saml2Bearer,
+            _ => return Err(KernelError::InvalidValue {
+                method: "from_str",
+                value: s.to_string(),
+            })
+        })
+    }
 }
 
 impl AsRef<str> for GrantType {

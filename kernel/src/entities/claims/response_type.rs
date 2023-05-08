@@ -1,5 +1,7 @@
 use std::collections::HashSet;
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use crate::KernelError;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ResponseTypes(HashSet<ResponseType>);
@@ -53,6 +55,27 @@ impl AsRef<HashSet<ResponseType>> for ResponseTypes {
 pub enum ResponseType {
     Code,
     Token
+}
+
+impl TryFrom<String> for ResponseType {
+    type Error = KernelError;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        ResponseType::from_str(value.as_str())
+    }
+}
+
+impl FromStr for ResponseType {
+    type Err = KernelError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "code" => Self::Code,
+            "token" => Self::Token,
+            _ => return Err(KernelError::InvalidValue {
+                method: "from_str",
+                value: s.to_string(),
+            })
+        })
+    }
 }
 
 impl AsRef<str> for ResponseType {
