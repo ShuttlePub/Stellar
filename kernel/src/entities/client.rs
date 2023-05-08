@@ -1,34 +1,48 @@
 use destructure::Destructure;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
-use crate::{
-    KernelError,
-    entities::{
-        Address,
-        GrantType,
-        ResponseType,
-        ScopeDescription,
-        ScopeMethod
-    }
-};
-use crate::entities::{RedirectUri, RedirectUris, RegistrationAccessToken, RegistrationEndPoint};
+use super::account::{Address, UserId};
+use crate::KernelError;
 
-use super::{
-    ClientId,
-    ClientName,
-    ClientTypes,
-    ClientUri,
-    ClientDescription,
-    Scopes,
-    UserId,
-    GrantTypes,
-    ResponseTypes,
-    TokenEndPointAuthMethod,
-    LogoUri,
-    TermsUri,
-    Contacts,
-    Jwks,
-    PolicyUri
+
+mod auth_method;
+mod client_desc;
+mod client_id;
+mod client_name;
+mod client_secret;
+mod client_types;
+mod client_uri;
+mod contacts;
+mod grant_type;
+mod keys;
+mod logo_uri;
+mod policy_uri;
+mod redirect;
+mod regi_access_token;
+mod regi_endpoint;
+mod response_type;
+mod scope;
+mod tos_uri;
+
+pub use self::{
+    auth_method::*,
+    client_desc::*,
+    client_id::*,
+    client_name::*,
+    client_secret::*,
+    client_types::*,
+    client_uri::*,
+    contacts::*,
+    grant_type::*,
+    keys::*,
+    logo_uri::*,
+    policy_uri::*,
+    redirect::*,
+    regi_access_token::*,
+    regi_endpoint::*,
+    response_type::*,
+    scope::*,
+    tos_uri::*
 };
 
 /// Client.

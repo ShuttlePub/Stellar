@@ -6,7 +6,32 @@ use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-use super::{UpdateTime, UserId, Scopes, ClientId, ExpiredIn, IssuedAt, NotBefore, Subject, Audience, Issuer, RedirectUri};
+use super::{
+    account::UserId,
+    client::{
+        ClientId,
+        Scopes,
+        RedirectUri,
+    },
+    time::LoggedAt
+};
+
+
+mod aud;
+mod exp;
+mod iat;
+mod iss;
+mod nbf;
+mod sub;
+
+pub use self::{
+    aud::*,
+    exp::*,
+    iat::*,
+    iss::*,
+    nbf::*,
+    sub::*
+};
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
 pub struct AccessTokenContext {
@@ -90,7 +115,7 @@ impl Default for AccessTokenId {
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
 pub struct AccessToken {
     id: AccessTokenId,
-    date: UpdateTime,
+    date: LoggedAt,
     ctx: AccessTokenContext
 }
 
@@ -110,7 +135,7 @@ impl AccessToken {
     ) -> Self {
         Self {
             id: AccessTokenId::new(id),
-            date: UpdateTime::new(
+            date: LoggedAt::new(
                 created_at,
                 updated_at
             ),
@@ -132,7 +157,7 @@ impl AccessToken {
         &self.id
     }
 
-    pub fn date(&self) -> &UpdateTime {
+    pub fn date(&self) -> &LoggedAt {
         &self.date
     }
 
@@ -207,7 +232,7 @@ impl AuthorizeTokenContext {
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
 pub struct AuthorizeToken {
     id: AuthorizeTokenId,
-    date: UpdateTime,
+    date: LoggedAt,
     ctx: AuthorizeTokenContext
 }
 
@@ -225,7 +250,7 @@ impl AuthorizeToken {
     ) -> Self {
         Self { 
             id: AuthorizeTokenId::new(id),
-            date: UpdateTime::new(
+            date: LoggedAt::new(
                 created_at,
                 updated_at
             ),
@@ -243,7 +268,7 @@ impl AuthorizeToken {
         &self.id
     }
 
-    pub fn date(&self) -> &UpdateTime {
+    pub fn date(&self) -> &LoggedAt {
         &self.date
     }
 

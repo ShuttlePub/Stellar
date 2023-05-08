@@ -1,12 +1,24 @@
 use rand::{distributions::Alphanumeric, prelude::Distribution};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use destructure::Destructure;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::KernelError;
 
-use super::{UserId, Address, Password, UpdateTime, UserName, VerifiedAt};
+use super::time::{LoggedAt, VerifiedAt};
+
+mod address;
+mod pass;
+mod user_id;
+mod username;
+
+pub use self::{
+    address::*,
+    pass::*,
+    user_id::*,
+    username::*
+};
 
 #[derive(Debug, Clone, Hash, Serialize, Deserialize, Destructure)]
 pub struct Account {
@@ -14,7 +26,7 @@ pub struct Account {
     address: Address,
     name: UserName,
     pass: Password,
-    date: UpdateTime,
+    date: LoggedAt,
     verified_at: VerifiedAt
 }
 
@@ -33,7 +45,7 @@ impl Account {
             address: Address::new(address),
             name: UserName::new(name),
             pass: Password::new(pass)?,
-            date: UpdateTime::new(created_at, updated_at),
+            date: LoggedAt::new(created_at, updated_at),
             verified_at: VerifiedAt::new(verified_at)
         })
     }
@@ -54,7 +66,7 @@ impl Account {
         &self.pass
     }
 
-    pub fn date(&self) -> &UpdateTime {
+    pub fn date(&self) -> &LoggedAt {
         &self.date
     }
 

@@ -1,13 +1,11 @@
-mod claims;
 mod client;
 mod account;
-mod update_time;
 mod token;
+mod time;
 
 pub use self::{
-    claims::*,
     client::*,
     account::*,
-    update_time::*,
+    time::*,
     token::*
 };
