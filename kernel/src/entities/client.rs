@@ -125,6 +125,10 @@ impl Client {
         &self.uri
     }
 
+    pub fn description(&self) -> &ClientDescription {
+        &self.desc
+    }
+
     pub fn logo_uri(&self) -> &LogoUri {
         &self.logo
     }

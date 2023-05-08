@@ -45,6 +45,7 @@ CREATE TABLE clients(
 CREATE TABLE client_metadata(
   owner          UUID           NOT NULL,
   client_id      UUID           NOT NULL,
+  description    TEXT           NOT NULL,
   client_uri     VARCHAR(512),
   logo_uri       VARCHAR(512),
   contact        VARCHAR(128)[] NOT NULL,
