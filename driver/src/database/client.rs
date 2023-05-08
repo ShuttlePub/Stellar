@@ -387,7 +387,7 @@ impl PgClientInternal {
     }
 
     async fn find_by_id(id: &ClientId, con: &mut PgConnection) -> Result<Option<Client>, DriverError> {
-        // Note: L391-393 See https://github.com/launchbadge/sqlx/issues/298
+        // Note: L406-409 See https://github.com/launchbadge/sqlx/issues/298
         // language=SQL
         let fetched = sqlx::query_as::<_, ClientRow>(r#"
             SELECT
@@ -633,9 +633,11 @@ mod tests {
         let mut transaction = pool.begin().await?;
 
         let client = create_dummy_data(&mut transaction).await?;
+        let timer = Instant::now();
 
         let fetched = PgClientInternal::find_by_id(client.id(), &mut transaction).await?;
 
+        println!("fetched time: {}ms", timer.elapsed().as_millis());
         println!("{:#?}", fetched);
 
         transaction.rollback().await?;

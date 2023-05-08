@@ -71,7 +71,7 @@ pub struct Client {
     conf_token: RegistrationAccessToken,
     conf_endpoint: RegistrationEndPoint,
 }
-
+// Fixme: Should consider adopting Builder pattern as it requires very long parameters.
 impl Client {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
