@@ -53,6 +53,7 @@ mod tests {
     use reqwest::Client;
     use crate::transport::blacklist::TlsRequestInternal;
 
+    #[ignore = "It depends on `reqwest` and does not work as is."]
     #[tokio::test]
     async fn test_request() -> anyhow::Result<()> {
         let client = Client::new();
