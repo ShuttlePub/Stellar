@@ -1,11 +1,24 @@
-use serde::Deserialize;
+use std::collections::HashMap;
 use sqlx::{PgConnection, Pool, Postgres};
 use sqlx::types::Json;
-use kernel::entities::{Client, ClientId};
+use kernel::entities::{
+    Address,
+    Client,
+    ClientId,
+    ClientSecret,
+    ClientTypes,
+    GrantType,
+    RedirectUri,
+    ResponseType,
+    ScopeDescription,
+    ScopeMethod,
+    TokenEndPointAuthMethod
+};
 use kernel::external::{JsonWebKey, OffsetDateTime, Uuid};
 use kernel::KernelError;
 use kernel::repository::ClientRegistry;
 use try_ref::TryAsRef;
+use merge_opt::merge_opt_i2;
 use crate::DriverError;
 
 pub struct ClientDataBase {
@@ -68,37 +81,36 @@ impl ClientRegistry for ClientDataBase {
     }
 
     async fn find_by_id(&self, id: &ClientId) -> Result<Option<Client>, KernelError> {
-        todo!()
+        let mut con = self.pool.acquire().await
+            .map_err(DriverError::SqlX)?;
+        let client = PgClientInternal::find_by_id(id, &mut con).await?;
+        Ok(client)
     }
 }
 
 #[derive(sqlx::FromRow, Debug)]
-pub struct ClientRow {
-    pub client_id: Uuid,
-    pub client_id_iat: OffsetDateTime,
-    pub client_name: String,
-    pub client_uri: String,
-    pub logo_uri: String,
-    pub tos_uri: String,
-    pub policy_uri: String,
-    pub contact: Vec<String>,
-    pub client_secret: String,
-    pub client_secret_expire: OffsetDateTime,
-    pub auth_method: String,
-    pub grant_types: Vec<String>,
-    pub response_types: Vec<String>,
-    pub jwks: Option<Json<JsonWebKey>>,
-    pub jwks_uri: Option<String>,
-    pub redirect_uris: Vec<String>,
-    pub scope: Json<Vec<ScopeRow>>,
-    pub registration_token: String,
-    pub registration_endpoint: String
-}
-
-#[derive(Deserialize, Debug)]
-pub struct ScopeRow {
-    pub method: String,
-    pub description: String
+struct ClientRow {
+    client_id: Uuid,
+    client_id_iat: OffsetDateTime,
+    client_name: String,
+    description: String,
+    owner: Uuid,
+    client_uri: String,
+    logo_uri: String,
+    tos_uri: String,
+    policy_uri: String,
+    contact: Vec<String>,
+    client_secret: Option<String>,
+    client_secret_exp: Option<OffsetDateTime>,
+    auth_method: String,
+    grant_types: Vec<String>,
+    response_types: Vec<String>,
+    jwks: Option<Json<JsonWebKey>>,
+    jwks_uri: Option<String>,
+    redirect_uris: Vec<String>,
+    scope: Json<HashMap<String, Option<String>>>,
+    registration_token: String,
+    registration_endpoint: String
 }
 
 pub(in crate::database) struct PgClientInternal;
@@ -128,6 +140,7 @@ impl PgClientInternal {
         // language=SQL
         sqlx::query(r#"
             INSERT INTO client_metadata(
+              description,
               owner,
               client_id,
               client_uri,
@@ -142,9 +155,11 @@ impl PgClientInternal {
               $4,
               $5,
               $6,
-              $7
+              $7,
+              $8
             )
         "#)
+        .bind(client.description().as_ref())
         .bind(client.owner().as_ref())
         .bind(client.id().id())
         .bind(client.client_uri().as_ref())
@@ -372,42 +387,91 @@ impl PgClientInternal {
     }
 
     async fn find_by_id(id: &ClientId, con: &mut PgConnection) -> Result<Option<Client>, DriverError> {
+        // Note: L391-393 See https://github.com/launchbadge/sqlx/issues/298
         // language=SQL
-        sqlx::query_as::<_, ClientRow>(r#"
-            SELECT (
-              clients.client_id,
-              clients.client_id_iat,
-              clients.client_name,
-                   cm.owner,
-                   cm.client_uri,
-                   cm.logo_uri,
-                   cm.tos_uri,
-                   cm.policy_uri,
-                   cm.contact,
-                   cc.client_secret,
-                   cc.client_secret_exp,
-                   cc.auth_method,
-                   cc.grant_types,
-                   cc.response_types,
-                   cc.jwks,
-                   cc.jwks_uri,
-                   cru.uri,
-                   cs.scope,
-                   ccp.token,
-                   ccp.endpoint
-            )
-            FROM clients
-              LEFT JOIN client_metadata             cm  on clients.client_id = cm.client_id
-                   JOIN client_cert                 cc  on clients.client_id = cc.client_id
-                   JOIN client_scopes               cs  on clients.client_id = cs.client_id
-                   JOIN client_redirect_uris        cru on clients.client_id = cru.client_id
-                   JOIN client_configuration_policy ccp on clients.client_id = ccp.client_id
-            WHERE clients.client_id = $1
+        let fetched = sqlx::query_as::<_, ClientRow>(r#"
+            SELECT
+              c.client_id,
+              c.client_id_iat,
+              c.client_name,
+              cm.description,
+              cm.owner,
+              cm.client_uri,
+              cm.logo_uri,
+              cm.tos_uri,
+              cm.policy_uri,
+              cm.contact,
+              cc.client_secret,
+              cc.client_secret_exp,
+              cc.auth_method::TEXT,
+              cc.grant_types::TEXT[],
+              cc.response_types::TEXT[],
+              cc.jwks,
+              cc.jwks_uri,
+              cru.uri as redirect_uris,
+              cs.scope,
+              ccp.token as registration_token,
+              ccp.endpoint as registration_endpoint
+            FROM clients c
+              LEFT JOIN client_metadata             cm  on c.client_id = cm.client_id
+                   JOIN client_cert                 cc  on c.client_id = cc.client_id
+                   JOIN client_scopes               cs  on c.client_id = cs.client_id
+                   JOIN client_redirect_uris        cru on c.client_id = cru.client_id
+                   JOIN client_configuration_policy ccp on c.client_id = ccp.client_id
+            WHERE c.client_id = $1
         "#)
         .bind(id.id())
         .fetch_optional(&mut *con)
-        .await?;
-        todo!()
+        .await?
+            .map(|row| -> Result<Client, DriverError> {
+                Ok(Client::new(
+                    ClientId::new(
+                        row.client_id,
+                        row.client_id_iat
+                    ),
+                    row.client_name,
+                    row.client_uri,
+                    row.description,
+                    ClientTypes::new(merge_opt_i2(
+                        row.client_secret,
+                        row.client_secret_exp,
+                        |secret, exp| {
+                        ClientSecret::new(secret?, exp?).into()
+                    })),
+                    row.logo_uri,
+                    row.tos_uri,
+                    row.owner,
+                    row.policy_uri,
+                    TokenEndPointAuthMethod::try_from(row.auth_method)?,
+                    row.grant_types.into_iter()
+                        .map(TryFrom::try_from)
+                        .collect::<Result<Vec<GrantType>, KernelError>>()?,
+                    row.response_types.into_iter()
+                        .map(TryFrom::try_from)
+                        .collect::<Result<Vec<ResponseType>, KernelError>>()?,
+                    row.redirect_uris.into_iter()
+                        .map(RedirectUri::new)
+                        .collect::<Vec<_>>(),
+                    row.scope.0.into_iter()
+                        .map(|scope| (ScopeMethod::new(scope.0), ScopeDescription::new(scope.1)))
+                        .collect::<Vec<_>>(),
+                    row.contact.into_iter()
+                        .map(Address::new)
+                        .collect::<Vec<_>>(),
+                    merge_opt_i2(
+                        row.jwks,
+                        row.jwks_uri, |jwk, uri| {
+                            if let Some(jwk) = jwk {
+                                return jwk.0.to_string().into()
+                            }
+                            uri?.into()
+                        }),
+                    row.registration_token,
+                    row.registration_endpoint
+                )?)
+            })
+            .transpose()?;
+        Ok(fetched)
     }
 }
 
@@ -561,4 +625,21 @@ mod tests {
         Ok(())
     }
 
+    #[ignore = "It depends on Postgres and does not work as is."]
+    #[tokio::test]
+    async fn pg_select() -> anyhow::Result<()> {
+        let pool = test_pool().await?;
+
+        let mut transaction = pool.begin().await?;
+
+        let client = create_dummy_data(&mut transaction).await?;
+
+        let fetched = PgClientInternal::find_by_id(client.id(), &mut transaction).await?;
+
+        println!("{:#?}", fetched);
+
+        transaction.rollback().await?;
+
+        Ok(())
+    }
 }
