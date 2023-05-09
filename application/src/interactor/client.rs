@@ -15,6 +15,7 @@ use kernel::{
         Contacts,
         GrantType,
         GrantTypes,
+        Jwks,
         LogoUri,
         PolicyUri,
         RedirectUri,
@@ -45,7 +46,7 @@ use crate::{
     ApplicationError,
 };
 
-use crate::adapter::client::UpdateClientAdapter;
+use crate::adapter::client::{DeleteClientAdapter, UpdateClientAdapter};
 use crate::transfer::client::UpdateClientDto;
 
 #[derive(Clone)]
@@ -65,6 +66,7 @@ impl<T1, T2> RegisterClientAdapter for RegisterClientInteractor<T1, T2>
   where T1: ClientRegistry,
         T2: AccountRepository
 {
+    //noinspection DuplicatedCode
     async fn register(&self, register: RegisterClientDto) -> Result<ClientDto, ApplicationError> {
         let RegisterClientDto {
             id,
@@ -196,7 +198,8 @@ impl<T1, T2> UpdateClientAdapter for UpdateClientInteractor<T1, T2>
   where T1: ClientRegistry,
         T2: AccountRepository
 {
-    async fn update(&self, id: &Uuid, cl_secret: &str, pass_phrase: &str, _update: UpdateClientDto) -> Result<ClientDto, ApplicationError> {
+    //noinspection DuplicatedCode
+    async fn update(&self, id: &Uuid, cl_secret: &str, pass_phrase: &str, update: UpdateClientDto) -> Result<ClientDto, ApplicationError> {
         let client_id = ClientId::new_at_now(*id);
 
         let Some(client) = self.registry.find_by_id(&client_id).await? else {
@@ -233,9 +236,141 @@ impl<T1, T2> UpdateClientAdapter for UpdateClientInteractor<T1, T2>
             })
         }
 
-        // Todo: Client update
+        let mut before = client.into_destruct();
 
-        todo!()
+        let UpdateClientDto {
+            name,
+            client_uri,
+            description,
+            logo_uri,
+            tos_uri,
+            owner,
+            policy_uri,
+            auth_method,
+            grant_types,
+            response_types,
+            redirect_uris,
+            scopes,
+            contacts,
+            jwks
+        } = update;
+
+        before.name   = ClientName::new(name);
+        before.uri    = ClientUri::new(client_uri)?;
+        before.desc   = ClientDescription::new(description);
+        before.logo   = LogoUri::new(logo_uri)?;
+        before.terms  = TermsUri::new(tos_uri)?;
+        before.owner  = UserId::new(owner);
+        before.policy = PolicyUri::new(policy_uri)?;
+
+        before.auth_method = match auth_method {
+            TokenEndPointAuthMethodDto::ClientSecretPost => TokenEndPointAuthMethod::ClientSecretPost,
+            TokenEndPointAuthMethodDto::ClientSecretBasic => TokenEndPointAuthMethod::ClientSecretBasic,
+            TokenEndPointAuthMethodDto::None => TokenEndPointAuthMethod::None,
+            TokenEndPointAuthMethodDto::PrivateKeyJWK => TokenEndPointAuthMethod::PrivateKeyJWK
+        };
+
+        before.grant_types = grant_types.into_iter()
+            .map(|types| match types {
+                GrantTypeDto::AuthorizationCode => GrantType::AuthorizationCode,
+                GrantTypeDto::Implicit => GrantType::Implicit,
+                GrantTypeDto::Password => GrantType::Password,
+                GrantTypeDto::ClientCredentials => GrantType::ClientCredentials,
+                GrantTypeDto::RefreshToken => GrantType::RefreshToken,
+                GrantTypeDto::JWTBearer => GrantType::JWTBearer,
+                GrantTypeDto::Saml2Bearer => GrantType::Saml2Bearer
+            })
+            .collect::<GrantTypes>();
+
+        before.response_types = response_types.into_iter()
+            .map(|types| match types {
+                ResponseTypeDto::Code => ResponseType::Code,
+                ResponseTypeDto::Token => ResponseType::Token
+            })
+            .collect::<ResponseTypes>();
+
+        before.redirect_uris = redirect_uris.into_iter()
+            .map(RedirectUri::new)
+            .collect::<RedirectUris>();
+
+        before.scopes = scopes.into_iter()
+            .map(|scope| (
+                ScopeMethod::new(scope.method),
+                ScopeDescription::new(scope.description)
+            ))
+            .collect::<Scopes>();
+
+        before.contact = contacts.into_iter()
+            .map(Address::new)
+            .collect::<Contacts>();
+
+        before.jwks = jwks.map(Jwks::new).transpose()?;
+
+        let after = before.freeze();
+
+        self.registry.update(&after).await?;
+
+        Ok(after.into())
+    }
+}
+
+pub struct DeleteClientInteractor<T1, T2> {
+    registry: T1,
+    accounts: T2
+}
+
+impl<T1, T2> DeleteClientInteractor<T1, T2> {
+    pub fn new(registry: T1, accounts: T2) -> Self {
+        Self { registry, accounts }
+    }
+}
+
+#[async_trait::async_trait]
+impl<T1, T2> DeleteClientAdapter for DeleteClientInteractor<T1, T2> 
+  where T1: ClientRegistry,
+        T2: AccountRepository
+{
+    //noinspection DuplicatedCode
+    async fn delete(&self, id: &Uuid, cl_secret: &str, pass_phrase: &str) -> Result<(), ApplicationError> {
+        let client_id = ClientId::new_at_now(*id);
+
+        let Some(client) = self.registry.find_by_id(&client_id).await? else {
+            return Err(ApplicationError::NotFound {
+                method: "find_by_id",
+                entity: "client",
+                id: client_id.to_string(),
+            })
+        };
+
+        if let ClientTypes::Confidential(secret) = client.types() {
+            if let Err(e) = secret.verify(cl_secret) {
+                return Err(ApplicationError::Verification {
+                    method: "client_secret_verify",
+                    entity: "client",
+                    id: format!("{:?}, `in kernel`: {:?}", client_id, e),
+                })
+            }
+        }
+
+        let Some(owner_ac) = self.accounts.find_by_id(client.owner()).await? else {
+            return Err(ApplicationError::NotFound {
+                method: "find_by_id",
+                entity: "account",
+                id: client.owner().to_string(),
+            })
+        };
+
+        if let Err(e) = owner_ac.pass().verify(pass_phrase) {
+            return Err(ApplicationError::Verification {
+                method: "account_password_verify",
+                entity: "account",
+                id: format!("{:?}, `in kernel`: {:?}", owner_ac.id(), e),
+            })
+        }
+        
+        self.registry.delete(&client_id).await?;
+        
+        Ok(())
     }
 }
 
@@ -243,15 +378,36 @@ impl<T1, T2> UpdateClientAdapter for UpdateClientInteractor<T1, T2>
 mod tests {
     use std::time::Duration;
     use mockall::predicate::always;
-    use kernel::entities::Account;
+    use kernel::entities::{
+        Account,
+        Address,
+        Client,
+        ClientId,
+        ClientTypes,
+        GrantType,
+        RedirectUri,
+        RegistrationAccessToken,
+        RegistrationEndPoint,
+        ResponseType,
+        ScopeDescription,
+        ScopeMethod,
+        TokenEndPointAuthMethod
+    };
     use kernel::external::{OffsetDateTime, Uuid};
-    use kernel::repository::{MockAccountRepository, MockClientRegistry};
-    use crate::adapter::client::RegisterClientAdapter;
-    use crate::interactor::RegisterClientInteractor;
-    use crate::transfer::client::{GrantTypeDto, RegisterClientDto, ResponseTypeDto, ScopeDto, TokenEndPointAuthMethodDto};
+    use kernel::repository::{ClientRegistry, MockAccountRepository, MockClientRegistry};
+    use crate::adapter::client::{RegisterClientAdapter, UpdateClientAdapter};
+    use crate::interactor::{RegisterClientInteractor, UpdateClientInteractor};
+    use crate::transfer::client::{
+        ClientDto,
+        GrantTypeDto,
+        RegisterClientDto,
+        ResponseTypeDto,
+        ScopeDto,
+        TokenEndPointAuthMethodDto,
+        UpdateClientDto
+    };
 
-    #[tokio::test]
-    async fn test() -> anyhow::Result<()> {
+    fn new_mock_accounts_repo() -> MockAccountRepository {
         let mut mock_accounts_repository = MockAccountRepository::new();
 
         let user_id = Uuid::new_v4();
@@ -276,6 +432,14 @@ mod tests {
                 ).unwrap()))
             });
 
+        mock_accounts_repository
+    }
+
+    //noinspection DuplicatedCode
+    #[tokio::test]
+    async fn test_register() -> anyhow::Result<()> {
+        let mock_accounts_repository = new_mock_accounts_repo();
+
         let mut mock_client_registry = MockClientRegistry::new();
 
         mock_client_registry.expect_register()
@@ -295,7 +459,7 @@ mod tests {
         let client_desc = "TEST CLIENT!";
         let logo_uri = "https://test.client.example.com/logo";
         let tos_uri = "https://test.client.example.com/terms";
-        let owner_id = user_id;
+        let owner_id = Uuid::new_v4();
         let policy_uri = "https://test.client.example.com/policy";
         let auth_method = TokenEndPointAuthMethodDto::ClientSecretPost;
         let grant_types = vec![GrantTypeDto::AuthorizationCode];
@@ -340,6 +504,120 @@ mod tests {
         let regi = client_registration.register(dto).await?;
 
         println!("{:#?}", regi);
+
+        Ok(())
+    }
+
+    //noinspection DuplicatedCode
+    #[tokio::test]
+    async fn test_update() -> anyhow::Result<()> {
+        let mock_accounts_repository = new_mock_accounts_repo();
+
+        let mut mock_client_registry = MockClientRegistry::new();
+
+        mock_client_registry.expect_find_by_id()
+            .with(always())
+            .returning(move |_| {
+                let client_id = ClientId::new_at_now(Uuid::new_v4());
+                let client_name = "Test Client";
+                let client_uri = "https://test.client.example.com/";
+                let client_desc = "TEST CLIENT!";
+                let client_type = ClientTypes::Public;
+                let logo_uri = "https://test.client.example.com/logo";
+                let tos_uri = "https://test.client.example.com/terms";
+                let owner_id = Uuid::new_v4();
+                let policy_uri = "https://test.client.example.com/policy";
+                let auth_method = TokenEndPointAuthMethod::ClientSecretPost;
+                let grant_types = vec![GrantType::AuthorizationCode];
+                let response_types = vec![ResponseType::Code];
+                let redirect_uris = vec![
+                    "https://test.client.example.com/callback",
+                    "https://test.client.example.com/callback2"
+                ].into_iter()
+                    .map(RedirectUri::new)
+                    .collect::<Vec<RedirectUri>>();
+                let scopes = vec![
+                    ("read", Some("base user data read")),
+                    ("write", Some("base user data write")),
+                    ("phantom", None)
+                ].into_iter()
+                    .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
+                    .map(|(method, desc)| (ScopeMethod::new(method), ScopeDescription::new(desc)))
+                    .collect::<Vec<(ScopeMethod, ScopeDescription)>>();
+                let contacts = vec!["test.user@client.com"]
+                    .into_iter()
+                    .map(Address::new)
+                    .collect::<Vec<Address>>();
+                let reg_token = RegistrationAccessToken::default();
+                let reg_endpoint = RegistrationEndPoint::default();
+                let client = Client::new(
+                    client_id,
+                    client_name,
+                    client_uri,
+                    client_desc,
+                    client_type,
+                    logo_uri,
+                    tos_uri,
+                    owner_id,
+                    policy_uri,
+                    auth_method,
+                    grant_types,
+                    response_types,
+                    redirect_uris,
+                    scopes,
+                    contacts,
+                    None,
+                    reg_token,
+                    reg_endpoint
+                ).unwrap();
+
+                println!("{:#?}", client);
+                Ok(Some(client))
+            });
+
+        mock_client_registry.expect_update()
+            .with(always())
+            .returning(move |v| {
+                println!("{:#?}", v);
+                Ok(())
+            });
+
+        let before: ClientDto = mock_client_registry.find_by_id(&ClientId::new_at_now(Uuid::new_v4())).await?.unwrap().into();
+
+        let interactor = UpdateClientInteractor::new(
+            mock_client_registry, mock_accounts_repository
+        );
+
+        let update = UpdateClientDto {
+            name: "TEST CLIENT MK2".to_string(),
+            client_uri: "https://client.test.com/".to_string(),
+            description: "TEST 2".to_string(),
+            logo_uri: "https://logo.example.com".to_string(),
+            tos_uri: "https://client.test.com/terms".to_string(),
+            owner: Default::default(),
+            policy_uri: "https://policy.example.com/".to_string(),
+            auth_method: TokenEndPointAuthMethodDto::None,
+            grant_types: vec![GrantTypeDto::AuthorizationCode, GrantTypeDto::Implicit],
+            response_types: vec![ResponseTypeDto::Token],
+            redirect_uris: vec!["https://client.test.com/callback"].into_iter().map(Into::into).collect(),
+            scopes: vec![
+                ("read", Some("base user data read")),
+                ("write", Some("base user data write")),
+                ("phantom", None)
+            ].into_iter()
+             .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
+             .map(|(method, desc)| ScopeDto { method, description: desc })
+             .collect::<Vec<ScopeDto>>(),
+            contacts: vec!["test.user@client.com"]
+            .into_iter()
+            .map(ToOwned::to_owned)
+            .collect::<Vec<String>>(),
+            jwks: None,
+        };
+
+        let after = interactor.update(&Uuid::new_v4(), "none", "test0000pAssw0rd", update).await?;
+
+        assert_ne!(before, after);
 
         Ok(())
     }

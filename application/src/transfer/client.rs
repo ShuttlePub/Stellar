@@ -14,6 +14,7 @@ use kernel::entities::{
 use kernel::external::{JsonWebKey, OffsetDateTime, Uuid};
 
 #[derive(Debug)]
+#[cfg_attr(test, derive(Eq, PartialEq))]
 pub struct ClientDto {
     pub id: Uuid,
     pub id_iat: OffsetDateTime,
@@ -129,7 +130,8 @@ impl From<TokenEndPointAuthMethodDomain> for TokenEndPointAuthMethodDto {
     }
 }
 
-#[derive(Debug)]
+
+#[derive(Debug, PartialEq, Eq)]
 pub enum GrantTypeDto {
     AuthorizationCode,
     Implicit,
@@ -154,7 +156,8 @@ impl From<GrantTypeDomain> for GrantTypeDto {
     }
 }
 
-#[derive(Debug)]
+
+#[derive(Debug, PartialEq, Eq)]
 pub enum ResponseTypeDto {
     Code,
     Token
@@ -169,7 +172,7 @@ impl From<ResponseTypeDomain> for ResponseTypeDto {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct ScopeDto {
     pub method: String,
     pub description: Option<String>
@@ -181,7 +184,7 @@ impl From<(ScopeMethod, ScopeDescription)> for ScopeDto {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum JwksDto {
     Uri(String),
     Key(JsonWebKey)
@@ -225,9 +228,10 @@ pub struct UpdateClientDto {
     pub owner: Uuid,
     pub policy_uri: String,
     pub auth_method: TokenEndPointAuthMethodDto,
+    pub grant_types: Vec<GrantTypeDto>,
     pub response_types: Vec<ResponseTypeDto>,
     pub redirect_uris: Vec<String>,
-    pub scope: Vec<ScopeDto>,
+    pub scopes: Vec<ScopeDto>,
     pub contacts: Vec<String>,
     pub jwks: Option<String>
 }

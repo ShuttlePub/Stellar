@@ -23,5 +23,5 @@ pub trait UpdateClientAdapter: 'static + Sync + Send {
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
 pub trait DeleteClientAdapter: 'static + Sync + Send {
-    async fn delete(&self) -> Result<(), ApplicationError>;
+    async fn delete(&self, id: &Uuid, cl_secret: &str, pass_phrase: &str) -> Result<(), ApplicationError>;
 }
