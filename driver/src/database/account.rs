@@ -230,6 +230,7 @@ impl RedisInternal {
         Ok(())
     }
 
+    //noinspection DuplicatedCode
     pub async fn find_by_id(id: &TicketId, con: &mut RedisConnection) -> Result<Option<NonVerifiedAccount>, DriverError> {
         let Some(address) = redis::cmd("GET").arg(id.as_ref()).query_async::<_, Option<String>>(&mut *con).await? else {
             return Ok(None);
@@ -242,6 +243,7 @@ impl RedisInternal {
         Ok(Some(NonVerifiedAccount::new(id.clone(), address, code)))
     }
 
+    //noinspection DuplicatedCode
     pub async fn find_by_valid_id(id: &TicketId, con: &mut RedisConnection) -> Result<Option<Address>, DriverError> {
         let Some(address) = redis::cmd("GET").arg(id.as_ref()).query_async::<_, Option<String>>(&mut *con).await? else {
             return Ok(None);
