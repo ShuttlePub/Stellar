@@ -5,3 +5,8 @@ use crate::KernelError;
 pub trait BlackListTransporter: 'static + Sync + Send {
    async fn pull(&self) -> Result<HashSet<String>, KernelError>;
 }
+
+pub trait DependOnBlacklistTransporter: 'static + Sync + Send {
+   type BlacklistTransporter: BlackListTransporter;
+   fn blacklist_transporter(&self) -> Self::BlacklistTransporter;
+}
