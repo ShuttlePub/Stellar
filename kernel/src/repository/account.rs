@@ -15,7 +15,7 @@ pub trait AccountRepository: 'static + Sync + Send {
 
 pub trait DependOnAccountRepository: 'static + Sync + Send {
     type AccountRepository: AccountRepository;
-    fn account_repository(&self) -> Self::AccountRepository;
+    fn account_repository(&self) -> &Self::AccountRepository;
 }
 
 #[cfg_attr(feature = "mock", mockall::automock)]
@@ -29,5 +29,5 @@ pub trait NonVerifiedAccountRepository: 'static + Sync + Send {
 
 pub trait DependOnNonVerifiedAccountRepository: 'static + Sync + Send {
     type NonVerifiedAccountRepository: NonVerifiedAccountRepository;
-    fn non_verified_account_repository(&self) -> Self::NonVerifiedAccountRepository;
+    fn non_verified_account_repository(&self) -> &Self::NonVerifiedAccountRepository;
 }

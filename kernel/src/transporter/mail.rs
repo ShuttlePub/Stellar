@@ -7,5 +7,5 @@ pub trait VerificationMailTransporter: 'static + Sync + Send {
 
 pub trait DependOnVerificationMailTransporter: 'static + Sync + Send {
     type VerificationMailTransporter: VerificationMailTransporter;
-    fn verification_mail_transporter(&self) -> Self::VerificationMailTransporter;
+    fn verification_mail_transporter(&self) -> &Self::VerificationMailTransporter;
 }
