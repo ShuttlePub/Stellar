@@ -1,4 +1,7 @@
 mod account;
 mod client;
 
-pub use self::account::*;
+pub use self::{
+    account::*,
+    client::*
+};
