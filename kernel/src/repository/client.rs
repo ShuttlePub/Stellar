@@ -12,5 +12,5 @@ pub trait ClientRegistry: 'static + Sync + Send {
 
 pub trait DependOnClientRegistry: 'static + Sync + Send {
     type ClientRegistry: ClientRegistry;
-    fn client_registry(&self) -> Self::ClientRegistry;
+    fn client_registry(&self) -> &Self::ClientRegistry;
 }
