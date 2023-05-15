@@ -17,7 +17,8 @@ serde = { version = "1", features = ["derive"] }
 once_cell = "1"
 destructure = "0.1.2"
 async-trait = "0.1"
-jsonwebkey = "0.3.5"
+jsonwebtoken = "8.3.0"
+jsonwebkey = { version =  "0.3.5", features = ["generate"] }
 url = { version = "2.3.1", features = ["serde"] }
 try-ref = "0.1"
 
