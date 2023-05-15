@@ -1,9 +1,9 @@
 mod error;
-mod injector;
 pub mod routes;
 mod handler;
+mod builtin;
 
 pub use self::{
     error::*,
-    injector::InteractionHandler,
+    handler::Handler,
 };

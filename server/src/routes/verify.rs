@@ -1,8 +1,8 @@
-use application::adapter::rest::RestAdapter;
 use axum::{response::IntoResponse, http::StatusCode, extract::{State, Query}, Json};
 use serde::{Deserialize, Serialize};
+use application::services::{ApproveAccountService, DependOnApproveAccountService};
 
-use crate::InteractionHandler;
+use crate::Handler;
 
 #[derive(Deserialize, Debug)]
 pub struct UserInput {
@@ -20,12 +20,12 @@ pub struct Ticket {
 }
 
 pub async fn verify(
-    State(handler): State<InteractionHandler>,
+    State(handler): State<Handler>,
     Query(ticket): Query<Ticket>,
     Json(form): Json<UserInput>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let valid = handler.as_ref()
-        .approve_account(&ticket.id, &form.code)
+    let valid = handler.approve_account_service()
+        .approve(&ticket.id, &form.code)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let res = Response {

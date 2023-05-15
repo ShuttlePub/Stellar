@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use axum::{Router, Server, routing::{post, get}, response::IntoResponse, http::StatusCode};
-use server::{InteractionHandler, routes::{verify, signup}};
+use server::{Handler, routes::{verify, signup}};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -20,7 +20,7 @@ async fn main() -> anyhow::Result<()> {
             .with_filter(tracing_subscriber::filter::LevelFilter::DEBUG))
         .init();
 
-    let handler = InteractionHandler::inject().await?;
+    let handler = Handler::init().await?;
 
     let app = Router::new()
         .route("/healthcheck", get(healthcheck))

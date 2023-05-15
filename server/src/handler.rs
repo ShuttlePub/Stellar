@@ -2,24 +2,46 @@ use application::services::{
     DependOnCreateNonVerifiedAccountService,
     DependOnApproveAccountService,
     DependOnCreateAccountService,
-    DependOnDeleteAccountService, 
-    DependOnUpdateAccountService
+    DependOnDeleteAccountService,
+    DependOnUpdateAccountService,
+    DependOnRegisterClientService,
+    DependOnUpdateClientService
 };
-use driver::database::{AccountDataBase, NonVerifiedAccountDataBase};
+use kernel::{
+    repository::{
+        DependOnAccountRepository,
+        DependOnClientRegistry,
+        DependOnNonVerifiedAccountRepository
+    },
+    transporter::{
+        DependOnVerificationMailTransporter
+    }
+};
+
+use application::interactor::{
+    RegisterClientInteractor, 
+    UpdateClientInteractor
+};
+use driver::database::{
+    AccountDataBase, 
+    ClientDataBase, 
+    NonVerifiedAccountDataBase
+};
 use driver::{DataBaseDriver, SmtpDriver};
 use driver::transport::VerificationMailer;
-use kernel::repository::{
-    DependOnAccountRepository, 
-    DependOnNonVerifiedAccountRepository
-};
-use kernel::transporter::DependOnVerificationMailTransporter;
 use crate::ServerError;
+
+type ClientRegisterer = RegisterClientInteractor<ClientDataBase, AccountDataBase>;
 
 #[derive(Clone)]
 pub struct Handler {
     ac_repo: AccountDataBase,
     nvac_repo: NonVerifiedAccountDataBase,
-    mailer: VerificationMailer
+    clients: ClientDataBase,
+    mailer: VerificationMailer,
+
+    client_reg: ClientRegisterer,
+    client_upd: UpdateClientInteractor<ClientDataBase, AccountDataBase>
 }
 
 impl Handler {
@@ -29,14 +51,21 @@ impl Handler {
         let redis_pool = DataBaseDriver::setup_redis().await?;
         let smtp_pool = SmtpDriver::setup_lettre()?;
 
-        let ac_repo = AccountDataBase::new(pg_pool);
+        let ac_repo = AccountDataBase::new(pg_pool.clone());
         let nvac_repo = NonVerifiedAccountDataBase::new(redis_pool);
+        let clients = ClientDataBase::new(pg_pool);
         let mailer = VerificationMailer::new(smtp_pool);
 
+        let client_reg = RegisterClientInteractor::new(clients.clone(), ac_repo.clone());
+        let client_upd = UpdateClientInteractor::new(clients.clone(), ac_repo.clone());
         Ok(Self {
             ac_repo,
             nvac_repo,
-            mailer
+            clients,
+            mailer,
+
+            client_reg,
+            client_upd
         })
     }
 }
@@ -54,6 +83,14 @@ impl DependOnNonVerifiedAccountRepository for Handler {
 
     fn non_verified_account_repository(&self) -> &Self::NonVerifiedAccountRepository {
         &self.nvac_repo
+    }
+}
+
+impl DependOnClientRegistry for Handler {
+    type ClientRegistry = ClientDataBase;
+
+    fn client_registry(&self) -> &Self::ClientRegistry {
+        &self.clients
     }
 }
 
@@ -100,7 +137,23 @@ impl DependOnUpdateAccountService for Handler {
 impl DependOnDeleteAccountService for Handler {
     type DeleteAccountService = Self;
 
-    fn delete_account_repository(&self) -> &Self::DeleteAccountService {
+    fn delete_account_service(&self) -> &Self::DeleteAccountService {
         self
+    }
+}
+
+impl DependOnRegisterClientService for Handler {
+    type RegisterClientService = ClientRegisterer;
+
+    fn register_client_service(&self) -> &Self::RegisterClientService {
+        &self.client_reg
+    }
+}
+
+impl DependOnUpdateClientService for Handler {
+    type UpdateClientService = UpdateClientInteractor<ClientDataBase, AccountDataBase>;
+
+    fn update_client_service(&self) -> &Self::UpdateClientService {
+        &self.client_upd
     }
 }
