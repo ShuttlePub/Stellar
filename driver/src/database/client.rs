@@ -21,6 +21,7 @@ use try_ref::TryAsRef;
 use merge_opt::merge_opt_i2;
 use crate::DriverError;
 
+#[derive(Clone)]
 pub struct ClientDataBase {
     pool: Pool<Postgres>
 }
