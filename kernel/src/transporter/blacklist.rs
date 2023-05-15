@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use crate::KernelError;
 
+#[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
 pub trait BlackListTransporter: 'static + Sync + Send {
    async fn pull(&self) -> Result<HashSet<String>, KernelError>;
