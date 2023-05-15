@@ -116,7 +116,7 @@ pub enum TokenEndPointAuthMethodDto {
     ClientSecretBasic,
     None,
 
-    PrivateKeyJWK
+    PrivateKeyJWT
 }
 
 impl From<TokenEndPointAuthMethodDomain> for TokenEndPointAuthMethodDto {
@@ -125,7 +125,7 @@ impl From<TokenEndPointAuthMethodDomain> for TokenEndPointAuthMethodDto {
             TokenEndPointAuthMethodDomain::ClientSecretPost => Self::ClientSecretPost,
             TokenEndPointAuthMethodDomain::ClientSecretBasic => Self::ClientSecretBasic,
             TokenEndPointAuthMethodDomain::None => Self::None,
-            TokenEndPointAuthMethodDomain::PrivateKeyJWK => Self::PrivateKeyJWK
+            TokenEndPointAuthMethodDomain::PrivateKeyJWT => Self::PrivateKeyJWT
         }
     }
 }
@@ -201,7 +201,6 @@ impl From<Jwks> for JwksDto {
 
 #[derive(Debug)]
 pub struct RegisterClientDto {
-    pub id: Uuid,
     pub name: String,
     pub client_uri: String,
     pub description: String,

@@ -48,10 +48,6 @@ pub trait CreateNonVerifiedAccountService: 'static + Send + Sync
     }
 }
 
-impl<T> CreateNonVerifiedAccountService for T
-    where T: DependOnNonVerifiedAccountRepository
-           + DependOnVerificationMailTransporter {}
-
 pub trait DependOnCreateNonVerifiedAccountService: 'static + Send + Sync {
     type CreateNonVerifiedAccountService: CreateNonVerifiedAccountService;
     fn create_non_verified_account_service(&self) -> &Self::CreateNonVerifiedAccountService;
@@ -87,9 +83,6 @@ pub trait ApproveAccountService: 'static + Send + Sync
         Ok(valid.into())
     }
 }
-
-impl<T> ApproveAccountService for T
-    where T: DependOnNonVerifiedAccountRepository {}
 
 pub trait DependOnApproveAccountService: 'static + Send + Sync {
     type ApproveAccountService: ApproveAccountService;
@@ -130,10 +123,6 @@ pub trait CreateAccountService: 'static + Send + Sync
         Ok(verified.into())
     }
 }
-
-impl<T> CreateAccountService for T
-    where T: DependOnAccountRepository
-           + DependOnNonVerifiedAccountRepository {}
 
 pub trait DependOnCreateAccountService: 'static + Send + Sync {
     type CreateAccountService: CreateAccountService;
@@ -187,9 +176,6 @@ pub trait UpdateAccountService: 'static + Send + Sync
     }
 }
 
-impl<T> UpdateAccountService for T
-    where T: DependOnAccountRepository {}
-
 pub trait DependOnUpdateAccountService: 'static + Send + Sync {
     type UpdateAccountService: UpdateAccountService;
     fn update_account_service(&self) -> &Self::UpdateAccountService;
@@ -227,10 +213,7 @@ pub trait DeleteAccountService: 'static + Send + Sync
     }
 }
 
-impl<T> DeleteAccountService for T
-    where T: DependOnAccountRepository {}
-
 pub trait DependOnDeleteAccountService: 'static + Send + Sync {
     type DeleteAccountService: DeleteAccountService;
-    fn delete_account_repository(&self) -> &Self::DeleteAccountService;
+    fn delete_account_service(&self) -> &Self::DeleteAccountService;
 }

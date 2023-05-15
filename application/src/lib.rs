@@ -1,4 +1,3 @@
-pub mod adapter;
 pub mod interactor;
 pub mod transfer;
 pub mod services;

@@ -1,7 +1,9 @@
 use kernel::{
     repository::{
         ClientRegistry, 
-        AccountRepository
+        AccountRepository,
+        DependOnAccountRepository,
+        DependOnClientRegistry,
     },
     entities::{
         Address,
@@ -35,41 +37,68 @@ use kernel::{
 };
 
 use crate::{
-    adapter::client::RegisterClientAdapter,
-    transfer::client::{
-        ClientDto, 
-        RegisterClientDto,
-        GrantTypeDto,
-        ResponseTypeDto,
-        TokenEndPointAuthMethodDto
+    services::{
+        RegisterClientService,
+        UpdateClientService
     },
     ApplicationError,
+    transfer::client::{
+        ResponseTypeDto,
+        GrantTypeDto,
+        RegisterClientDto,
+        ClientDto,
+        TokenEndPointAuthMethodDto,
+        UpdateClientDto
+    }
 };
+use crate::services::DeleteClientService;
 
-use crate::adapter::client::{DeleteClientAdapter, UpdateClientAdapter};
-use crate::transfer::client::UpdateClientDto;
 
 #[derive(Clone)]
-pub struct RegisterClientInteractor<T1, T2> {
-    registry: T1,
-    accounts: T2
+pub struct RegisterClientInteractor<C, A> {
+    registry: C,
+    repository: A
 }
 
-impl<T1, T2> RegisterClientInteractor<T1, T2> {
-    pub fn new(registry: T1, accounts: T2) -> Self {
-        Self { registry, accounts }
+impl<C, A> RegisterClientInteractor<C, A>
+    where C: ClientRegistry,
+          A: AccountRepository
+{
+    pub fn new(registry: C, repository: A) -> Self {
+        Self { registry, repository }
+    }
+}
+
+impl<C, A> DependOnClientRegistry for RegisterClientInteractor<C, A>
+    where C: ClientRegistry,
+          A: AccountRepository
+{
+    type ClientRegistry = C;
+
+    fn client_registry(&self) -> &Self::ClientRegistry {
+        &self.registry
+    }
+}
+
+impl<C, A> DependOnAccountRepository for RegisterClientInteractor<C, A>
+    where C: ClientRegistry,
+          A: AccountRepository
+{
+    type AccountRepository = A;
+
+    fn account_repository(&self) -> &Self::AccountRepository {
+        &self.repository
     }
 }
 
 #[async_trait::async_trait]
-impl<T1, T2> RegisterClientAdapter for RegisterClientInteractor<T1, T2>
-  where T1: ClientRegistry,
-        T2: AccountRepository
+impl<C, A> RegisterClientService for RegisterClientInteractor<C, A>
+    where C: ClientRegistry,
+          A: AccountRepository
 {
     //noinspection DuplicatedCode
     async fn register(&self, register: RegisterClientDto) -> Result<ClientDto, ApplicationError> {
         let RegisterClientDto {
-            id,
             name,
             client_uri,
             description,
@@ -88,7 +117,7 @@ impl<T1, T2> RegisterClientAdapter for RegisterClientInteractor<T1, T2>
 
         let owner = UserId::new(owner_id);
 
-        let Some(owner) = self.accounts.find_by_id(&owner).await? else {
+        let Some(owner) = self.account_repository().find_by_id(&owner).await? else {
             return Err(ApplicationError::NotFound {
                 method: "find_by_id",
                 entity: "account",
@@ -104,7 +133,7 @@ impl<T1, T2> RegisterClientAdapter for RegisterClientInteractor<T1, T2>
             ClientTypes::new(None)
         };
 
-        let client_id = ClientId::new_at_now(id);
+        let client_id = ClientId::new_at_now(Uuid::new_v4());
         let name = ClientName::new(name);
         let client_uri = ClientUri::new(client_uri)?;
         let client_desc = ClientDescription::new(description);
@@ -115,7 +144,7 @@ impl<T1, T2> RegisterClientAdapter for RegisterClientInteractor<T1, T2>
             TokenEndPointAuthMethodDto::ClientSecretPost => TokenEndPointAuthMethod::ClientSecretPost,
             TokenEndPointAuthMethodDto::ClientSecretBasic => TokenEndPointAuthMethod::ClientSecretBasic,
             TokenEndPointAuthMethodDto::None => TokenEndPointAuthMethod::None,
-            TokenEndPointAuthMethodDto::PrivateKeyJWK => TokenEndPointAuthMethod::PrivateKeyJWK
+            TokenEndPointAuthMethodDto::PrivateKeyJWT => TokenEndPointAuthMethod::PrivateKeyJWT
         };
         let grant_types = grant_types.into_iter()
             .map(|types| match types {
@@ -175,34 +204,57 @@ impl<T1, T2> RegisterClientAdapter for RegisterClientInteractor<T1, T2>
             conf_endpoint
         )?;
 
-        self.registry.register(&client).await?;
+        self.client_registry().register(&client).await?;
 
         Ok(client.into())
+
     }
 }
 
 #[derive(Clone)]
-pub struct UpdateClientInteractor<T1, T2> {
-    registry: T1,
-    accounts: T2,
+pub struct UpdateClientInteractor<C, A> {
+    registry: C,
+    accounts: A,
 }
 
-impl<T1, T2> UpdateClientInteractor<T1, T2> {
-    pub fn new(registry: T1, accounts: T2) -> Self {
+impl<C, A> UpdateClientInteractor<C, A> {
+    pub fn new(registry: C, accounts: A) -> Self {
         Self { registry, accounts }
     }
 }
 
+impl<C, A> DependOnClientRegistry for UpdateClientInteractor<C, A>
+    where A: AccountRepository,
+          C: ClientRegistry
+{
+    type ClientRegistry = C;
+
+    fn client_registry(&self) -> &Self::ClientRegistry {
+        &self.registry
+    }
+}
+
+impl<C, A> DependOnAccountRepository for UpdateClientInteractor<C, A>
+    where A: AccountRepository,
+          C: ClientRegistry
+{
+    type AccountRepository = A;
+
+    fn account_repository(&self) -> &Self::AccountRepository {
+        &self.accounts
+    }
+}
+
 #[async_trait::async_trait]
-impl<T1, T2> UpdateClientAdapter for UpdateClientInteractor<T1, T2>
-  where T1: ClientRegistry,
-        T2: AccountRepository
+impl<C, A> UpdateClientService for UpdateClientInteractor<C, A>
+  where C: ClientRegistry,
+        A: AccountRepository
 {
     //noinspection DuplicatedCode
     async fn update(&self, id: &Uuid, cl_secret: &str, pass_phrase: &str, update: UpdateClientDto) -> Result<ClientDto, ApplicationError> {
         let client_id = ClientId::new_at_now(*id);
 
-        let Some(client) = self.registry.find_by_id(&client_id).await? else {
+        let Some(client) = self.client_registry().find_by_id(&client_id).await? else {
             return Err(ApplicationError::NotFound {
                 method: "find_by_id",
                 entity: "client",
@@ -220,7 +272,7 @@ impl<T1, T2> UpdateClientAdapter for UpdateClientInteractor<T1, T2>
             }
         }
 
-        let Some(owner_ac) = self.accounts.find_by_id(client.owner()).await? else {
+        let Some(owner_ac) = self.account_repository().find_by_id(client.owner()).await? else {
             return Err(ApplicationError::NotFound {
                 method: "find_by_id",
                 entity: "account",
@@ -267,7 +319,7 @@ impl<T1, T2> UpdateClientAdapter for UpdateClientInteractor<T1, T2>
             TokenEndPointAuthMethodDto::ClientSecretPost => TokenEndPointAuthMethod::ClientSecretPost,
             TokenEndPointAuthMethodDto::ClientSecretBasic => TokenEndPointAuthMethod::ClientSecretBasic,
             TokenEndPointAuthMethodDto::None => TokenEndPointAuthMethod::None,
-            TokenEndPointAuthMethodDto::PrivateKeyJWK => TokenEndPointAuthMethod::PrivateKeyJWK
+            TokenEndPointAuthMethodDto::PrivateKeyJWT => TokenEndPointAuthMethod::PrivateKeyJWT
         };
 
         before.grant_types = grant_types.into_iter()
@@ -308,71 +360,17 @@ impl<T1, T2> UpdateClientAdapter for UpdateClientInteractor<T1, T2>
 
         let after = before.freeze();
 
-        self.registry.update(&after).await?;
+        self.client_registry().update(&after).await?;
 
         Ok(after.into())
     }
 }
 
-pub struct DeleteClientInteractor<T1, T2> {
-    registry: T1,
-    accounts: T2
-}
 
-impl<T1, T2> DeleteClientInteractor<T1, T2> {
-    pub fn new(registry: T1, accounts: T2) -> Self {
-        Self { registry, accounts }
-    }
-}
-
-#[async_trait::async_trait]
-impl<T1, T2> DeleteClientAdapter for DeleteClientInteractor<T1, T2> 
-  where T1: ClientRegistry,
-        T2: AccountRepository
-{
-    //noinspection DuplicatedCode
-    async fn delete(&self, id: &Uuid, cl_secret: &str, pass_phrase: &str) -> Result<(), ApplicationError> {
-        let client_id = ClientId::new_at_now(*id);
-
-        let Some(client) = self.registry.find_by_id(&client_id).await? else {
-            return Err(ApplicationError::NotFound {
-                method: "find_by_id",
-                entity: "client",
-                id: client_id.to_string(),
-            })
-        };
-
-        if let ClientTypes::Confidential(secret) = client.types() {
-            if let Err(e) = secret.verify(cl_secret) {
-                return Err(ApplicationError::Verification {
-                    method: "client_secret_verify",
-                    entity: "client",
-                    id: format!("{:?}, `in kernel`: {:?}", client_id, e),
-                })
-            }
-        }
-
-        let Some(owner_ac) = self.accounts.find_by_id(client.owner()).await? else {
-            return Err(ApplicationError::NotFound {
-                method: "find_by_id",
-                entity: "account",
-                id: client.owner().to_string(),
-            })
-        };
-
-        if let Err(e) = owner_ac.pass().verify(pass_phrase) {
-            return Err(ApplicationError::Verification {
-                method: "account_password_verify",
-                entity: "account",
-                id: format!("{:?}, `in kernel`: {:?}", owner_ac.id(), e),
-            })
-        }
-        
-        self.registry.delete(&client_id).await?;
-        
-        Ok(())
-    }
-}
+// Default Impl
+impl<T> DeleteClientService for T
+    where T: DependOnClientRegistry
+           + DependOnAccountRepository {}
 
 #[cfg(test)]
 mod tests {
@@ -395,8 +393,8 @@ mod tests {
     };
     use kernel::external::{OffsetDateTime, Uuid};
     use kernel::repository::{ClientRegistry, MockAccountRepository, MockClientRegistry};
-    use crate::adapter::client::{RegisterClientAdapter, UpdateClientAdapter};
     use crate::interactor::{RegisterClientInteractor, UpdateClientInteractor};
+    use crate::services::{RegisterClientService, UpdateClientService};
     use crate::transfer::client::{
         ClientDto,
         GrantTypeDto,
@@ -453,7 +451,6 @@ mod tests {
             mock_client_registry, mock_accounts_repository
         );
 
-        let client_id = Uuid::new_v4();
         let client_name = "Test Client";
         let client_uri = "https://test.client.example.com/";
         let client_desc = "TEST CLIENT!";
@@ -484,7 +481,6 @@ mod tests {
             .collect::<Vec<String>>();
 
         let dto = RegisterClientDto {
-            id: client_id,
             name: client_name.into(),
             client_uri: client_uri.into(),
             description: client_desc.into(),
