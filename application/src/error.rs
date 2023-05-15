@@ -28,12 +28,20 @@ pub enum ApplicationError {
 impl From<KernelError> for ApplicationError {
     fn from(e: KernelError) -> Self {
         match e {
-            KernelError::NotFound { method, entity, id } => ApplicationError::NotFound { method, entity, id },
-            KernelError::InvalidValue { method, value } => ApplicationError::InvalidValue { method, value },
-            KernelError::Driver(not_here) => ApplicationError::Other(not_here),
-            KernelError::External(e) => ApplicationError::External(e),
-            KernelError::InvalidPassword(e) => ApplicationError::Other(anyhow::Error::new(e)),
-            KernelError::Cryption(e) => ApplicationError::Other(anyhow::Error::new(e))
+            KernelError::NotFound { method, entity, id }
+                => ApplicationError::NotFound { method, entity, id },
+            KernelError::InvalidValue { method, value }
+                => ApplicationError::InvalidValue { method, value },
+            KernelError::Driver(not_here)
+                => ApplicationError::Other(not_here),
+            KernelError::External(e)
+                => ApplicationError::External(e),
+            KernelError::InvalidPassword(e)
+                => ApplicationError::Other(anyhow::Error::new(e)),
+            KernelError::Cryption(e)
+                => ApplicationError::Other(anyhow::Error::new(e)),
+            KernelError::JsonWebToken(e)
+                => ApplicationError::Other(e)
         }
     }
 }

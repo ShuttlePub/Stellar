@@ -11,7 +11,9 @@ pub enum KernelError {
         method: &'static str,
         value: String
     },
-    #[error("failed cryption in argon password hasing. : {0:?}")]
+    #[error(transparent)]
+    JsonWebToken(anyhow::Error),
+    #[error("failed cryption in argon password hashing. : {0:?}")]
     Cryption(argon2::password_hash::Error),
     #[error("invalid password ")]
     InvalidPassword(argon2::password_hash::Error),
@@ -19,4 +21,10 @@ pub enum KernelError {
     Driver(anyhow::Error),
     #[error(transparent)]
     External(anyhow::Error)
+}
+
+impl From<jsonwebtoken::errors::Error> for KernelError {
+    fn from(value: jsonwebtoken::errors::Error) -> Self {
+        Self::JsonWebToken(anyhow::Error::new(value))
+    }
 }
