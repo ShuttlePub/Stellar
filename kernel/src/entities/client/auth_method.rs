@@ -8,7 +8,7 @@ pub enum TokenEndPointAuthMethod {
     ClientSecretBasic,
     None,
 
-    PrivateKeyJWK
+    PrivateKeyJWT
 }
 
 impl TryFrom<String> for TokenEndPointAuthMethod {
@@ -25,7 +25,7 @@ impl FromStr for TokenEndPointAuthMethod {
             "client_secret_post" => Ok(Self::ClientSecretPost),
             "client_secret_basic" => Ok(Self::ClientSecretBasic),
             "none" => Ok(Self::None),
-            "private_key_jwk" => Ok(Self::PrivateKeyJWK),
+            "private_key_jwt" => Ok(Self::PrivateKeyJWT),
             _ => Err(KernelError::InvalidValue {
                 method: "from_str",
                 value: s.to_string(),
@@ -40,7 +40,7 @@ impl AsRef<str> for TokenEndPointAuthMethod {
             TokenEndPointAuthMethod::ClientSecretPost => "client_secret_post",
             TokenEndPointAuthMethod::ClientSecretBasic => "client_secret_basic",
             TokenEndPointAuthMethod::None => "none",
-            TokenEndPointAuthMethod::PrivateKeyJWK => "private_key_jwk"
+            TokenEndPointAuthMethod::PrivateKeyJWT => "private_key_jwk"
         }
     }
 }

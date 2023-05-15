@@ -23,6 +23,7 @@ mod regi_endpoint;
 mod response_type;
 mod scope;
 mod tos_uri;
+mod jwt;
 
 pub use self::{
     auth_method::*,
@@ -42,7 +43,8 @@ pub use self::{
     regi_endpoint::*,
     response_type::*,
     scope::*,
-    tos_uri::*
+    tos_uri::*,
+    jwt::*
 };
 
 /// Client.
