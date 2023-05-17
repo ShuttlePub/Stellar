@@ -2,6 +2,7 @@ pub mod entities;
 pub mod repository;
 pub mod transporter;
 mod error;
+mod services;
 
 use once_cell::sync::Lazy;
 use url::Url;
