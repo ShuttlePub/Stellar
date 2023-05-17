@@ -41,6 +41,8 @@ impl From<KernelError> for ApplicationError {
             KernelError::Cryption(e)
                 => ApplicationError::Other(anyhow::Error::new(e)),
             KernelError::JsonWebToken(e)
+                => ApplicationError::Other(e),
+            KernelError::Base64Decode(e)
                 => ApplicationError::Other(e)
         }
     }

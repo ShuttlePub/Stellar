@@ -13,6 +13,8 @@ pub enum KernelError {
     },
     #[error(transparent)]
     JsonWebToken(anyhow::Error),
+    #[error(transparent)]
+    Base64Decode(anyhow::Error),
     #[error("failed cryption in argon password hashing. : {0:?}")]
     Cryption(argon2::password_hash::Error),
     #[error("invalid password ")]
@@ -26,5 +28,11 @@ pub enum KernelError {
 impl From<jsonwebtoken::errors::Error> for KernelError {
     fn from(value: jsonwebtoken::errors::Error) -> Self {
         Self::JsonWebToken(anyhow::Error::new(value))
+    }
+}
+
+impl From<base64::DecodeError> for KernelError {
+    fn from(value: base64::DecodeError) -> Self {
+       Self::Base64Decode(anyhow::Error::new(value))
     }
 }
