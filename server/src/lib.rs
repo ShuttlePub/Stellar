@@ -1,7 +1,6 @@
 mod error;
-pub mod routes;
 mod handler;
-mod builtin;
+pub mod routes;
 
 pub use self::{
     error::*,
