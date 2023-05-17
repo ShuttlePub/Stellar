@@ -1,8 +1,8 @@
-use rand::{distributions::Alphanumeric, prelude::Distribution};
 use serde::{Deserialize, Serialize};
 use destructure::Destructure;
 use time::OffsetDateTime;
 use uuid::Uuid;
+use crate::entities::volatiles::{TicketId, VerificationCode};
 
 use crate::KernelError;
 
@@ -72,68 +72,6 @@ impl Account {
 
     pub fn verified_at(&self) -> &VerifiedAt {
         &self.verified_at
-    }
-}
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
-pub struct TicketId(String);
-
-impl TicketId {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl From<TicketId> for String {
-    fn from(origin: TicketId) -> Self {
-        origin.0
-    }
-}
-
-impl AsRef<str> for TicketId {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Default for TicketId {
-    fn default() -> Self {
-        let ticket = Alphanumeric.sample_iter(&mut rand::thread_rng())
-            .take(64)
-            .map(char::from)
-            .collect::<String>();
-        Self::new(ticket)
-    }
-}
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
-pub struct VerificationCode(String);
-
-impl VerificationCode {
-    pub fn new(code: impl Into<String>) -> Self {
-        Self(code.into())
-    }
-}
-
-impl From<VerificationCode> for String {
-    fn from(origin: VerificationCode) -> Self {
-        origin.0
-    }
-}
-
-impl AsRef<str> for VerificationCode {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Default for VerificationCode {
-    fn default() -> Self {
-        let code = Alphanumeric.sample_iter(&mut rand::thread_rng())
-            .take(8)
-            .map(char::from)
-            .collect::<String>();
-        Self(code)
     }
 }
 
