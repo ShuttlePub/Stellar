@@ -57,6 +57,12 @@ pub enum ResponseType {
     Token
 }
 
+impl PartialEq<String> for ResponseType {
+    fn eq(&self, other: &String) -> bool {
+        self.as_ref() == other
+    }
+}
+
 impl TryFrom<String> for ResponseType {
     type Error = KernelError;
     fn try_from(value: String) -> Result<Self, Self::Error> {
@@ -75,6 +81,15 @@ impl FromStr for ResponseType {
                 value: s.to_string(),
             })
         })
+    }
+}
+
+impl From<ResponseType> for String {
+    fn from(value: ResponseType) -> Self {
+        match value {
+            ResponseType::Code => "code",
+            ResponseType::Token => "token"
+        }.to_owned()
     }
 }
 

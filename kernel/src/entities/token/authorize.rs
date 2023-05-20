@@ -1,10 +1,20 @@
-use std::time::Duration;
 use destructure::Destructure;
-use rand::distributions::{Alphanumeric, Distribution};
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
+use try_ref::TryAsRef;
 use uuid::Uuid;
-use crate::entities::{ClientId, LoggedAt, RedirectUri, Scopes, UserId};
+use crate::{
+    KernelError,
+    services::RandomizeService,
+    entities::{
+        ClientId,
+        LoggedAt,
+        RedirectUri,
+        ScopeMethod,
+        UserId
+    },
+};
+use crate::entities::ResponseType;
 
 use super::claims::ExpiredIn;
 
@@ -32,36 +42,68 @@ impl AsRef<str> for AuthorizeTokenId {
 impl Default for AuthorizeTokenId {
     //noinspection DuplicatedCode
     fn default() -> Self {
-        let id = Alphanumeric.sample_iter(&mut rand::thread_rng())
-            .take(32)
-            .map(char::from)
-            .collect::<String>();
-        Self::new(id)
+        RandomizeService::gen_str(128, Self::new)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TokenOwnedUser(Option<UserId>);
+
+impl TokenOwnedUser {
+    pub fn new(id: impl Into<Option<UserId>>) -> Self {
+        Self(id.into())
+    }
+}
+
+impl TryFrom<TokenOwnedUser> for UserId {
+    type Error = KernelError;
+
+    fn try_from(value: TokenOwnedUser) -> Result<Self, Self::Error> {
+        value.0.ok_or_else(|| KernelError::NotFound {
+            method: "try_from",
+            entity: "TokenOwnedUser",
+            id: "None".to_string(),
+        })
+    }
+}
+
+impl TryAsRef<UserId> for TokenOwnedUser {
+    type Error = KernelError;
+
+    fn try_as_ref(&self) -> Result<&UserId, Self::Error> {
+        match self.0 {
+            Some(ref user) => Ok(user),
+            None => Err(KernelError::NotFound {
+                method: "try_as_ref",
+                entity: "TokenOwnedUser",
+                id: "None".to_string(),
+            })
+        }
     }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
 pub struct AuthorizeTokenContext {
-    account: UserId,
     client_id: ClientId,
-    scopes: Scopes,
+    scopes: Vec<ScopeMethod>,
+    response_type: ResponseType,
     redirect_uri: RedirectUri,
     expired_in: ExpiredIn,
 }
 
 impl AuthorizeTokenContext {
-    pub fn account(&self) -> &UserId {
-        &self.account
-    }
-
     pub fn client_id(&self) -> &ClientId {
         &self.client_id
     }
 
-    pub fn scopes(&self) -> &Scopes {
+    pub fn scopes(&self) -> &Vec<ScopeMethod> {
         &self.scopes
     }
 
+    pub fn response_type(&self) -> &ResponseType {
+        &self.response_type
+    }
+    
     pub fn redirect_uri(&self) -> &RedirectUri {
         &self.redirect_uri
     }
@@ -75,6 +117,7 @@ impl AuthorizeTokenContext {
 pub struct AuthorizeToken {
     id: AuthorizeTokenId,
     date: LoggedAt,
+    owned_by: TokenOwnedUser,
     ctx: AuthorizeTokenContext
 }
 
@@ -84,22 +127,24 @@ impl AuthorizeToken {
         id: impl Into<String>,
         created_at: impl Into<OffsetDateTime>,
         updated_at: impl Into<OffsetDateTime>,
-        account: impl Into<Uuid>,
+        owned_by: impl Into<Option<Uuid>>,
         client_id: impl Into<Uuid>,
-        scope: impl Into<Scopes>,
+        scope: impl Into<Vec<ScopeMethod>>,
+        response_type: impl Into<ResponseType>,
         redirect_uri: impl Into<String>,
         expired_in: impl Into<Duration>
     ) -> Self {
         Self {
             id: AuthorizeTokenId::new(id),
+            owned_by: TokenOwnedUser::new(owned_by.into().map(UserId::new)),
             date: LoggedAt::new(
                 created_at,
                 updated_at
             ),
             ctx: AuthorizeTokenContext {
-                account: UserId::new(account),
                 client_id: ClientId::new_at_now(client_id),
                 scopes: scope.into(),
+                response_type: response_type.into(),
                 redirect_uri: RedirectUri::new(redirect_uri),
                 expired_in: ExpiredIn::new(expired_in)
             }

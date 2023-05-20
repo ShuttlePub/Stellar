@@ -17,7 +17,7 @@ pub use self::{
     address::*,
     pass::*,
     user_id::*,
-    username::*
+    username::*,
 };
 
 #[derive(Debug, Clone, Hash, Serialize, Deserialize, Destructure)]

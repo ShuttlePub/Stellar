@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
+use crate::KernelError;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RedirectUris(HashSet<RedirectUri>);
@@ -11,6 +12,18 @@ impl RedirectUris {
 
     pub fn iter(&self) -> impl Iterator<Item = &RedirectUri> {
         self.0.iter()
+    }
+
+    pub fn is_many(&self) -> bool {
+        self.0.len() > 1
+    }
+
+    pub fn take_one(self) -> Result<RedirectUri, KernelError> {
+        if self.is_many() { return Err(KernelError::InvalidValue {
+            method: "redirect_uris_take_one",
+            value: "There are one or more elements present.".to_string(),
+        }) }
+        Ok(Vec::from(self).remove(0))
     }
 }
 
@@ -40,6 +53,12 @@ pub struct RedirectUri(String);
 impl RedirectUri {
     pub fn new(uri: impl Into<String>) -> Self {
         Self(uri.into())
+    }
+}
+
+impl PartialEq<str> for RedirectUri {
+    fn eq(&self, other: &str) -> bool {
+        self.0.eq(other)
     }
 }
 
