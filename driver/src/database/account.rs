@@ -53,6 +53,13 @@ impl AccountRepository for AccountDataBase {
         let found = PgAccountInternal::find_by_id(id, &mut con).await?;
         Ok(found)
     }
+
+    async fn find_by_address(&self, address: &Address) -> Result<Option<Account>, KernelError> {
+        let mut con = self.pool.acquire().await
+            .map_err(DriverError::SqlX)?;
+        let found = PgAccountInternal::find_by_address(address, &mut con).await?;
+        Ok(found)
+    }
 }
 
 pub(in crate::database) struct PgAccountInternal;
@@ -156,6 +163,27 @@ impl PgAccountInternal {
             )?)
         })
         .transpose()
+    }
+    
+    pub async fn find_by_address(address: &Address, con: &mut PgConnection) -> Result<Option<Account>, DriverError> {
+        sqlx::query_as::<_, AccountRow>(r#"
+            SELECT * from users WHERE address LIKE $1
+        "#)
+            .bind(address.as_ref())
+            .fetch_optional(&mut *con)
+            .await?
+            .map(|fetched| -> Result<Account, DriverError> {
+                Ok(Account::new(
+                    fetched.id,
+                    fetched.address,
+                    fetched.name,
+                    fetched.pass,
+                    fetched.created_at,
+                    fetched.updated_at,
+                    fetched.verified_at
+                )?)
+            })
+            .transpose() 
     }
 }
 
