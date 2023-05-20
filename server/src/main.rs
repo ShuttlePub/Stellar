@@ -23,6 +23,7 @@ async fn main() -> anyhow::Result<()> {
     let handler = Handler::init().await?;
 
     let app = Router::new()
+        .route("/.well-known", get(|| async { todo!() })) // Todo: To produce endpoints so that JWK public keys can be provided.
         .route("/healthcheck", get(healthcheck))
         .route("/signup", post(signup))
         .route("/verify", post(verify))
