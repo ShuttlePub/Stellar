@@ -1,10 +1,9 @@
-use std::time::Duration;
 use destructure::Destructure;
-use rand::distributions::{Alphanumeric, Distribution};
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 use crate::entities::{ClientId, LoggedAt, ScopeMethod, UserId};
+use crate::services::RandomizeService;
 
 use super::claims::{
     Audience,
@@ -39,11 +38,7 @@ impl AsRef<str> for AccessTokenId {
 impl Default for AccessTokenId {
     //noinspection DuplicatedCode
     fn default() -> Self {
-        let id = Alphanumeric.sample_iter(&mut rand::thread_rng())
-            .take(32)
-            .map(char::from)
-            .collect::<String>();
-        Self::new(id)
+        RandomizeService::gen_str(128, Self::new)
     }
 }
 
