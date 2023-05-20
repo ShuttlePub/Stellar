@@ -11,6 +11,7 @@ pub trait AccountRepository: 'static + Sync + Send {
     async fn delete(&self, delete: &UserId) -> Result<(), KernelError>;
 
     async fn find_by_id(&self, id: &UserId) -> Result<Option<Account>, KernelError>;
+    async fn find_by_address(&self, address: &Address) -> Result<Option<Account>, KernelError>;
 }
 
 pub trait DependOnAccountRepository: 'static + Sync + Send {
