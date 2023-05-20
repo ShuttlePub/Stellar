@@ -20,9 +20,41 @@ pub enum ApplicationError {
         id: String,
     },
     #[error(transparent)]
+    Authorization(#[from] ExpectedAuthorizationError),
+    #[error(transparent)]
     Other(anyhow::Error),
     #[error(transparent)]
     External(anyhow::Error)
+}
+
+// Todo: Replace the errors assumed in RFC6749 with this one.
+#[derive(Debug, thiserror::Error)]
+pub enum ExpectedAuthorizationError {
+    #[error("")]
+    InvalidRequest {
+        entity: &'static str,
+        value: String
+    },
+    #[error("")]
+    UnAuthorizedClient {
+        entity: &'static str,
+        id: String
+    },
+    #[error("")]
+    AccessDenied {
+        side: &'static str,
+        value: String
+    },
+    #[error("")]
+    UnSupportedResponseType {
+
+    },
+    #[error("")]
+    InvalidScope,
+    #[error("")]
+    ServerError,
+    #[error("")]
+    TemporaryUnAvailable
 }
 
 impl From<KernelError> for ApplicationError {
