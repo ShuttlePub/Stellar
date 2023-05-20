@@ -7,6 +7,11 @@ use crate::KernelError;
 pub struct CodeChallenge(Vec<u8>);
 
 impl CodeChallenge {
+    /// Decodes and initializes the given string in **Base64Url** format.
+    ///
+    /// - Note that the value inside is `Vec<u8>`.
+    /// - If you do not need the decoding process,
+    ///   consider using `From<Vec<u8>>` instead.
     pub fn new(code: impl Into<String>) -> Result<Self, KernelError> {
         let code = BASE64_URL_SAFE.decode(code.into())?
             .into_iter()
@@ -25,6 +30,12 @@ impl CodeChallenge {
             })
         }
         Ok(())
+    }
+}
+
+impl From<Vec<u8>> for CodeChallenge {
+    fn from(value: Vec<u8>) -> Self {
+        Self(value)
     }
 }
 
@@ -72,10 +83,13 @@ mod tests {
     #[test]
     fn pkce_test() -> anyhow::Result<()> {
         let d: TestDomain = RandomizeService::gen_str(128, TestDomain::new);
+        println!("origin: {}", d.as_ref());
         let mut hasher = Sha256::default();
         hasher.update(d.as_ref());
         let hashed = hasher.finalize();
         let encode = BASE64_URL_SAFE.encode(hashed.as_slice());
+
+        println!("encode: {}", &encode);
 
         let vol = CodeChallenge::new(encode)?;
         vol.verify(d)?;

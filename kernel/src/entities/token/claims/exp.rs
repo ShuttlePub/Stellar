@@ -1,7 +1,5 @@
-use std::time::Duration;
-
 use serde::{Serialize, Deserialize};
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct ExpiredIn(OffsetDateTime);
