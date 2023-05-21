@@ -1,34 +1,50 @@
-use application::services::{
-    DependOnCreateNonVerifiedAccountService,
-    DependOnApproveAccountService,
-    DependOnCreateAccountService,
-    DependOnDeleteAccountService,
-    DependOnUpdateAccountService,
-    DependOnRegisterClientService,
-    DependOnUpdateClientService
+use application::{
+    services::{
+        DependOnCreateNonVerifiedAccountService,
+        DependOnApproveAccountService,
+        DependOnCreateAccountService,
+        DependOnDeleteAccountService,
+        DependOnUpdateAccountService,
+        DependOnRegisterClientService,
+        DependOnUpdateClientService,
+        DependOnPendingAuthorizeTokenService,
+        DependOnAcceptAuthorizeTokenService,
+        DependOnRejectAuthorizeTokenService
+    },
+    interactor::{
+        RegisterClientInteractor,
+        UpdateClientInteractor
+    }
 };
 use kernel::{
     repository::{
         DependOnAccountRepository,
         DependOnClientRegistry,
-        DependOnNonVerifiedAccountRepository
+        DependOnNonVerifiedAccountRepository,
+        DependOnAuthorizeTokenRepository,
+        DependOnPendingAuthorizeTokenRepository,
+        DependOnPKCEVolatileRepository,
+        DependOnStateVolatileRepository
     },
     transporter::{
         DependOnVerificationMailTransporter
-    }
+    },
 };
 
-use application::interactor::{
-    RegisterClientInteractor, 
-    UpdateClientInteractor
+use driver::{
+    database::{
+        AccountDataBase,
+        AuthorizeTokenVolatileDataBase,
+        ClientDataBase,
+        NonVerifiedAccountDataBase,
+        PendingAuthorizeTokenVolatileDataBase,
+        PKCEVolatileDataBase,
+        StateVolatileDataBase
+    },
+    DataBaseDriver,
+    SmtpDriver,
+    transport::VerificationMailer
 };
-use driver::database::{
-    AccountDataBase, 
-    ClientDataBase, 
-    NonVerifiedAccountDataBase
-};
-use driver::{DataBaseDriver, SmtpDriver};
-use driver::transport::VerificationMailer;
 use crate::ServerError;
 
 type ClientRegisterer = RegisterClientInteractor<ClientDataBase, AccountDataBase>;
@@ -36,8 +52,14 @@ type ClientRegisterer = RegisterClientInteractor<ClientDataBase, AccountDataBase
 #[derive(Clone)]
 pub struct Handler {
     ac_repo: AccountDataBase,
-    nvac_repo: NonVerifiedAccountDataBase,
     clients: ClientDataBase,
+
+    nvac_repo: NonVerifiedAccountDataBase,
+    p_authz_v_repo: PendingAuthorizeTokenVolatileDataBase,
+    authz_v_repo: AuthorizeTokenVolatileDataBase,
+    pkce_v_repo: PKCEVolatileDataBase,
+    state_v_repo: StateVolatileDataBase,
+
     mailer: VerificationMailer,
 
     client_reg: ClientRegisterer,
@@ -52,16 +74,29 @@ impl Handler {
         let smtp_pool = SmtpDriver::setup_lettre()?;
 
         let ac_repo = AccountDataBase::new(pg_pool.clone());
-        let nvac_repo = NonVerifiedAccountDataBase::new(redis_pool);
         let clients = ClientDataBase::new(pg_pool);
+
+        let nvac_repo = NonVerifiedAccountDataBase::new(redis_pool.clone());
+        let p_authz_v_repo = PendingAuthorizeTokenVolatileDataBase::new(redis_pool.clone());
+        let authz_v_repo = AuthorizeTokenVolatileDataBase::new(redis_pool.clone());
+        let pkce_v_repo = PKCEVolatileDataBase::new(redis_pool.clone());
+        let state_v_repo = StateVolatileDataBase::new(redis_pool);
+
         let mailer = VerificationMailer::new(smtp_pool);
 
         let client_reg = RegisterClientInteractor::new(clients.clone(), ac_repo.clone());
         let client_upd = UpdateClientInteractor::new(clients.clone(), ac_repo.clone());
+
         Ok(Self {
             ac_repo,
-            nvac_repo,
             clients,
+
+            nvac_repo,
+            p_authz_v_repo,
+            authz_v_repo,
+            pkce_v_repo,
+            state_v_repo,
+
             mailer,
 
             client_reg,
@@ -78,14 +113,6 @@ impl DependOnAccountRepository for Handler {
     }
 }
 
-impl DependOnNonVerifiedAccountRepository for Handler {
-    type NonVerifiedAccountRepository = NonVerifiedAccountDataBase;
-
-    fn non_verified_account_repository(&self) -> &Self::NonVerifiedAccountRepository {
-        &self.nvac_repo
-    }
-}
-
 impl DependOnClientRegistry for Handler {
     type ClientRegistry = ClientDataBase;
 
@@ -94,11 +121,41 @@ impl DependOnClientRegistry for Handler {
     }
 }
 
-impl DependOnVerificationMailTransporter for Handler {
-    type VerificationMailTransporter = VerificationMailer;
 
-    fn verification_mail_transporter(&self) -> &Self::VerificationMailTransporter {
-        &self.mailer
+
+impl DependOnNonVerifiedAccountRepository for Handler {
+    type NonVerifiedAccountRepository = NonVerifiedAccountDataBase;
+
+    fn non_verified_account_repository(&self) -> &Self::NonVerifiedAccountRepository {
+        &self.nvac_repo
+    }
+}
+
+impl DependOnPKCEVolatileRepository for Handler {
+    type PKCEVolatileRepository = PKCEVolatileDataBase;
+    fn pkce_volatile_repository(&self) -> &Self::PKCEVolatileRepository {
+        &self.pkce_v_repo
+    }
+}
+
+impl DependOnStateVolatileRepository for Handler {
+    type StateVolatileRepository = StateVolatileDataBase;
+    fn state_volatile_repository(&self) -> &Self::StateVolatileRepository {
+        &self.state_v_repo
+    }
+}
+
+impl DependOnPendingAuthorizeTokenRepository for Handler {
+    type PendingAuthorizeTokenRepository = PendingAuthorizeTokenVolatileDataBase;
+    fn pending_authorize_token_repository(&self) -> &Self::PendingAuthorizeTokenRepository {
+        &self.p_authz_v_repo
+    }
+}
+
+impl DependOnAuthorizeTokenRepository for Handler {
+    type AuthorizeTokenRepository = AuthorizeTokenVolatileDataBase;
+    fn authorize_token_repository(&self) -> &Self::AuthorizeTokenRepository {
+        &self.authz_v_repo
     }
 }
 
@@ -107,6 +164,14 @@ impl DependOnCreateNonVerifiedAccountService for Handler {
 
     fn create_non_verified_account_service(&self) -> &Self::CreateNonVerifiedAccountService {
         self
+    }
+}
+
+impl DependOnVerificationMailTransporter for Handler {
+    type VerificationMailTransporter = VerificationMailer;
+
+    fn verification_mail_transporter(&self) -> &Self::VerificationMailTransporter {
+        &self.mailer
     }
 }
 
@@ -155,5 +220,26 @@ impl DependOnUpdateClientService for Handler {
 
     fn update_client_service(&self) -> &Self::UpdateClientService {
         &self.client_upd
+    }
+}
+
+impl DependOnPendingAuthorizeTokenService for Handler {
+    type PendingAuthorizeTokenService = Self;
+    fn pending_authorize_token_service(&self) -> &Self::PendingAuthorizeTokenService {
+        self
+    }
+}
+
+impl DependOnAcceptAuthorizeTokenService for Handler {
+    type AcceptAuthorizeTokenService = Self;
+    fn accept_authorize_token_service(&self) -> &Self::AcceptAuthorizeTokenService {
+        self
+    }
+}
+
+impl DependOnRejectAuthorizeTokenService for Handler {
+    type RejectAuthorizeTokenService = Self;
+    fn reject_authorize_token_service(&self) -> &Self::RejectAuthorizeTokenService {
+        self
     }
 }
