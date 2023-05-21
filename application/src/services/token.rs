@@ -1,22 +1,39 @@
 use kernel::{
-    entities::{AuthorizeToken, AuthorizeTokenId, ClientId, CodeChallenge, DestructClient, ScopeMethod, State, TicketId},
-    external::{Duration, OffsetDateTime},
     repository::{
         DependOnAccessTokenRepository,
         DependOnAccountRepository,
-        DependOnAuthorizeTokenRepository,
+        DependOnPendingAuthorizeTokenRepository,
         DependOnClientRegistry,
         DependOnPKCEVolatileRepository,
         DependOnRefreshTokenRepository,
-        AuthorizeTokenRepository,
+        DependOnAuthorizeTokenRepository,
         DependOnStateVolatileRepository,
         ClientRegistry,
         PKCEVolatileRepository,
-        StateVolatileRepository
-    }
+        StateVolatileRepository,
+        AccountRepository,
+        AuthorizeTokenRepository,
+        PendingAuthorizeTokenRepository,
+    },
+    entities::{
+        AuthorizeToken,
+        AuthorizeTokenId,
+        ClientId,
+        CodeChallenge,
+        DestructClient,
+        ScopeMethod,
+        State,
+        TicketId,
+        Address,
+        DestructAccount,
+        ResponseType,
+        TokenOwnedUser
+    },
+    external::{
+        Duration,
+        OffsetDateTime
+    },
 };
-use kernel::entities::{Address, DestructAccount, ResponseType, TokenOwnedUser};
-use kernel::repository::AccountRepository;
 use crate::ApplicationError;
 use crate::transfer::token::{AcceptUserFormDto, AuthorizeTokenDto, CreateAuthorizeTokenDto, TicketIdDto};
 
@@ -24,9 +41,10 @@ use crate::transfer::token::{AcceptUserFormDto, AuthorizeTokenDto, CreateAuthori
 pub trait PendingAuthorizeTokenService: 'static + Sync + Send
     + DependOnClientRegistry
     + DependOnPKCEVolatileRepository
-    + DependOnAuthorizeTokenRepository
+    + DependOnPendingAuthorizeTokenRepository
     + DependOnStateVolatileRepository
 {
+    //noinspection DuplicatedCode
     async fn pending(&self, create: CreateAuthorizeTokenDto) -> Result<TicketIdDto, ApplicationError> {
         let CreateAuthorizeTokenDto {
             response_type,
@@ -116,21 +134,28 @@ pub trait PendingAuthorizeTokenService: 'static + Sync + Send
 
         let ticket = TicketId::default();
         self.state_volatile_repository().save(&ticket, &state).await?;
-        self.authorize_token_repository().save(&ticket, &token).await?;
+        self.pending_authorize_token_repository().save(&ticket, &token).await?;
 
         Ok(ticket.into())
     }
 }
 
+pub trait DependOnPendingAuthorizeTokenService: 'static + Sync + Send {
+    type PendingAuthorizeTokenService: PendingAuthorizeTokenService;
+    fn pending_authorize_token_service(&self) -> &Self::PendingAuthorizeTokenService;
+}
+
+
 #[async_trait::async_trait]
 pub trait AcceptAuthorizeTokenService: 'static + Sync + Send
     + DependOnAccountRepository
     + DependOnStateVolatileRepository
+    + DependOnPendingAuthorizeTokenRepository
     + DependOnAuthorizeTokenRepository
 {
     async fn accept(&self, ticket: &str, state: &str, accept: AcceptUserFormDto) -> Result<AuthorizeTokenDto, ApplicationError> {
         let ticket = TicketId::new(ticket);
-        let Some(token) = self.authorize_token_repository().find(&ticket).await? else {
+        let Some(token) = self.pending_authorize_token_repository().find(&ticket).await? else {
             return Err(ApplicationError::NotFound {
                 method: "find",
                 entity: "ticket",
@@ -138,7 +163,7 @@ pub trait AcceptAuthorizeTokenService: 'static + Sync + Send
             })
         };
 
-        let Some(state) = self.state_volatile_repository().find(&ticket).await? else {
+        let Some(origin) = self.state_volatile_repository().find(&ticket).await? else {
             return Err(ApplicationError::NotFound {
                 method: "find",
                 entity: "state",
@@ -146,10 +171,10 @@ pub trait AcceptAuthorizeTokenService: 'static + Sync + Send
             })
         };
 
-        if state.ne(&state) {
+        if origin.ne(state) {
             return Err(ApplicationError::InvalidValue {
                 method: "state_eq",
-                value: state.as_ref().to_string(),
+                value: state.to_string(),
             })
         }
 
@@ -175,22 +200,41 @@ pub trait AcceptAuthorizeTokenService: 'static + Sync + Send
 
         let token = token.freeze();
 
-        self.authorize_token_repository().save(&ticket, &token).await?;
+        self.pending_authorize_token_repository().dele(&ticket).await?;
+
+        self.authorize_token_repository().save(token.id(), &token).await?;
 
 
         Ok(AuthorizeTokenDto::from_with(token, "bearer", state))
     }
 }
 
+pub trait DependOnAcceptAuthorizeTokenService: 'static + Sync + Send {
+    type AcceptAuthorizeTokenService: AcceptAuthorizeTokenService;
+    fn accept_authorize_token_service(&self) -> &Self::AcceptAuthorizeTokenService;
+}
+
+
 #[async_trait::async_trait]
 pub trait RejectAuthorizeTokenService: 'static + Sync + Send
-    + DependOnAuthorizeTokenRepository
+    + DependOnPendingAuthorizeTokenRepository
+    + DependOnStateVolatileRepository
+    + DependOnPKCEVolatileRepository
 {
     async fn reject(&self, ticket: &str) -> Result<(), ApplicationError> {
         let ticket = TicketId::new(ticket);
-        self.authorize_token_repository().dele(&ticket).await?;
+        if let Some(token) = self.pending_authorize_token_repository().find(&ticket).await? {
+            self.pkce_volatile_repository().dele(token.id()).await?;
+        }
+        self.state_volatile_repository().dele(&ticket).await?;
+        self.pending_authorize_token_repository().dele(&ticket).await?;
         Ok(())
     }
+}
+
+pub trait DependOnRejectAuthorizeTokenService: 'static + Sync + Send {
+    type RejectAuthorizeTokenService: RejectAuthorizeTokenService;
+    fn reject_authorize_token_service(&self) -> &Self::RejectAuthorizeTokenService;
 }
 
 
@@ -198,6 +242,7 @@ pub trait RejectAuthorizeTokenService: 'static + Sync + Send
 pub trait CreateAccessTokenService: 'static + Sync + Send
     + DependOnPKCEVolatileRepository
     + DependOnAccessTokenRepository
+    + DependOnRefreshTokenRepository
 {
     async fn create(&self) -> Result<(), ApplicationError>;
 }
