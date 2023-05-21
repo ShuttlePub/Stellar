@@ -9,8 +9,8 @@ impl State {
     }
 }
 
-impl PartialEq<String> for State {
-    fn eq(&self, other: &String) -> bool {
+impl PartialEq<str> for State {
+    fn eq(&self, other: &str) -> bool {
         self.0.eq(other)
     }
 }
