@@ -5,6 +5,7 @@ use kernel::KernelError;
 use kernel::repository::PKCEVolatileRepository;
 use crate::DriverError;
 
+#[derive(Clone)]
 pub struct PKCEVolatileDataBase {
     pool: Pool
 }
