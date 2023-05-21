@@ -46,7 +46,7 @@ impl Default for AuthorizeTokenId {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
 pub struct TokenOwnedUser(Option<UserId>);
 
 impl TokenOwnedUser {
@@ -82,7 +82,7 @@ impl TryAsRef<UserId> for TokenOwnedUser {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize, Destructure)]
 pub struct AuthorizeTokenContext {
     client_id: ClientId,
     scopes: Vec<ScopeMethod>,
@@ -113,7 +113,7 @@ impl AuthorizeTokenContext {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize, Destructure)]
 pub struct AuthorizeToken {
     id: AuthorizeTokenId,
     date: LoggedAt,
