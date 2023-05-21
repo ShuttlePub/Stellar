@@ -12,6 +12,10 @@ impl ExpiredIn {
     pub fn is_expired(&self) -> bool {
         self.0 < OffsetDateTime::now_utc()
     }
+    
+    pub fn as_ref_i64(&self) -> i64 {
+        self.0.unix_timestamp()
+    }
 }
 
 impl From<ExpiredIn> for OffsetDateTime {
