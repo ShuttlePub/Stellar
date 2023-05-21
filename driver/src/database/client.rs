@@ -213,8 +213,7 @@ impl PgClientInternal {
             .map(TryAsRef::<JsonWebKey>::try_as_ref)
             .transpose()?
             .map(serde_json::to_value)
-            .transpose()
-            .map_err(|e| KernelError::External(anyhow::Error::new(e)))?)
+            .transpose()?)
         .execute(&mut *con)
         .await?;
 
