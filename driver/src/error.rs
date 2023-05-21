@@ -15,6 +15,8 @@ pub enum DriverError {
     #[error(transparent)]
     Reqwest(anyhow::Error),
     #[error(transparent)]
+    Serde(serde_json::Error),
+    #[error(transparent)]
     Kernel(#[from] KernelError)
 }
 
@@ -27,6 +29,7 @@ impl From<DriverError> for KernelError {
             DriverError::DeadPool(e) => KernelError::Driver(e),
             DriverError::Redis(e) => KernelError::Driver(anyhow::Error::new(e)),
             DriverError::Lettre(e) => KernelError::Driver(e),
+            DriverError::Serde(e) => KernelError::Driver(anyhow::Error::new(e)),
             DriverError::Kernel(internal) => internal,
         }
     }
@@ -65,5 +68,11 @@ impl From<lettre::error::Error> for DriverError {
 impl From<reqwest::Error> for DriverError {
     fn from(e: reqwest::Error) -> Self {
         Self::Reqwest(anyhow::Error::new(e))
+    }
+}
+
+impl From<serde_json::Error> for DriverError {
+    fn from(e: serde_json::Error) -> Self {
+        Self::Serde(e)
     }
 }
