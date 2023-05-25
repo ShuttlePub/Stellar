@@ -2,6 +2,7 @@ pub mod database;
 pub mod transport;
 mod error;
 mod driver;
+mod config;
 
 pub use self::error::*;
 pub use self::driver::*;

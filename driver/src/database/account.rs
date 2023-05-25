@@ -78,6 +78,7 @@ pub(in crate::database) struct AccountRow {
 
 impl PgAccountInternal {
     pub async fn create(create: &Account, con: &mut PgConnection) -> Result<(), DriverError> {
+        // language=SQL
         sqlx::query(r#"
             INSERT INTO users (
                 user_id,
@@ -112,6 +113,7 @@ impl PgAccountInternal {
     }
 
     pub async fn update(update: &Account, con: &mut PgConnection) -> Result<(), DriverError> {
+        // language=SQL
         sqlx::query(r#"
             UPDATE users
             SET
@@ -120,7 +122,7 @@ impl PgAccountInternal {
                 pass = $3,
                 updated_at = $4
             WHERE
-                id = $5
+                user_id = $5
         "#)
         .bind(update.address().as_ref())
         .bind(update.name().as_ref())
@@ -145,8 +147,9 @@ impl PgAccountInternal {
     }
 
     pub async fn find_by_id(id: &UserId, con: &mut PgConnection) -> Result<Option<Account>, DriverError> {
+        // language=SQL
         sqlx::query_as::<_, AccountRow>(r#"
-            SELECT * from users WHERE id = $1
+            SELECT * from users WHERE user_id = $1
         "#)
         .bind(id.as_ref())
         .fetch_optional(&mut *con)
@@ -164,8 +167,9 @@ impl PgAccountInternal {
         })
         .transpose()
     }
-    
+
     pub async fn find_by_address(address: &Address, con: &mut PgConnection) -> Result<Option<Account>, DriverError> {
+        // language=SQL
         sqlx::query_as::<_, AccountRow>(r#"
             SELECT * from users WHERE address LIKE $1
         "#)
@@ -183,7 +187,7 @@ impl PgAccountInternal {
                     fetched.verified_at
                 )?)
             })
-            .transpose() 
+            .transpose()
     }
 }
 

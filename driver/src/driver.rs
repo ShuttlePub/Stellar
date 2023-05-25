@@ -2,6 +2,7 @@ use std::time::Duration;
 use deadpool_redis::{Pool as RedisPool, Config};
 use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
+use crate::config;
 
 use crate::DriverError;
 
@@ -20,7 +21,9 @@ impl DataBaseDriver {
         sqlx::migrate!("../migrations")
             .run(&pool)
             .await?;
-        
+
+        config::initialize(pool.clone()).await?;
+
         Ok(pool)
     }
 

@@ -15,7 +15,9 @@ pub enum DriverError {
     #[error(transparent)]
     Reqwest(anyhow::Error),
     #[error(transparent)]
-    Serde(serde_json::Error),
+    Serde(anyhow::Error),
+    #[error(transparent)]
+    FileSystem(anyhow::Error),
     #[error(transparent)]
     Kernel(#[from] KernelError)
 }
@@ -23,14 +25,24 @@ pub enum DriverError {
 impl From<DriverError> for KernelError {
     fn from(origin: DriverError) -> Self {
         match origin {
-            DriverError::SqlX(e) => KernelError::Driver(anyhow::Error::new(e)),
-            DriverError::Migration(e) => KernelError::Driver(anyhow::Error::new(e)),
-            DriverError::Reqwest(e) => KernelError::Driver(e),
-            DriverError::DeadPool(e) => KernelError::Driver(e),
-            DriverError::Redis(e) => KernelError::Driver(anyhow::Error::new(e)),
-            DriverError::Lettre(e) => KernelError::Driver(e),
-            DriverError::Serde(e) => KernelError::Driver(anyhow::Error::new(e)),
-            DriverError::Kernel(internal) => internal,
+            DriverError::SqlX(e)
+                => KernelError::Driver(anyhow::Error::new(e)),
+            DriverError::Migration(e)
+                => KernelError::Driver(anyhow::Error::new(e)),
+            DriverError::Reqwest(e)
+                => KernelError::Driver(e),
+            DriverError::DeadPool(e)
+                => KernelError::Driver(e),
+            DriverError::Redis(e)
+                => KernelError::Driver(anyhow::Error::new(e)),
+            DriverError::Lettre(e)
+                => KernelError::Driver(e),
+            DriverError::Serde(e)
+                => KernelError::Driver(e),
+            DriverError::FileSystem(e)
+                => KernelError::Driver(e),
+            DriverError::Kernel(internal)
+                => internal,
         }
     }
 }
@@ -73,6 +85,36 @@ impl From<reqwest::Error> for DriverError {
 
 impl From<serde_json::Error> for DriverError {
     fn from(e: serde_json::Error) -> Self {
-        Self::Serde(e)
+        Self::Serde(anyhow::Error::new(e))
+    }
+}
+
+impl From<toml::de::Error> for DriverError {
+    fn from(e: toml::de::Error) -> Self {
+        Self::Serde(anyhow::Error::new(e))
+    }
+}
+
+impl From<toml::ser::Error> for DriverError {
+    fn from(e: toml::ser::Error) -> Self {
+        Self::Serde(anyhow::Error::new(e))
+    }
+}
+
+impl From<rmp_serde::encode::Error> for DriverError {
+    fn from(e: rmp_serde::encode::Error) -> Self {
+        Self::Serde(anyhow::Error::new(e))
+    }
+}
+
+impl From<rmp_serde::decode::Error> for DriverError {
+    fn from(e: rmp_serde::decode::Error) -> Self {
+        Self::Serde(anyhow::Error::new(e))
+    }
+}
+
+impl From<std::io::Error> for DriverError {
+    fn from(e: std::io::Error) -> Self {
+        Self::FileSystem(anyhow::Error::new(e))
     }
 }
