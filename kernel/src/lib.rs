@@ -1,8 +1,8 @@
 pub mod entities;
 pub mod repository;
 pub mod transport;
+pub mod services;
 mod error;
-mod services;
 
 use once_cell::sync::Lazy;
 use url::Url;
@@ -23,10 +23,18 @@ pub(crate) static BASE_URL: Lazy<Url> = Lazy::new(|| {
 pub mod external {
     #[cfg(feature = "jsonwebkey")]
     pub use jsonwebkey::*;
+    #[cfg(feature = "jsonwebkey")]
+    pub use jsonwebkey::Error as JWKError;
     #[cfg(feature = "url")]
     pub use url::*;
+    #[cfg(feature = "url")]
+    pub use url::ParseError as UrlParseError;
     #[cfg(feature = "uuid")]
     pub use uuid::*;
+    #[cfg(feature = "uuid")]
+    pub use uuid::Error as UuidError;
     #[cfg(feature = "time")]
     pub use time::*;
+    #[cfg(feature = "time")]
+    pub use time::Error as TimeError;
 }
