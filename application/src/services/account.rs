@@ -38,11 +38,7 @@ pub trait CreateNonVerifiedAccountService: 'static + Send + Sync
 
         self.non_verified_account_repository().create(&non_verified).await?;
 
-        #[cfg(not(debug_assertions))]
         self.verification_mail_transporter().send(non_verified.code(), non_verified.address()).await?;
-
-        #[cfg(debug_assertions)]
-        println!("{:?}", non_verified.code());
 
         Ok(non_verified.into())
     }
