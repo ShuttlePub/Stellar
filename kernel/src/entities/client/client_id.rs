@@ -38,6 +38,12 @@ impl Display for ClientId {
     }
 }
 
+impl Default for ClientId {
+    fn default() -> Self {
+        Self::new_at_now(Uuid::new_v4())
+    }
+}
+
 impl From<ClientId> for Uuid {
     fn from(value: ClientId) -> Self {
         value.id

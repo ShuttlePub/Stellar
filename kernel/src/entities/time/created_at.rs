@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CreatedAt(OffsetDateTime);
 
 impl CreatedAt {
@@ -19,5 +19,11 @@ impl From<CreatedAt> for OffsetDateTime {
 impl AsRef<OffsetDateTime> for CreatedAt {
     fn as_ref(&self) -> &OffsetDateTime {
         &self.0
+    }
+}
+
+impl Default for CreatedAt {
+    fn default() -> Self {
+        Self(OffsetDateTime::now_utc())
     }
 }
