@@ -20,7 +20,6 @@ pub struct RegistrationForm {
     tepam: TokenEndPointAuthMethod,
     grant_types: Vec<GrantType>,
     response_types: Vec<ResponseType>,
-    client_name: String,
     scopes: Vec<Scope>,
     contacts: Vec<String>,
     policy_uri: String,
@@ -29,7 +28,7 @@ pub struct RegistrationForm {
 }
 
 impl RegistrationForm {
-    pub fn to_dto(self, owner: Uuid) -> Result<RegisterClientDto, ServerError> {
+    pub fn convert_dto(self, owner: Uuid) -> Result<RegisterClientDto, ServerError> {
         let RegistrationForm {
             name,
             client_uri,
@@ -40,7 +39,6 @@ impl RegistrationForm {
             tepam,
             grant_types,
             response_types,
-            client_name,
             scopes,
             contacts,
             policy_uri,
@@ -67,7 +65,8 @@ impl RegistrationForm {
                 .map(Into::into)
                 .collect(),
             contacts,
-            jwk: check_jwk(jwks, jwks_uri)?,
+            jwks,
+            jwks_uri
         })
     }
 }
@@ -216,8 +215,8 @@ impl From<ResponseType> for ResponseTypeDto {
 
 impl<'de> Deserialize<'de> for ResponseType {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
-        Ok(Self::from_str(Deserialize::deserialize(deserializer)?)
-            .map_err(|e| D::Error::custom(e.to_string()))?)
+        Self::from_str(Deserialize::deserialize(deserializer)?)
+            .map_err(|e| D::Error::custom(e.to_string()))
     }
 }
 
@@ -234,20 +233,4 @@ impl From<Scope> for ScopeDto {
             description: value.desc
         }
     }
-}
-
-fn check_jwk(
-    key: Option<String>,
-    uri: Option<String>
-) -> Result<Option<String>, ServerError> {
-    if key.is_some() && uri.is_some() {
-        return Err(ServerError::InvalidValue {
-            method: "check_jwk",
-            value: "conflict jwk resources".to_string(),
-        })
-    }
-    if key.is_none() { return Ok(uri) }
-    if uri.is_none() { return Ok(key) }
-
-    Ok(None)
 }
