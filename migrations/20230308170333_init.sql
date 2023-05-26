@@ -68,14 +68,63 @@ CREATE TABLE client_cert(
   auth_method       TEP_AM          NOT NULL,
   grant_types       GRANT_TYPE[]    NOT NULL,
   response_types    RESPONSE_TYPE[] NOT NULL,
-  jwks              JSONB           CHECK ( jwks_uri IS NULL ), -- ─┬─ MUST NOT both be present in the same request or response.
-  jwks_uri          VARCHAR(512)    CHECK ( jwks IS NULL ),     -- ─┘
 
   created_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
 
   FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
 );
+
+
+CREATE FUNCTION exists_client_jwks_uri(id UUID) RETURNS BOOLEAN AS $$
+  DECLARE jwks_uri_exists BOOLEAN;
+  BEGIN
+    SELECT EXISTS(
+      SELECT * FROM client_jwks_uri
+               WHERE client_jwks_uri.client_id = id
+    )
+    INTO jwks_uri_exists;
+
+    RETURN jwks_uri_exists;
+  END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TABLE client_jwks(
+  client_id UUID  NOT NULL,
+  jwks      JSONB NOT NULL,
+
+  FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
+);
+
+ALTER TABLE client_jwks ADD CONSTRAINT client_jwks_id_pkey PRIMARY KEY (client_id);
+ALTER TABLE client_jwks ADD CONSTRAINT checkin_exists_client_jwks_uri CHECK ( NOT exists_client_jwks_uri(client_id) );
+
+
+CREATE FUNCTION exists_client_jwks(id UUID) RETURNS BOOLEAN AS $$
+  DECLARE jwks_exists BOOLEAN;
+  BEGIN
+    SELECT EXISTS(
+      SELECT * FROM  client_jwks
+      WHERE client_jwks.client_id = id
+    )
+    INTO jwks_exists;
+
+    RETURN jwks_exists;
+  END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TABLE client_jwks_uri(
+  client_id UUID         NOT NULL,
+  jwks_uri  VARCHAR(512) NOT NULL,
+
+  FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE
+);
+
+ALTER TABLE client_jwks_uri ADD CONSTRAINT client_jwks_uri_id_pkey PRIMARY KEY (client_id);
+ALTER TABLE client_jwks_uri ADD CONSTRAINT checkin_exists_client_jwks CHECK ( NOT exists_client_jwks(client_id) );
+
 
 CREATE TABLE client_redirect_uris(
   client_id UUID           NOT NULL,
