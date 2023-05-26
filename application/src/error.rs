@@ -75,6 +75,8 @@ impl From<KernelError> for ApplicationError {
             KernelError::JsonWebToken(e)
                 => ApplicationError::Other(e),
             KernelError::Base64Decode(e)
+                => ApplicationError::Other(e),
+            KernelError::Serde(e)
                 => ApplicationError::Other(e)
         }
     }
