@@ -214,7 +214,8 @@ pub struct RegisterClientDto {
     pub redirect_uris: Vec<String>,
     pub scopes: Vec<ScopeDto>,
     pub contacts: Vec<String>,
-    pub jwk: Option<String>
+    pub jwks: Option<String>,
+    pub jwks_uri: Option<String>
 }
 
 #[derive(Debug)]

@@ -35,6 +35,7 @@ use kernel::{
     },
     external::Uuid,
 };
+use kernel::services::JwkSelectionService;
 
 use crate::{
     services::{
@@ -112,7 +113,8 @@ impl<C, A> RegisterClientService for RegisterClientInteractor<C, A>
             redirect_uris,
             scopes,
             contacts,
-            jwk
+            jwks,
+            jwks_uri
         } = register;
 
         let owner = UserId::new(owner_id);
@@ -180,6 +182,8 @@ impl<C, A> RegisterClientService for RegisterClientInteractor<C, A>
             .map(Address::new)
             .collect::<Contacts>();
 
+        let jwks = JwkSelectionService::check(jwks, jwks_uri)?;
+
         let conf_access_token = RegistrationAccessToken::default();
         let conf_endpoint = RegistrationEndPoint::default();
 
@@ -199,7 +203,7 @@ impl<C, A> RegisterClientService for RegisterClientInteractor<C, A>
             redirect_uris,
             scopes,
             contacts,
-            jwk,
+            jwks,
             conf_access_token,
             conf_endpoint
         )?;
@@ -480,6 +484,8 @@ mod tests {
             .map(ToOwned::to_owned)
             .collect::<Vec<String>>();
 
+        let jwks_uri = Some("https://stellar.example.com/.well-known".to_string());
+
         let dto = RegisterClientDto {
             name: client_name.into(),
             client_uri: client_uri.into(),
@@ -494,7 +500,8 @@ mod tests {
             redirect_uris,
             scopes,
             contacts,
-            jwk: None,
+            jwks: None,
+            jwks_uri
         };
 
         let regi = client_registration.register(dto).await?;
