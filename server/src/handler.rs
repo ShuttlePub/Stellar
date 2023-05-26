@@ -31,6 +31,7 @@ use kernel::{
     },
 };
 
+#[allow(unused_imports)]
 use driver::{
     database::{
         AccountDataBase,
@@ -47,6 +48,9 @@ use driver::{
 };
 use crate::ServerError;
 
+#[cfg(debug_assertions)]
+use self::mock::MockVerificationMailer;
+
 type ClientRegisterer = RegisterClientInteractor<ClientDataBase, AccountDataBase>;
 
 #[derive(Clone)]
@@ -60,7 +64,11 @@ pub struct Handler {
     pkce_v_repo: PKCEVolatileDataBase,
     state_v_repo: StateVolatileDataBase,
 
+    #[cfg(not(debug_assertions))]
     mailer: VerificationMailer,
+
+    #[cfg(debug_assertions)]
+    mailer: MockVerificationMailer,
 
     client_reg: ClientRegisterer,
     client_upd: UpdateClientInteractor<ClientDataBase, AccountDataBase>
@@ -71,6 +79,8 @@ impl Handler {
     pub async fn init() -> Result<Self, ServerError> {
         let pg_pool = DataBaseDriver::setup_postgres().await?;
         let redis_pool = DataBaseDriver::setup_redis().await?;
+
+        #[cfg(not(debug_assertions))]
         let smtp_pool = SmtpDriver::setup_lettre()?;
 
         let ac_repo = AccountDataBase::new(pg_pool.clone());
@@ -82,7 +92,11 @@ impl Handler {
         let pkce_v_repo = PKCEVolatileDataBase::new(redis_pool.clone());
         let state_v_repo = StateVolatileDataBase::new(redis_pool);
 
+        #[cfg(not(debug_assertions))]
         let mailer = VerificationMailer::new(smtp_pool);
+
+        #[cfg(debug_assertions)]
+        let mailer = MockVerificationMailer::new();
 
         let client_reg = RegisterClientInteractor::new(clients.clone(), ac_repo.clone());
         let client_upd = UpdateClientInteractor::new(clients.clone(), ac_repo.clone());
@@ -167,9 +181,17 @@ impl DependOnCreateNonVerifiedAccountService for Handler {
     }
 }
 
+#[cfg(not(debug_assertions))]
 impl DependOnVerificationMailTransporter for Handler {
     type VerificationMailTransporter = VerificationMailer;
 
+    fn verification_mail_transporter(&self) -> &Self::VerificationMailTransporter {
+        &self.mailer
+    }
+}
+
+impl DependOnVerificationMailTransporter for Handler {
+    type VerificationMailTransporter = MockVerificationMailer;
     fn verification_mail_transporter(&self) -> &Self::VerificationMailTransporter {
         &self.mailer
     }
@@ -241,5 +263,32 @@ impl DependOnRejectAuthorizeTokenService for Handler {
     type RejectAuthorizeTokenService = Self;
     fn reject_authorize_token_service(&self) -> &Self::RejectAuthorizeTokenService {
         self
+    }
+}
+
+
+#[cfg(debug_assertions)]
+mod mock {
+    use axum::async_trait;
+    use kernel::entities::{Address, VerificationCode};
+    use kernel::KernelError;
+    use kernel::transport::VerificationMailTransporter;
+
+    #[derive(Clone)]
+    pub struct MockVerificationMailer;
+
+    #[allow(clippy::new_without_default)]
+    impl MockVerificationMailer {
+        pub fn new() -> Self {
+            Self
+        }
+    }
+
+    #[async_trait]
+    impl VerificationMailTransporter for MockVerificationMailer {
+        async fn send(&self, code: &VerificationCode, address: &Address) -> Result<(), KernelError> {
+            println!("code: {:?}, adr: {:?}", code, address);
+            Ok(())
+        }
     }
 }
