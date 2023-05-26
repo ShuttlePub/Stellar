@@ -1,6 +1,6 @@
 pub mod entities;
 pub mod repository;
-pub mod transporter;
+pub mod transport;
 mod error;
 mod services;
 

@@ -1,4 +1,4 @@
-use kernel::{transporter::VerificationMailTransporter, entities::{VerificationCode, Address}, KernelError};
+use kernel::{transport::VerificationMailTransporter, entities::{VerificationCode, Address}, KernelError};
 use lettre::{Message, message::Mailbox, AsyncTransport};
 use once_cell::sync::Lazy;
 

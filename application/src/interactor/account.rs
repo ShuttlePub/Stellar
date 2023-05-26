@@ -2,7 +2,7 @@ use kernel::repository::{
     DependOnAccountRepository,
     DependOnNonVerifiedAccountRepository
 };
-use kernel::transporter::DependOnVerificationMailTransporter;
+use kernel::transport::DependOnVerificationMailTransporter;
 use crate::services::{CreateNonVerifiedAccountService, ApproveAccountService, UpdateAccountService, CreateAccountService, DeleteAccountService};
 
 // Default Impl

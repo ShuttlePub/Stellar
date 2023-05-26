@@ -9,7 +9,7 @@ use kernel::repository::{
 };
 
 #[allow(unused_imports)]
-use kernel::transporter::{
+use kernel::transport::{
     DependOnVerificationMailTransporter,
     VerificationMailTransporter
 };

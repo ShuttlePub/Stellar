@@ -26,7 +26,7 @@ use kernel::{
         DependOnPKCEVolatileRepository,
         DependOnStateVolatileRepository
     },
-    transporter::{
+    transport::{
         DependOnVerificationMailTransporter
     },
 };
