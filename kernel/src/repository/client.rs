@@ -1,4 +1,5 @@
 use crate::{entities::{Client, ClientId}, KernelError};
+use crate::entities::ClientName;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
@@ -8,6 +9,7 @@ pub trait ClientRegistry: 'static + Sync + Send {
     async fn update(&self, client: &Client) -> Result<(), KernelError>;
 
     async fn find_by_id(&self, id: &ClientId) -> Result<Option<Client>, KernelError>;
+    async fn find_by_name(&self, name: &ClientName) -> Result<Option<Client>, KernelError>;
 }
 
 pub trait DependOnClientRegistry: 'static + Sync + Send {

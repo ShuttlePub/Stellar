@@ -76,6 +76,14 @@ impl ClientRegistry for ClientDataBase {
         let client = PgClientInternal::find_by_id(id, &mut con).await?;
         Ok(client)
     }
+
+    async fn find_by_name(&self, name: &ClientName) -> Result<Option<Client>, KernelError> {
+        let mut con = self.pool.acquire().await
+            .map_err(DriverError::SqlX)?;
+        let client = PgClientInternal::find_by_name(name, &mut con).await?;
+        Ok(client)
+
+    }
 }
 
 #[derive(sqlx::FromRow, Debug)]
