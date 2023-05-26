@@ -109,11 +109,11 @@ name = "administrator"
 pass = "administrator"
 
 [stellar]
+contacts = ["admin@example.com"]
 client_uri = "https://stellar.example.com/"
 logo_uri = "https://stellar.example.com/logo"
 tos_uri = "https://stellar.example.com/terms"
 policy_uri = "https://stellar.example.com/policy"
-contacts = ["admin@example.com"]
 jwks_uri = "https://stellar.example.com/.well-known"
 "#;
 
