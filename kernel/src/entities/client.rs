@@ -92,7 +92,7 @@ impl Client {
         redirect_uris: impl Into<Vec<RedirectUri>>,
         scopes: impl Into<Vec<(ScopeMethod, ScopeDescription)>>,
         contacts: impl Into<Vec<Address>>,
-        jwk: impl Into<Option<String>>,
+        jwk: impl Into<Option<Jwks>>,
         conf_access_token: impl Into<String>,
         conf_endpoint: impl Into<String>,
     ) -> Result<Self, KernelError> {
@@ -115,9 +115,7 @@ impl Client {
                 .into_iter()
                 .collect::<Vec<_>>()
             ),
-            jwks: jwk.into()
-                .map(Jwks::new)
-                .transpose()?,
+            jwks: jwk.into(),
             conf_token: RegistrationAccessToken::new(conf_access_token),
             conf_endpoint: RegistrationEndPoint::new(conf_endpoint)
         })
