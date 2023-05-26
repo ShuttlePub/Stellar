@@ -1,9 +1,8 @@
 use std::fs::{File, OpenOptions};
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::io::{Read, Write};
 use std::path::Path;
 use kernel::entities::{Account, Client, ClientId, UserId};
-use crate::config::{GenIds};
-use super::{Config, constants::{CONFIG, GENNED, CACHED}};
+use super::{GenIds, Config, constants::{CONFIG, GENNED, CACHED}};
 use crate::DriverError;
 
 pub fn generate(path: impl AsRef<Path>) -> Result<Option<(Account, Client)>, DriverError> {

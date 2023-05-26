@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use kernel::entities::{Account, Client, ClientId, UserId};
-use crate::config::{AdminUser, StellarClient};
+use super::{AdminUser, StellarClient};
 use crate::DriverError;
 
 

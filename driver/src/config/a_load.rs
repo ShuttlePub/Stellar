@@ -2,10 +2,9 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
 use kernel::entities::{Account, Client};
-use crate::config::constants::{CACHED, CONFIG, GENNED};
-use crate::config::model::Config;
-use crate::config::GenIds;
+use super::{model::Config, constants::{CACHED, CONFIG, GENNED}, GenIds};
 use crate::DriverError;
+
 
 pub fn load(path: impl AsRef<Path>) -> Result<Option<(Account, Client)>, DriverError> {
     let path = path.as_ref();

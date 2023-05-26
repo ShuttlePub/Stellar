@@ -29,7 +29,7 @@ use kernel::{
 };
 use kernel::entities::Client;
 use kernel::services::JwkSelectionService;
-use crate::config::Stellar;
+use super::Stellar;
 use crate::DriverError;
 
 #[derive(Debug)]

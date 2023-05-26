@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use kernel::entities::{Account, Address, CreatedAt, Password, UserId, UserName};
-use crate::config::model::Admin;
+use super::Admin;
 use crate::DriverError;
 
 #[derive(Debug, Clone, Hash, Deserialize, Serialize)]
