@@ -1,31 +1,55 @@
-use axum::{extract::{Query, State}, http::StatusCode, Json, response::IntoResponse};
+use axum::{extract::{Query, State}, Json, response::IntoResponse};
 use serde::{Deserialize, Deserializer};
-use crate::Handler;
+use application::services::{DependOnPendingAuthorizeTokenService, PendingAuthorizeTokenService};
+use application::transfer::token::CreateAuthorizeTokenDto;
+use kernel::external::Uuid;
+use crate::{Handler, ServerError};
 
 pub async fn authorization(
-    State(_handler): State<Handler>,
-    Query(_query): Query<AuthorizationGrantQuery>
-) -> Result<impl IntoResponse, StatusCode> {
-    Ok(())
+    State(handler): State<Handler>,
+    Query(query): Query<AuthorizationGrantQuery>
+) -> Result<impl IntoResponse, ServerError> {
+    let AuthorizationGrantQuery {
+        response_type, 
+        client_id, 
+        redirect_uri, 
+        scope, 
+        state, 
+        code_challenge, 
+        code_challenge_method
+    } = query;
+
+    let client_id = Uuid::parse_str(&client_id)?; 
+    
+    let ticket = handler.pending_authorize_token_service().pending(
+        CreateAuthorizeTokenDto {
+            response_type,
+            client_id,
+            redirect_uri,
+            scope,
+            state,
+            code_challenge,
+            code_challenge_method,
+        }
+    ).await?;
+    let value = serde_json::json!({
+        "ticket": ticket.0
+    });
+    Ok(Json(value))
 }
 
-pub async fn user_decision(
-    State(_handler): State<Handler>
-) {
-
-}
 
 #[allow(unused)]
 #[derive(Deserialize, Debug)]
 pub struct AuthorizationGrantQuery {
-    response_type: String,
-    client_id: String,
-    redirect_uri: Option<String>,
+    pub response_type: String,
+    pub client_id: String,
+    pub redirect_uri: Option<String>,
     #[serde(deserialize_with = "scope_deserializer")]
-    scope: Vec<String>,
-    state: String,
-    code_challenge: String,
-    code_challenge_method: String
+    pub scope: Vec<String>,
+    pub state: String,
+    pub code_challenge: String,
+    pub code_challenge_method: String
 }
 
 /// This function converts a space-delimited string into an array.
@@ -34,9 +58,10 @@ pub struct AuthorizationGrantQuery {
 fn scope_deserializer<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
   where D: Deserializer<'de>
 {
-    let raw: &str = Deserialize::deserialize(deserializer)?;
+    let raw: String = Deserialize::deserialize(deserializer)?;
+    println!("{:?}", raw);
     let scopes = raw.split(' ')
-        .map(ToOwned::to_owned)
+        .map(|scope| scope.to_string())
         .collect::<Vec<String>>();
     Ok(scopes)
 }
