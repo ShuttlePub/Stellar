@@ -16,6 +16,16 @@ impl Scopes {
     }
 }
 
+impl From<Scopes> for HashMap<String, Option<String>> {
+    fn from(value: Scopes) -> Self {
+        value.into_iter()
+            .map(|(method, desc)| {
+                (method.into(), desc.into())
+            })
+            .collect::<HashMap<String, Option<String>>>()
+    }
+}
+
 impl From<Scopes> for Vec<(ScopeMethod, ScopeDescription)> {
     fn from(values: Scopes) -> Self {
         values.into_iter().collect()

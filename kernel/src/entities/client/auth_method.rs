@@ -45,6 +45,12 @@ impl AsRef<str> for TokenEndPointAuthMethod {
     }
 }
 
+impl From<TokenEndPointAuthMethod> for String {
+    fn from(value: TokenEndPointAuthMethod) -> Self {
+        value.as_ref().to_string()
+    }
+}
+
 impl<'de> Deserialize<'de> for TokenEndPointAuthMethod {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>

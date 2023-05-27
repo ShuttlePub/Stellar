@@ -101,3 +101,9 @@ impl AsRef<str> for GrantType {
         }
     }
 }
+
+impl From<GrantType> for String {
+    fn from(value: GrantType) -> Self {
+        value.as_ref().to_string()
+    }
+}
