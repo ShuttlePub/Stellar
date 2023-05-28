@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use axum::{Router, Server, routing::{post, get}, response::IntoResponse, http::StatusCode};
-use server::{Handler, routes::{verify, signup, stellar_info, authorization}};
+use server::{Handler, routes::{verify, signup, stellar_info, authorization, user_decision}};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -22,16 +22,24 @@ async fn main() -> anyhow::Result<()> {
 
     let handler = Handler::init().await?;
 
+    let statics = Router::new()
+        .route("/.well-known", get(|| async { todo!() }))
+        .route("/hc", get(healthcheck));
+
     let clients = Router::new()
-        .route("/authorize", get(authorization));
+        .route("/stellar", get(stellar_info))
+        .route("/authorize", get(authorization)
+            .patch(user_decision::accept)
+            .delete(user_decision::reject));
+
+    let accounts = Router::new()
+        .route("/signup", post(signup))
+        .route("/verify", post(verify));
 
     let app = Router::new()
-        .route("/.well-known", get(|| async { todo!() })) // Todo: To produce endpoints so that JWK public keys can be provided.
-        .route("/healthcheck", get(healthcheck))
-        .route("/signup", post(signup))
-        .route("/verify", post(verify))
-        .route("/info", get(stellar_info))
+        .nest("/", statics)
         .nest("/clients", clients)
+        .nest("/accounts", accounts)
         .layer(TraceLayer::new_for_http())
         .with_state(handler);
 
