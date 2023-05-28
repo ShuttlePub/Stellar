@@ -18,7 +18,7 @@ pub async fn stellar_info(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let stellar = stellar
-        .ok_or_else(|| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
     let stellar = stellar.into_destruct();
     let stellar = StellarClient {
         client_id: stellar.id.into(),
