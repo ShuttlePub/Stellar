@@ -1,16 +1,12 @@
 mod infos;
 
-mod signup;
-mod verify;
-
-mod client;
-
 mod auth;
+mod client;
+mod account;
 
 pub use self::{
     infos::*,
+    auth::*,
     client::*,
-    signup::*,
-    verify::*,
-    auth::*
+    account::*,
 };

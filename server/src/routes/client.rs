@@ -24,11 +24,7 @@ impl ClientRegistration {
         State(_handler): State<Handler>,
         Json(_form): Json<RegistrationForm>
     ) -> Result<impl IntoResponse, ErrorResponse> {
-        // let dto = _form.to_dto()
-        //     .map_err(|e| ErrorResponse::InvalidClientMetadata(e.to_string()))?;
-        // _handler.register_client_service()
-        //     .register()
-
+        //_handler.register_client_service().register(_form.convert_dto())
         Ok(())
     }
 }
