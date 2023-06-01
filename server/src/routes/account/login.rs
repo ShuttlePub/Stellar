@@ -8,3 +8,4 @@ pub async fn login(
 ) -> Result<impl IntoResponse, ServerError> {
     Ok(StatusCode::INTERNAL_SERVER_ERROR)
 }
+

@@ -5,8 +5,8 @@ mod client;
 mod account;
 
 pub use self::{
-    infos::*,
+    account::*,
     auth::*,
     client::*,
-    account::*,
+    infos::*,
 };

@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use axum::http::StatusCode;
 use axum::Json;
-use axum::response::{IntoResponse, Response};
+use axum::response::{IntoResponse, Redirect, Response};
 use serde_json::json;
 use application::ApplicationError;
 use driver::DriverError;
@@ -20,7 +20,9 @@ pub enum ServerError {
     #[error(transparent)]
     Serde(anyhow::Error),
     #[error(transparent)]
-    RequestParse(anyhow::Error)
+    RequestParse(anyhow::Error),
+    #[error("MFA code via email required.")]
+    MFAVerification
 }
 
 impl serde::de::Error for ServerError {
@@ -47,7 +49,9 @@ impl IntoResponse for ServerError {
             ServerError::RequestParse(e)
                 => e.to_string(),
             ServerError::Application(e)
-                => e.to_string()
+                => e.to_string(),
+            ServerError::MFAVerification
+                => return Redirect::to("/accounts/verify").into_response()
         };
 
         let json = json!({

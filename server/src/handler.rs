@@ -16,6 +16,7 @@ use application::{
         UpdateClientInteractor
     }
 };
+use application::services::DependOnVerifyAccountService;
 use kernel::{
     repository::{
         DependOnAccountRepository,
@@ -46,6 +47,8 @@ use driver::{
     SmtpDriver,
     transport::VerificationMailer
 };
+use driver::database::{MFACodeVolatileDataBase, SessionVolatileDataBase};
+use kernel::repository::{DependOnMFACodeVolatileRepository, DependOnSessionVolatileRepository};
 use crate::ServerError;
 
 #[cfg(debug_assertions)]
@@ -63,6 +66,8 @@ pub struct Handler {
     authz_v_repo: AuthorizeTokenVolatileDataBase,
     pkce_v_repo: PKCEVolatileDataBase,
     state_v_repo: StateVolatileDataBase,
+    mfa_code_v_repo: MFACodeVolatileDataBase,
+    session_v_repo: SessionVolatileDataBase,
 
     #[cfg(not(debug_assertions))]
     mailer: VerificationMailer,
@@ -90,7 +95,9 @@ impl Handler {
         let p_authz_v_repo = PendingAuthorizeTokenVolatileDataBase::new(redis_pool.clone());
         let authz_v_repo = AuthorizeTokenVolatileDataBase::new(redis_pool.clone());
         let pkce_v_repo = PKCEVolatileDataBase::new(redis_pool.clone());
-        let state_v_repo = StateVolatileDataBase::new(redis_pool);
+        let state_v_repo = StateVolatileDataBase::new(redis_pool.clone());
+        let mfa_code_v_repo = MFACodeVolatileDataBase::new(redis_pool.clone());
+        let session_v_repo = SessionVolatileDataBase::new(redis_pool);
 
         #[cfg(not(debug_assertions))]
         let mailer = VerificationMailer::new(smtp_pool);
@@ -110,6 +117,8 @@ impl Handler {
             authz_v_repo,
             pkce_v_repo,
             state_v_repo,
+            mfa_code_v_repo,
+            session_v_repo,
 
             mailer,
 
@@ -163,6 +172,20 @@ impl DependOnPendingAuthorizeTokenRepository for Handler {
     type PendingAuthorizeTokenRepository = PendingAuthorizeTokenVolatileDataBase;
     fn pending_authorize_token_repository(&self) -> &Self::PendingAuthorizeTokenRepository {
         &self.p_authz_v_repo
+    }
+}
+
+impl DependOnMFACodeVolatileRepository for Handler {
+    type MFACodeVolatileRepository = MFACodeVolatileDataBase;
+    fn mfa_code_volatile_repository(&self) -> &Self::MFACodeVolatileRepository {
+        &self.mfa_code_v_repo
+    }
+}
+
+impl DependOnSessionVolatileRepository for Handler {
+    type SessionVolatileRepository = SessionVolatileDataBase;
+    fn session_volatile_repository(&self) -> &Self::SessionVolatileRepository {
+       &self.session_v_repo
     }
 }
 
@@ -229,6 +252,13 @@ impl DependOnDeleteAccountService for Handler {
     }
 }
 
+impl DependOnVerifyAccountService for Handler {
+    type VerifyAccountService = Self;
+    fn verify_account_service(&self) -> &Self::VerifyAccountService {
+       self
+    }
+}
+
 impl DependOnRegisterClientService for Handler {
     type RegisterClientService = ClientRegisterer;
 
@@ -270,7 +300,7 @@ impl DependOnRejectAuthorizeTokenService for Handler {
 #[cfg(debug_assertions)]
 mod mock {
     use axum::async_trait;
-    use kernel::entities::{Address, VerificationCode};
+    use kernel::entities::{Address, MFACode};
     use kernel::KernelError;
     use kernel::transport::VerificationMailTransporter;
 
@@ -286,7 +316,7 @@ mod mock {
 
     #[async_trait]
     impl VerificationMailTransporter for MockVerificationMailer {
-        async fn send(&self, code: &VerificationCode, address: &Address) -> Result<(), KernelError> {
+        async fn send(&self, address: &Address, code: &MFACode) -> Result<(), KernelError> {
             println!("code: {:?}, adr: {:?}", code, address);
             Ok(())
         }
