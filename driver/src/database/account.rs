@@ -1,5 +1,5 @@
 use kernel::{
-    repository::{AccountRepository, NonVerifiedAccountRepository},
+    repository::{AccountRepository, TemporaryAccountRepository},
     entities::{Account, UserId, NonVerifiedAccount, TicketId, Address},
     KernelError
 };
@@ -203,7 +203,7 @@ impl NonVerifiedAccountDataBase {
 }
 
 #[async_trait::async_trait]
-impl NonVerifiedAccountRepository for NonVerifiedAccountDataBase {
+impl TemporaryAccountRepository for NonVerifiedAccountDataBase {
     async fn create(&self, create: &NonVerifiedAccount) -> Result<(), KernelError> {
         let mut con = self.pool.get().await
             .map_err(DriverError::from)?;

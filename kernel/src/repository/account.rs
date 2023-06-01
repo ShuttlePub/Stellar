@@ -19,9 +19,10 @@ pub trait DependOnAccountRepository: 'static + Sync + Send {
     fn account_repository(&self) -> &Self::AccountRepository;
 }
 
+
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
-pub trait NonVerifiedAccountRepository: 'static + Sync + Send {
+pub trait TemporaryAccountRepository: 'static + Sync + Send {
     async fn create(&self, create: &NonVerifiedAccount) -> Result<(), KernelError>;
     async fn validation(&self, coupon: &TicketId, valid: &TicketId, address: &Address) -> Result<(), KernelError>;
     async fn find_by_id(&self, id: &TicketId) -> Result<Option<NonVerifiedAccount>, KernelError>;
@@ -29,6 +30,6 @@ pub trait NonVerifiedAccountRepository: 'static + Sync + Send {
 }
 
 pub trait DependOnNonVerifiedAccountRepository: 'static + Sync + Send {
-    type NonVerifiedAccountRepository: NonVerifiedAccountRepository;
+    type NonVerifiedAccountRepository: TemporaryAccountRepository;
     fn non_verified_account_repository(&self) -> &Self::NonVerifiedAccountRepository;
 }
