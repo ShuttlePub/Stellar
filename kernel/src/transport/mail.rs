@@ -1,9 +1,9 @@
-use crate::{entities::{VerificationCode, Address}, KernelError};
+use crate::{entities::{MFACode, Address}, KernelError};
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
 pub trait VerificationMailTransporter: 'static + Sync + Send {
-    async fn send(&self, code: &VerificationCode, address: &Address) -> Result<(), KernelError>;
+    async fn send(&self, address: &Address, code: &MFACode) -> Result<(), KernelError>;
 }
 
 pub trait DependOnVerificationMailTransporter: 'static + Sync + Send {

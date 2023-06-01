@@ -1,12 +1,7 @@
-use kernel::entities::{Account, Address, NonVerifiedAccount, Password, TicketId, UpdatedAt, UserId, UserName, VerificationCode};
-use kernel::external::{OffsetDateTime, Uuid};
+use kernel::entities::{Account, Address, NonVerifiedAccount, Password, TicketId, UpdatedAt, UserId, UserName, MFACode, Session, SessionId, EstablishedAt};
+use kernel::external::{Duration, OffsetDateTime, Uuid};
 use kernel::KernelError;
-use kernel::repository::{
-    DependOnAccountRepository,
-    DependOnNonVerifiedAccountRepository,
-    AccountRepository,
-    NonVerifiedAccountRepository
-};
+use kernel::repository::{DependOnAccountRepository, DependOnNonVerifiedAccountRepository, AccountRepository, TemporaryAccountRepository, MFACodeVolatileRepository, DependOnMFACodeVolatileRepository, DependOnSessionVolatileRepository, SessionVolatileRepository};
 
 #[allow(unused_imports)]
 use kernel::transport::{
@@ -15,14 +10,17 @@ use kernel::transport::{
 };
 
 use crate::{
+    transfer::{
+        account::CreateNonVerifiedAccountDto,
+        account::NonVerifiedAccountDto,
+        account::CreateAccountDto,
+        account::UpdateAccountDto,
+        account::AccountDto,
+        account::VerifyAccountDto,
+        session::SessionDto
+    },
+    ExpectUserAction,
     ApplicationError,
-    transfer::account::{
-        CreateNonVerifiedAccountDto,
-        NonVerifiedAccountDto,
-        CreateAccountDto,
-        UpdateAccountDto,
-        AccountDto,
-    }
 };
 
 #[async_trait::async_trait]
@@ -32,13 +30,13 @@ pub trait CreateNonVerifiedAccountService: 'static + Send + Sync
 {
     async fn create(&self, create: CreateNonVerifiedAccountDto) -> Result<NonVerifiedAccountDto, ApplicationError> {
         let ticket = TicketId::default();
-        let code = VerificationCode::default();
+        let code = MFACode::default();
         let CreateNonVerifiedAccountDto { address } = create;
         let non_verified = NonVerifiedAccount::new(ticket, address, code);
 
         self.non_verified_account_repository().create(&non_verified).await?;
 
-        self.verification_mail_transporter().send(non_verified.code(), non_verified.address()).await?;
+        self.verification_mail_transporter().send(non_verified.address(), non_verified.code()).await?;
 
         Ok(non_verified.into())
     }
@@ -55,7 +53,7 @@ pub trait ApproveAccountService: 'static + Send + Sync
 {
     async fn approve(&self, id: &str, code: &str) -> Result<String, ApplicationError> {
         let id = TicketId::new(id);
-        let code = VerificationCode::new(code);
+        let code = MFACode::new(code);
 
         let Some(nonverified) = self.non_verified_account_repository().find_by_id(&id).await? else {
             return Err(ApplicationError::NotFound {
@@ -212,4 +210,7 @@ pub trait DeleteAccountService: 'static + Send + Sync
 pub trait DependOnDeleteAccountService: 'static + Send + Sync {
     type DeleteAccountService: DeleteAccountService;
     fn delete_account_service(&self) -> &Self::DeleteAccountService;
+pub trait DependOnVerifyAccountService: 'static + Send + Sync {
+    type VerifyAccountService: VerifyAccountService;
+    fn verify_account_service(&self) -> &Self::VerifyAccountService;
 }

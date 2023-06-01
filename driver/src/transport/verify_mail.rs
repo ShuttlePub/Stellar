@@ -1,4 +1,4 @@
-use kernel::{transport::VerificationMailTransporter, entities::{VerificationCode, Address}, KernelError};
+use kernel::{transport::VerificationMailTransporter, entities::{MFACode, Address}, KernelError};
 use lettre::{Message, message::Mailbox, AsyncTransport};
 use once_cell::sync::Lazy;
 
@@ -17,8 +17,8 @@ impl VerificationMailer {
 
 #[async_trait::async_trait]
 impl VerificationMailTransporter for VerificationMailer {
-    async fn send(&self, code: &VerificationCode, address: &Address) -> Result<(), KernelError> {
-        SmtpInternal::send(code, address, &self.mailer).await?;
+    async fn send(&self, address: &Address, code: &MFACode) -> Result<(), KernelError> {
+        SmtpInternal::send(address, code, &self.mailer).await?;
         Ok(())
     }
 }
@@ -28,7 +28,7 @@ pub(in crate::transport) struct SmtpInternal;
 static MB: Lazy<Mailbox> = Lazy::new(|| "Stellar <support@shuttle.pub>".parse().expect("cannot parse `MailBox`"));
 
 impl SmtpInternal {
-    pub async fn send(code: &VerificationCode, address: &Address, mailer: &SmtpPool) -> Result<(), DriverError> {
+    pub async fn send(address: &Address, code: &MFACode, mailer: &SmtpPool) -> Result<(), DriverError> {
         let msg = Message::builder()
             .from(MB.clone())
             .to(address.as_ref().parse()?)
@@ -43,7 +43,7 @@ impl SmtpInternal {
 
 #[cfg(test)]
 mod tests {
-    use kernel::entities::{VerificationCode, Address};
+    use kernel::entities::{MFACode, Address};
     use lettre::transport::smtp::authentication::Credentials;
 
     use crate::SmtpPool;
@@ -72,9 +72,9 @@ mod tests {
     async fn mailing_test() -> anyhow::Result<()> {
         let mailer = mailer_setup().await?;
 
-        let code = VerificationCode::default();
+        let code = MFACode::default();
         let address = Address::new("reirokusanami.rdh@gmail.com");
-        SmtpInternal::send(&code, &address, &mailer).await?;
+        SmtpInternal::send(&address, &code, &mailer).await?;
 
         Ok(())
     }

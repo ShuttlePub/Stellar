@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use destructure::Destructure;
 use time::OffsetDateTime;
 use uuid::Uuid;
-use crate::entities::volatiles::{TicketId, VerificationCode};
+use crate::entities::volatiles::{TicketId, MFACode};
 
 use crate::KernelError;
 
@@ -79,15 +79,15 @@ impl Account {
 pub struct NonVerifiedAccount {
     id: TicketId,
     address: Address,
-    code: VerificationCode,
+    code: MFACode,
 }
 
 impl NonVerifiedAccount {
     pub fn new(id: impl Into<String>, address: impl Into<String>, code: impl Into<String>) -> Self {
-        Self { id: TicketId::new(id), address: Address::new(address), code: VerificationCode::new(code) }
+        Self { id: TicketId::new(id), address: Address::new(address), code: MFACode::new(code) }
     }
 
-    pub fn is_match_verification_code(&self, code: &VerificationCode) -> bool {
+    pub fn is_match_verification_code(&self, code: &MFACode) -> bool {
         self.code.as_ref() == code.as_ref()
     }
 
@@ -99,7 +99,7 @@ impl NonVerifiedAccount {
         &self.address
     }
 
-    pub fn code(&self) -> &VerificationCode {
+    pub fn code(&self) -> &MFACode {
         &self.code
     }
 }
