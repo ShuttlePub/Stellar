@@ -1,37 +1,56 @@
+mod session_id;
+mod est;
+
+use destructure::Destructure;
+pub use self::{
+    session_id::*,
+    est::*,
+};
+
 use serde::{Deserialize, Serialize};
-use crate::services::RandomizeService;
+use time::{Duration, OffsetDateTime};
+use uuid::Uuid;
+use crate::entities::{ExpiredIn, UserId};
 
 
+#[derive(Debug, Clone, Hash, Deserialize, Serialize, Destructure)]
+pub struct Session {
+    id: SessionId,
+    usr: UserId,
+    exp: ExpiredIn,
+    est: EstablishedAt
+}
 
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
-pub struct SessionId(String);
-
-impl SessionId {
-    pub fn new(value: impl Into<String>) -> Self {
-        Self(value.into())
+impl Session {
+    pub fn new(
+        id:  impl Into<String>,
+        usr: impl Into<Uuid>,
+        exp: impl Into<Duration>,
+        est: impl Into<OffsetDateTime>
+    ) -> Self {
+        Self {
+            id: SessionId::new(id),
+            usr: UserId::new(usr),
+            exp: ExpiredIn::new(exp),
+            est: EstablishedAt::new(est)
+        }
     }
 }
 
-impl PartialEq<str> for SessionId {
-    fn eq(&self, other: &str) -> bool {
-        self.0.eq(other)
+impl Session {
+    pub fn id(&self) -> &SessionId {
+        &self.id
     }
-}
 
-impl From<SessionId> for String {
-    fn from(value: SessionId) -> Self {
-        value.0
+    pub fn usr(&self) -> &UserId {
+        &self.usr
     }
-}
 
-impl AsRef<str> for SessionId {
-    fn as_ref(&self) -> &str {
-        &self.0
+    pub fn exp(&self) -> &ExpiredIn {
+        &self.exp
     }
-}
 
-impl Default for SessionId {
-    fn default() -> Self {
-        RandomizeService::gen_str(128, Self::new)
+    pub fn est(&self) -> &EstablishedAt {
+        &self.est
     }
 }
