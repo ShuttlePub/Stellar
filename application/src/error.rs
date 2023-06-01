@@ -21,10 +21,18 @@ pub enum ApplicationError {
     },
     #[error(transparent)]
     Authorization(#[from] ExpectedAuthorizationError),
+    #[error("require user action.")]
+    RequireUserAction(ExpectUserAction),
     #[error(transparent)]
     Other(anyhow::Error),
     #[error(transparent)]
     External(anyhow::Error)
+}
+
+#[derive(Debug)]
+pub enum ExpectUserAction {
+    Login,
+    MFA
 }
 
 // Todo: Replace the errors assumed in RFC6749 with this one.
