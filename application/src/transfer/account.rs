@@ -80,6 +80,16 @@ impl UpdateAccountDto {
     }
 }
 
+
+#[derive(Debug)]
+pub struct VerifyAccountDto {
+    pub address: Option<String>,
+    pub pass: Option<String>,
+    pub code: Option<String>,
+    pub session: Option<String>,
+}
+
+
 #[derive(Debug)]
 pub struct NonVerifiedAccountDto {
     pub id: String,
