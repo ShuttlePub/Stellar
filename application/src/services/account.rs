@@ -135,7 +135,7 @@ pub trait UpdateAccountService: 'static + Send + Sync
             return Err(ApplicationError::NotFound {
                 method: "update",
                 entity: "Account",
-                id: id.as_ref().to_string()
+                id: AsRef::<Uuid>::as_ref(&id).to_string()
             })
         };
 
@@ -145,7 +145,7 @@ pub trait UpdateAccountService: 'static + Send + Sync
                 KernelError::InvalidPassword(_) => ApplicationError::Verification {
                     method: "on update in verification",
                     entity: "account",
-                    id: id.as_ref().to_string()
+                    id: AsRef::<Uuid>::as_ref(&id).to_string()
                 },
                 _ => unreachable!()
             })?;
@@ -186,7 +186,7 @@ pub trait DeleteAccountService: 'static + Send + Sync
             return Err(ApplicationError::NotFound {
                 method: "delete",
                 entity: "account",
-                id: id.as_ref().to_string()
+                id: AsRef::<Uuid>::as_ref(&id).to_string()
             })
         };
 
@@ -196,7 +196,7 @@ pub trait DeleteAccountService: 'static + Send + Sync
                 KernelError::InvalidPassword(_) => ApplicationError::Verification {
                     method: "on delete in verification",
                     entity: "account",
-                    id: id.as_ref().to_string()
+                    id: AsRef::<Uuid>::as_ref(&id).to_string()
                 },
                 _ => unreachable!()
             })?;

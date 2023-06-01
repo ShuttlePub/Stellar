@@ -99,7 +99,7 @@ impl PgAccountInternal {
                 $7
             );
         "#)
-        .bind(create.id().as_ref())
+        .bind(AsRef::<Uuid>::as_ref(create.id()))
         .bind(create.address().as_ref())
         .bind(create.name().as_ref())
         .bind(create.pass().as_ref())
@@ -128,7 +128,7 @@ impl PgAccountInternal {
         .bind(update.name().as_ref())
         .bind(update.pass().as_ref())
         .bind(update.date().updated_at().as_ref())
-        .bind(update.id().as_ref())
+        .bind(AsRef::<Uuid>::as_ref(update.id()))
         .execute(&mut *con)
         .await?;
 
@@ -139,7 +139,7 @@ impl PgAccountInternal {
         sqlx::query(r#"
             DELETE FROM users WHERE id = $1
         "#)
-        .bind(delete.as_ref())
+        .bind(AsRef::<Uuid>::as_ref(delete))
         .execute(&mut *con)
         .await?;
 
@@ -151,7 +151,7 @@ impl PgAccountInternal {
         sqlx::query_as::<_, AccountRow>(r#"
             SELECT * from users WHERE user_id = $1
         "#)
-        .bind(id.as_ref())
+        .bind(AsRef::<Uuid>::as_ref(id))
         .fetch_optional(&mut *con)
         .await?
         .map(|fetched| -> Result<Account, DriverError> {

@@ -202,7 +202,7 @@ impl PgClientInternal {
             )
         "#)
         .bind(client.description().as_ref())
-        .bind(client.owner().as_ref())
+        .bind(AsRef::<Uuid>::as_ref(client.owner()))
         .bind(client.id().id())
         .bind(client.client_uri().as_ref())
         .bind(client.logo_uri().as_ref())
@@ -365,7 +365,7 @@ impl PgClientInternal {
                 policy_uri = $6
             WHERE client_id = $7
         "#)
-        .bind(client.owner().as_ref())
+        .bind(AsRef::<Uuid>::as_ref(client.owner()))
         .bind(client.client_uri().as_ref())
         .bind(client.logo_uri().as_ref())
         .bind(client.contacts().as_ref_vec())

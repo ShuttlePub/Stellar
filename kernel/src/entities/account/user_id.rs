@@ -17,6 +17,12 @@ impl From<UserId> for Uuid {
     }
 }
 
+impl AsRef<[u8]> for UserId {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref() 
+    }
+}
+
 impl AsRef<Uuid> for UserId {
     fn as_ref(&self) -> &Uuid {
         &self.0
