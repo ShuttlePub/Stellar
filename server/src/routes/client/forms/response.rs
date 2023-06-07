@@ -28,24 +28,3 @@ impl IntoResponse for Response {
         (StatusCode::CREATED, Json(self)).into_response()
     }
 }
-
-#[derive(Serialize, Debug)]
-#[serde(rename_all(serialize = "snake_case"))]
-#[serde(tag = "error", content = "error_description")]
-pub enum ErrorResponse {
-    InvalidRedirectUri(String),
-    InvalidClientMetadata(String),
-    Unexpect(String)
-}
-
-impl ErrorResponse {
-    pub fn un_expect(desc: impl Into<String>) -> Self {
-        Self::Unexpect(desc.into())
-    }
-}
-
-impl IntoResponse for ErrorResponse {
-    fn into_response(self) -> axum::response::Response {
-        (StatusCode::BAD_REQUEST, Json(self)).into_response()
-    }
-}
