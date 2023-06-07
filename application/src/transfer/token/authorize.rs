@@ -1,4 +1,4 @@
-use kernel::entities::{AuthorizeToken, DestructAuthorizeToken, DestructAuthorizeTokenContext, TicketId};
+use kernel::entities::{AuthorizeToken, DestructAuthorizeToken, DestructAuthorizeTokenContext};
 use kernel::external::Uuid;
 
 #[derive(Debug)]
@@ -55,13 +55,4 @@ pub struct CreateAuthorizeTokenDto {
 pub struct AcceptUserFormDto {
     pub address: String,
     pub pass: String
-}
-
-#[derive(Debug)]
-pub struct TicketIdDto(pub String);
-
-impl From<TicketId> for TicketIdDto {
-    fn from(value: TicketId) -> Self {
-        Self(value.into())
-    }
 }

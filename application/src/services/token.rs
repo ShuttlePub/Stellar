@@ -35,7 +35,8 @@ use kernel::{
     },
 };
 use crate::ApplicationError;
-use crate::transfer::token::{AcceptUserFormDto, AuthorizeTokenDto, CreateAuthorizeTokenDto, TicketIdDto};
+use crate::transfer::mfa_code::TicketIdDto;
+use crate::transfer::token::{AcceptUserFormDto, AuthorizeTokenDto, CreateAuthorizeTokenDto};
 
 #[async_trait::async_trait]
 pub trait PendingAuthorizeTokenService: 'static + Sync + Send

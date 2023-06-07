@@ -1,4 +1,4 @@
-use kernel::repository::{DependOnAccountRepository, DependOnMFACodeVolatileRepository, DependOnNonVerifiedAccountRepository, DependOnSessionVolatileRepository};
+use kernel::repository::{DependOnAcceptedActionVolatileRepository, DependOnAccountRepository, DependOnMFACodeVolatileRepository, DependOnNonVerifiedAccountRepository, DependOnSessionVolatileRepository};
 use kernel::transport::DependOnVerificationMailTransporter;
 use crate::services::{CreateNonVerifiedAccountService, ApproveAccountService, UpdateAccountService, CreateAccountService, DeleteAccountService, VerifyAccountService};
 
@@ -28,8 +28,11 @@ impl<T> UpdateAccountService for T
 impl<T> DeleteAccountService for T
     where T: DependOnAccountRepository {}
 
+
+// Default Impl
 impl<T> VerifyAccountService for T
     where T: DependOnAccountRepository
            + DependOnSessionVolatileRepository
            + DependOnMFACodeVolatileRepository
-           + DependOnVerificationMailTransporter {}
+           + DependOnVerificationMailTransporter
+           + DependOnAcceptedActionVolatileRepository {}

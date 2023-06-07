@@ -1,7 +1,7 @@
 use kernel::entities::{Account, Address, NonVerifiedAccount, Password, TicketId, UpdatedAt, UserId, UserName, MFACode, Session, SessionId, EstablishedAt};
 use kernel::external::{Duration, OffsetDateTime, Uuid};
 use kernel::KernelError;
-use kernel::repository::{DependOnAccountRepository, DependOnNonVerifiedAccountRepository, AccountRepository, TemporaryAccountRepository, MFACodeVolatileRepository, DependOnMFACodeVolatileRepository, DependOnSessionVolatileRepository, SessionVolatileRepository};
+use kernel::repository::{DependOnAccountRepository, DependOnNonVerifiedAccountRepository, AccountRepository, TemporaryAccountRepository, MFACodeVolatileRepository, DependOnMFACodeVolatileRepository, DependOnSessionVolatileRepository, SessionVolatileRepository, DependOnAcceptedActionVolatileRepository, AcceptedActionVolatileRepository};
 
 #[allow(unused_imports)]
 use kernel::transport::{
@@ -218,13 +218,14 @@ pub trait VerifyAccountService: 'static + Send + Sync
     + DependOnSessionVolatileRepository
     + DependOnMFACodeVolatileRepository
     + DependOnVerificationMailTransporter
+    + DependOnAcceptedActionVolatileRepository
 {
     async fn verify(&self, verify: VerifyAccountDto) -> Result<SessionDto, ApplicationError> {
-        let VerifyAccountDto { code, address, pass, session, .. } = verify;
+        let VerifyAccountDto { ticket, address, pass, session, .. } = verify;
 
         if let Some(session) = session {
             let session = SessionId::new(session);
-            if let Some(valid) =  self.session_volatile_repository().find(&session).await? {
+            if let Some(valid) = self.session_volatile_repository().find(&session).await? {
                 return if valid.exp().is_expired() {
                     self.session_volatile_repository().revoke(valid.id()).await?;
                     Err(ApplicationError::RequireUserAction(ExpectUserAction::Login))
@@ -241,54 +242,44 @@ pub trait VerifyAccountService: 'static + Send + Sync
             }
         }
 
-        if address.is_none() || pass.is_none() {
-            return Err(ApplicationError::InvalidValue {
-                method: "required field valid",
-                value: "required field `address` and `pass`.".to_string(),
-            })
-        }
-
-        let address = Address::new(address.unwrap());
-
-        let Some(account) = self.account_repository().find_by_address(&address).await? else {
-            return Err(ApplicationError::NotFound {
-                method: "find_by_address",
-                entity: "account",
-                id: address.into(),
-            })
-        };
-
-        account.pass().verify(pass.unwrap())?;
-
-        match code {
+        match ticket {
             None => {
+                if address.is_none() || pass.is_none() {
+                    return Err(ApplicationError::InvalidValue {
+                        method: "required field valid",
+                        value: "required field `address` and `pass`.".to_string(),
+                    })
+                }
+
+                let address = Address::new(address.unwrap());
+
+                let Some(account) = self.account_repository().find_by_address(&address).await? else {
+                    return Err(ApplicationError::NotFound {
+                        method: "find_by_address",
+                        entity: "account",
+                        id: address.into(),
+                    })
+                };
+
+                account.pass().verify(pass.unwrap())?;
+
                 let code = MFACode::default();
                 self.mfa_code_volatile_repository().create(account.id(), &code).await?;
                 self.verification_mail_transporter().send(account.address(), &code).await?;
 
                 Err(ApplicationError::RequireUserAction(ExpectUserAction::MFA))
             },
-            Some(code) => {
-                let code = MFACode::new(code);
-                let Some(origin) = self.mfa_code_volatile_repository().find_by_id(account.id()).await? else {
+            Some(ticket) => {
+                let ticket = TicketId::new(ticket);
+                let Some(account) = self.accepted_action_volatile_repository().find(&ticket).await? else {
                     return Err(ApplicationError::NotFound {
-                        method: "find_by_id",
-                        entity: "mfa_code",
-                        id: account.id().to_string(),
+                        method: "find",
+                        entity: "verified_ticket",
+                        id: ticket.into(),
                     })
                 };
-
-                if code.ne(&origin) {
-                    return Err(ApplicationError::InvalidValue {
-                        method: "MFACode equivalence comparison",
-                        value: code.into(),
-                    })
-                }
-
-                self.mfa_code_volatile_repository().delete(account.id()).await?;
-
                 let id = SessionId::default();
-                let usr = *account.id();
+                let usr = account;
                 let exp = Duration::new(60 * 60, 0);
                 let est = EstablishedAt::default();
                 let session = Session::new(id, usr, exp, est);

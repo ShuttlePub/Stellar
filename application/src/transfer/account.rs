@@ -85,7 +85,7 @@ impl UpdateAccountDto {
 pub struct VerifyAccountDto {
     pub address: Option<String>,
     pub pass: Option<String>,
-    pub code: Option<String>,
+    pub ticket: Option<String>,
     pub session: Option<String>,
 }
 
