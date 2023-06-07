@@ -85,7 +85,9 @@ impl From<KernelError> for ApplicationError {
             KernelError::Base64Decode(e)
                 => ApplicationError::Other(e),
             KernelError::Serde(e)
-                => ApplicationError::Other(e)
+                => ApplicationError::Other(e),
+            KernelError::Parse(e)
+                => ApplicationError::Other(e),
         }
     }
 }
