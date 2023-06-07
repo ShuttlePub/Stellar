@@ -24,7 +24,7 @@ impl MFACodeVolatileRepository for MFACodeVolatileDataBase {
         Ok(())
     }
 
-    async fn delete(&self, user_id: &UserId) -> Result<(), KernelError> {
+    async fn revoke(&self, user_id: &UserId) -> Result<(), KernelError> {
         let mut con = self.pool.get().await
             .map_err(DriverError::from)?;
         MFACodeRedisInternal::delete(user_id, &mut con).await?;
@@ -51,7 +51,7 @@ impl MFACodeRedisInternal {
             .arg(AsRef::<[u8]>::as_ref(user_id))
             .arg(code.as_ref())
         .arg("EX")
-            .arg(60 * 60)
+            .arg(60 * 5)
             .query_async(&mut *con)
             .await?;
         Ok(())
