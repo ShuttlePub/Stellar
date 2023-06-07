@@ -3,6 +3,7 @@ mod token;
 mod client;
 mod session;
 mod mfa_code;
+mod ticket;
 
 pub use self::{
     account::*,
@@ -10,4 +11,5 @@ pub use self::{
     client::*,
     session::*,
     mfa_code::*,
+    ticket::*,
 };
