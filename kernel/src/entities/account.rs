@@ -50,6 +50,27 @@ impl Account {
         })
     }
 
+    pub fn new_with_unchecked(
+        id: impl Into<Uuid>,
+        address: impl Into<String>,
+        name: impl Into<String>,
+        pass: impl Into<String>,
+        created_at: impl Into<OffsetDateTime>,
+        updated_at: impl Into<OffsetDateTime>,
+        verified_at: impl Into<OffsetDateTime>
+    ) -> Self {
+       Self {
+           id: UserId::new(id),
+           address: Address::new(address),
+           name: UserName::new(name),
+           pass: Password::new_unchecked(pass),
+           date: LoggedAt::new(created_at, updated_at),
+           verified_at: VerifiedAt::new(verified_at)
+       }
+    }
+}
+
+impl Account {
     pub fn id(&self) -> &UserId {
         &self.id
     }

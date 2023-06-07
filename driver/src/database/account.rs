@@ -67,7 +67,7 @@ pub(in crate::database) struct PgAccountInternal;
 #[allow(dead_code)]
 #[derive(sqlx::FromRow)]
 pub(in crate::database) struct AccountRow {
-    id: Uuid,
+    user_id: Uuid,
     address: String,
     name: String,
     pass: String,
@@ -155,15 +155,15 @@ impl PgAccountInternal {
         .fetch_optional(&mut *con)
         .await?
         .map(|fetched| -> Result<Account, DriverError> {
-            Ok(Account::new(
-                fetched.id, 
+            Ok(Account::new_with_unchecked(
+                fetched.user_id,
                 fetched.address, 
                 fetched.name, 
                 fetched.pass, 
                 fetched.created_at, 
                 fetched.updated_at, 
                 fetched.verified_at
-            )?)
+            ))
         })
         .transpose()
     }
@@ -173,21 +173,21 @@ impl PgAccountInternal {
         sqlx::query_as::<_, AccountRow>(r#"
             SELECT * from users WHERE address LIKE $1
         "#)
-            .bind(address.as_ref())
-            .fetch_optional(&mut *con)
-            .await?
-            .map(|fetched| -> Result<Account, DriverError> {
-                Ok(Account::new(
-                    fetched.id,
-                    fetched.address,
-                    fetched.name,
-                    fetched.pass,
-                    fetched.created_at,
-                    fetched.updated_at,
-                    fetched.verified_at
-                )?)
-            })
-            .transpose()
+        .bind(address.as_ref())
+        .fetch_optional(&mut *con)
+        .await?
+        .map(|fetched| -> Result<Account, DriverError> {
+            Ok(Account::new_with_unchecked(
+                fetched.user_id,
+                fetched.address,
+                fetched.name,
+                fetched.pass,
+                fetched.created_at,
+                fetched.updated_at,
+                fetched.verified_at
+            ))
+        })
+        .transpose()
     }
 }
 

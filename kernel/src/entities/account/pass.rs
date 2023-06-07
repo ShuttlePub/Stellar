@@ -20,7 +20,7 @@ impl Password {
         Ok(Self(pass))
     }
 
-    pub fn unchecked_new(pass: impl Into<String>) -> Self {
+    pub fn new_unchecked(pass: impl Into<String>) -> Self {
         Self(pass.into())
     }
 
@@ -34,7 +34,10 @@ impl Password {
         let self_hashing = PasswordHash::new(&self.0)
             .map_err(KernelError::Cryption)?;
         ARGON.verify_password(pass.into().as_bytes(), &self_hashing)
-            .map_err(KernelError::Cryption)?;
+            .map_err(|e| {
+                println!("{:?}", e);
+                KernelError::InvalidPassword(e)
+            })?;
         Ok(())
     }
 }
@@ -48,5 +51,19 @@ impl From<Password> for String {
 impl AsRef<str> for Password {
     fn as_ref(&self) -> &str {
         &self.0
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn verify() -> anyhow::Result<()> {
+        let phrase = "PaSSw0rd";
+        let pass = Password::new(phrase)?;
+
+        pass.verify(phrase)?;
+        Ok(())
     }
 }

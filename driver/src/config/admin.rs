@@ -25,7 +25,7 @@ impl TryFrom<Admin> for AdminUser {
             name: UserName::new(value.name),
             address: Address::new(value.address),
             pass: value.pass_hashed
-                .map(Password::unchecked_new)
+                .map(Password::new_unchecked)
                 .unwrap_or(Password::new(value.pass)?),
         })
     }
