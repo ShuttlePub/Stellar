@@ -1,7 +1,7 @@
 mod access;
 mod authorize;
 
-pub mod user_decision;
+pub mod decision;
 
 pub use self::{
     authorize::*

@@ -29,8 +29,8 @@ async fn main() -> anyhow::Result<()> {
     let clients = Router::new()
         .route("/stellar", get(stellar_info))
         .route("/authorize", get(authorization)
-            .patch(user_decision::accept)
-            .delete(user_decision::reject));
+            .patch(decision::accept)
+            .delete(decision::reject));
 
     let accounts = Router::new()
         .route("/login", post(login))
