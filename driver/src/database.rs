@@ -5,6 +5,7 @@ mod pkce;
 mod state;
 mod mfa_code;
 mod session;
+mod ticket;
 
 pub use self::{
     account::*,
@@ -14,4 +15,5 @@ pub use self::{
     state::*,
     mfa_code::*,
     session::*,
+    ticket::*,
 };

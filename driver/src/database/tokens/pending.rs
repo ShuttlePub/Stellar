@@ -86,7 +86,7 @@ impl PendingAuthorizeTokenRedisInternal {
 }
 
 fn namespace(key: impl AsRef<str>) -> String {
-    format!("{}-authz-token", key.as_ref())
+    format!("{}-pending-authz-token", key.as_ref())
 }
 
 
