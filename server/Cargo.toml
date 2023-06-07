@@ -8,6 +8,7 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 axum = { version = "0.6", features = ["multipart", "query", "headers"] }
+axum-extra = { version = "0.7.4", features = ["cookie"] }
 tokio = { version = "1", features = ["full"] }
 thiserror = { workspace = true }
 anyhow =  { workspace = true }
