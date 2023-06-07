@@ -9,14 +9,15 @@ use application::{
         DependOnUpdateClientService,
         DependOnPendingAuthorizeTokenService,
         DependOnAcceptAuthorizeTokenService,
-        DependOnRejectAuthorizeTokenService
+        DependOnRejectAuthorizeTokenService,
+        DependOnVerifyAccountService,
+        DependOnVerifyMFACodeService
     },
     interactor::{
         RegisterClientInteractor,
         UpdateClientInteractor
-    }
+    },
 };
-use application::services::DependOnVerifyAccountService;
 use kernel::{
     repository::{
         DependOnAccountRepository,
@@ -25,7 +26,11 @@ use kernel::{
         DependOnAuthorizeTokenRepository,
         DependOnPendingAuthorizeTokenRepository,
         DependOnPKCEVolatileRepository,
-        DependOnStateVolatileRepository
+        DependOnStateVolatileRepository,
+        DependOnAcceptedActionVolatileRepository,
+        DependOnMFACodeVolatileRepository,
+        DependOnPendingActionVolatileRepository,
+        DependOnSessionVolatileRepository
     },
     transport::{
         DependOnVerificationMailTransporter
@@ -41,14 +46,16 @@ use driver::{
         NonVerifiedAccountDataBase,
         PendingAuthorizeTokenVolatileDataBase,
         PKCEVolatileDataBase,
-        StateVolatileDataBase
+        StateVolatileDataBase,
+        AcceptedActionVolatileDataBase,
+        MFACodeVolatileDataBase,
+        PendingActionVolatileDataBase,
+        SessionVolatileDataBase
     },
     DataBaseDriver,
     SmtpDriver,
-    transport::VerificationMailer
+    transport::VerificationMailer,
 };
-use driver::database::{MFACodeVolatileDataBase, SessionVolatileDataBase};
-use kernel::repository::{DependOnMFACodeVolatileRepository, DependOnSessionVolatileRepository};
 use crate::ServerError;
 
 #[cfg(debug_assertions)]
@@ -68,6 +75,8 @@ pub struct Handler {
     state_v_repo: StateVolatileDataBase,
     mfa_code_v_repo: MFACodeVolatileDataBase,
     session_v_repo: SessionVolatileDataBase,
+    pending_action_v_repo: PendingActionVolatileDataBase,
+    accepted_action_v_repo: AcceptedActionVolatileDataBase,
 
     #[cfg(not(debug_assertions))]
     mailer: VerificationMailer,
@@ -97,7 +106,9 @@ impl Handler {
         let pkce_v_repo = PKCEVolatileDataBase::new(redis_pool.clone());
         let state_v_repo = StateVolatileDataBase::new(redis_pool.clone());
         let mfa_code_v_repo = MFACodeVolatileDataBase::new(redis_pool.clone());
-        let session_v_repo = SessionVolatileDataBase::new(redis_pool);
+        let session_v_repo = SessionVolatileDataBase::new(redis_pool.clone());
+        let pending_action_v_repo = PendingActionVolatileDataBase::new(redis_pool.clone());
+        let accepted_action_v_repo = AcceptedActionVolatileDataBase::new(redis_pool);
 
         #[cfg(not(debug_assertions))]
         let mailer = VerificationMailer::new(smtp_pool);
@@ -119,6 +130,8 @@ impl Handler {
             state_v_repo,
             mfa_code_v_repo,
             session_v_repo,
+            pending_action_v_repo,
+            accepted_action_v_repo,
 
             mailer,
 
@@ -185,7 +198,21 @@ impl DependOnMFACodeVolatileRepository for Handler {
 impl DependOnSessionVolatileRepository for Handler {
     type SessionVolatileRepository = SessionVolatileDataBase;
     fn session_volatile_repository(&self) -> &Self::SessionVolatileRepository {
-       &self.session_v_repo
+        &self.session_v_repo
+    }
+}
+
+impl DependOnPendingActionVolatileRepository for Handler {
+    type PendingActionVolatileRepository = PendingActionVolatileDataBase;
+    fn pending_action_volatile_repository(&self) -> &Self::PendingActionVolatileRepository {
+        &self.pending_action_v_repo
+    }
+}
+
+impl DependOnAcceptedActionVolatileRepository for Handler {
+    type AcceptedActionVolatileRepository = AcceptedActionVolatileDataBase;
+    fn accepted_action_volatile_repository(&self) -> &Self::AcceptedActionVolatileRepository {
+        &self.accepted_action_v_repo
     }
 }
 
@@ -259,9 +286,15 @@ impl DependOnVerifyAccountService for Handler {
     }
 }
 
+impl DependOnVerifyMFACodeService for Handler {
+    type VerifyMFACodeService = Self;
+    fn verify_mfa_code_service(&self) -> &Self::VerifyMFACodeService {
+       self
+    }
+}
+
 impl DependOnRegisterClientService for Handler {
     type RegisterClientService = ClientRegisterer;
-
     fn register_client_service(&self) -> &Self::RegisterClientService {
         &self.client_reg
     }
@@ -269,7 +302,6 @@ impl DependOnRegisterClientService for Handler {
 
 impl DependOnUpdateClientService for Handler {
     type UpdateClientService = UpdateClientInteractor<ClientDataBase, AccountDataBase>;
-
     fn update_client_service(&self) -> &Self::UpdateClientService {
         &self.client_upd
     }
