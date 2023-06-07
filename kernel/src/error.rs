@@ -1,5 +1,3 @@
-use std::fmt::{Display};
-
 #[derive(Debug, thiserror::Error)]
 pub enum KernelError {
     #[error("cannot find `{id}:{entity}` in the following {method}.")]
@@ -19,10 +17,12 @@ pub enum KernelError {
     Base64Decode(anyhow::Error),
     #[error("failed cryption in argon password hashing. : {0:?}")]
     Cryption(argon2::password_hash::Error),
-    #[error("invalid password ")]
+    #[error("invalid password : {0:?}")]
     InvalidPassword(argon2::password_hash::Error),
     #[error(transparent)]
     Serde(anyhow::Error),
+    #[error(transparent)]
+    Parse(anyhow::Error),
     #[error(transparent)]
     Driver(anyhow::Error),
     #[error(transparent)]
@@ -42,7 +42,13 @@ impl From<base64::DecodeError> for KernelError {
 }
 
 impl serde::ser::Error for KernelError {
-    fn custom<T>(msg: T) -> Self where T: Display {
+    fn custom<T>(msg: T) -> Self where T: std::fmt::Display {
         Self::Serde(anyhow::Error::msg(msg.to_string()))
+    }
+}
+
+impl From<uuid::Error> for KernelError {
+    fn from(e: uuid::Error) -> Self {
+        Self::Parse(anyhow::Error::new(e))
     }
 }
