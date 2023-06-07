@@ -1,6 +1,8 @@
 use std::fmt::Display;
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::KernelError;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct UserId(Uuid);
@@ -8,6 +10,13 @@ pub struct UserId(Uuid);
 impl UserId {
     pub fn new(id: impl Into<Uuid>) -> Self {
         Self(id.into())
+    }
+}
+
+impl TryFrom<String> for UserId {
+    type Error = KernelError;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Ok(Self(Uuid::from_str(value.as_str())?))
     }
 }
 
