@@ -1,35 +1,48 @@
 use axum::{response::IntoResponse, http::StatusCode, extract::{State, Query}, Json};
-use serde::{Deserialize, Serialize};
-use application::services::{ApproveAccountService, DependOnApproveAccountService};
+use application::services::{DependOnVerifyMFACodeService, VerifyMFACodeService};
+use application::transfer::mfa_code::MFAActionDto;
 
-use crate::Handler;
-
-#[derive(Deserialize, Debug)]
-pub struct UserInput {
-    code: String
-}
-
-#[derive(Serialize, Debug)]
-pub struct Response {
-    ticket: String
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Ticket {
-    id: String
-}
+use crate::{Handler, ServerError};
+use self::forms::*;
 
 pub async fn verify(
     State(handler): State<Handler>,
-    Query(ticket): Query<Ticket>,
+    Query(query): Query<UserQuery>,
     Json(form): Json<UserInput>,
-) -> Result<impl IntoResponse, StatusCode> {
-    let valid = handler.approve_account_service()
-        .approve(&ticket.id, &form.code)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let res = Response {
-        ticket: valid
+) -> Result<impl IntoResponse, ServerError> {
+    let dto = MFAActionDto {
+        pending: query.ticket,
+        code: form.code,
     };
+
+    let accepted = handler
+        .verify_mfa_code_service()
+        .verify(dto)
+        .await?;
+
+    let res = Response {
+        ticket: accepted.0
+    };
+
     Ok((StatusCode::TEMPORARY_REDIRECT, Json(res)))
+}
+
+
+mod forms {
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Deserialize, Debug)]
+    pub struct UserInput {
+        pub code: String
+    }
+
+    #[derive(Deserialize, Debug)]
+    pub struct UserQuery {
+        pub ticket: String
+    }
+
+    #[derive(Serialize, Debug)]
+    pub struct Response {
+        pub ticket: String
+    }
 }

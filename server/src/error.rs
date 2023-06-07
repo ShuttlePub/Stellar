@@ -1,15 +1,14 @@
+use std::convert::Infallible;
 use std::fmt::Display;
-use axum::http::StatusCode;
-use axum::Json;
-use axum::response::{IntoResponse, Redirect, Response};
+use axum::{http::header::CONTENT_LOCATION, headers::{HeaderMap, HeaderValue}, http::StatusCode, Json, response::{IntoResponse, Response}};
 use serde_json::json;
-use application::ApplicationError;
+use application::{ApplicationError, ExpectUserAction};
 use driver::DriverError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ServerError {
     #[error(transparent)]
-    Application(#[from] ApplicationError),
+    Application(ApplicationError),
     #[error(transparent)]
     Driver(#[from] DriverError),
     #[error("invalid value `{value}` in the following {method}.")]
@@ -18,16 +17,29 @@ pub enum ServerError {
         value: String
     },
     #[error(transparent)]
+    Axum(anyhow::Error),
+    #[error(transparent)]
     Serde(anyhow::Error),
     #[error(transparent)]
     RequestParse(anyhow::Error),
-    #[error("MFA code via email required.")]
-    MFAVerification
+    #[error("require user action.")]
+    RequireUserAction(ExpectUserAction),
+    #[error(transparent)]
+    Infallible(#[from] Infallible)
 }
 
 impl serde::de::Error for ServerError {
     fn custom<T>(msg: T) -> Self where T: Display {
         ServerError::Serde(anyhow::Error::msg(msg.to_string()))
+    }
+}
+
+impl From<ApplicationError> for ServerError {
+    fn from(value: ApplicationError) -> Self {
+        match value {
+            ApplicationError::RequireUserAction(expect) => Self::RequireUserAction(expect),
+            _ => Self::Application(value)
+        }
     }
 }
 
@@ -37,9 +49,23 @@ impl From<kernel::external::UuidError> for ServerError {
     }
 }
 
+impl From<axum::Error> for ServerError {
+    fn from(e: axum::Error) -> Self {
+        Self::Axum(anyhow::Error::new(e))
+    }
+}
+
+impl From<axum::headers::Error> for ServerError {
+    fn from(e: axum::headers::Error) -> Self {
+        Self::Axum(anyhow::Error::new(e))
+    }
+}
+
 impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
         let msg = match self {
+            ServerError::Axum(e)
+                => e.to_string(),
             ServerError::Driver(e)
                 => e.to_string(),
             ServerError::InvalidValue { method, value }
@@ -50,8 +76,10 @@ impl IntoResponse for ServerError {
                 => e.to_string(),
             ServerError::Application(e)
                 => e.to_string(),
-            ServerError::MFAVerification
-                => return Redirect::to("/accounts/verify").into_response()
+            ServerError::Infallible(e)
+                => e.to_string(),
+            ServerError::RequireUserAction(expect)
+                => return require_user_actions(expect).into_response()
         };
 
         let json = json!({
@@ -59,5 +87,18 @@ impl IntoResponse for ServerError {
         });
 
         (StatusCode::BAD_REQUEST, Json(json)).into_response()
+    }
+}
+
+fn require_user_actions(expect: ExpectUserAction) -> impl IntoResponse {
+    match expect {
+        ExpectUserAction::Login => {
+            (StatusCode::FORBIDDEN, HeaderMap::new(), "session expired. please re-login.")
+        },
+        ExpectUserAction::MFA => {
+            let mut headers = HeaderMap::new();
+            headers.insert(CONTENT_LOCATION, HeaderValue::from_static("/accounts/verify"));
+            (StatusCode::ACCEPTED, headers, "accepted login process, We have sent you an email including an authentication code, please add the code to the form and continue the process.")
+        }
     }
 }

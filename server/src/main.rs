@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use axum::{Router, Server, routing::{post, get}, response::IntoResponse, http::StatusCode};
-use server::{Handler, routes::{verify, signup, stellar_info, authorization, user_decision}};
+use server::{Handler, routes::{login, verify, signup, stellar_info, authorization, decision}};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -33,6 +33,7 @@ async fn main() -> anyhow::Result<()> {
             .delete(user_decision::reject));
 
     let accounts = Router::new()
+        .route("/login", post(login))
         .route("/signup", post(signup))
         .route("/verify", post(verify));
 
@@ -56,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn healthcheck() -> impl IntoResponse {
-    StatusCode::ACCEPTED
+    StatusCode::OK
 }
 
 async fn exit() {
