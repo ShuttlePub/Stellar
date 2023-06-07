@@ -24,6 +24,6 @@ impl AsRef<str> for TicketId {
 
 impl Default for TicketId {
     fn default() -> Self {
-        RandomizeService::gen_str(64, TicketId::new)
+        RandomizeService::gen_str(128, TicketId::new)
     }
 }
