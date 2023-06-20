@@ -1,4 +1,4 @@
-use kernel::repository::{DependOnAccountRepository, DependOnPendingAuthorizeTokenRepository, DependOnClientRegistry, DependOnPKCEVolatileRepository, DependOnStateVolatileRepository, DependOnAuthorizeTokenRepository};
+use kernel::interfaces::repository::{DependOnAccountRepository, DependOnPendingAuthorizeTokenRepository, DependOnClientRegistry, DependOnPKCEVolatileRepository, DependOnStateVolatileRepository, DependOnAuthorizeTokenRepository};
 use crate::services::{AcceptAuthorizeTokenService, PendingAuthorizeTokenService, RejectAuthorizeTokenService};
 
 impl<T> PendingAuthorizeTokenService for T

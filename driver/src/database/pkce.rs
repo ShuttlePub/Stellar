@@ -1,8 +1,8 @@
 use deadpool_redis::{Pool, redis};
 use deadpool_redis::Connection as RedisConnection;
-use kernel::entities::{AuthorizeTokenId, CodeChallenge};
+use kernel::prelude::entities::{AuthorizeTokenId, CodeChallenge};
 use kernel::KernelError;
-use kernel::repository::PKCEVolatileRepository;
+use kernel::interfaces::repository::PKCEVolatileRepository;
 use crate::DriverError;
 
 #[derive(Clone)]

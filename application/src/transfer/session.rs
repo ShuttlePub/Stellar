@@ -1,4 +1,4 @@
-use kernel::entities::{Session, DestructSession};
+use kernel::prelude::entities::{Session, DestructSession};
 use kernel::external::{OffsetDateTime, Uuid};
 
 #[derive(Debug)]

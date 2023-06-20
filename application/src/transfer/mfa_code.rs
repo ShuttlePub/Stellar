@@ -1,4 +1,4 @@
-use kernel::entities::TicketId;
+use kernel::prelude::entities::TicketId;
 
 #[derive(Debug)]
 pub struct MFAActionDto {

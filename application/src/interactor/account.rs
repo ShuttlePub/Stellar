@@ -1,5 +1,5 @@
-use kernel::repository::{DependOnAcceptedActionVolatileRepository, DependOnAccountRepository, DependOnMFACodeVolatileRepository, DependOnNonVerifiedAccountRepository, DependOnSessionVolatileRepository};
-use kernel::transport::DependOnVerificationMailTransporter;
+use kernel::interfaces::repository::{DependOnAcceptedActionVolatileRepository, DependOnAccountRepository, DependOnMFACodeVolatileRepository, DependOnNonVerifiedAccountRepository, DependOnSessionVolatileRepository};
+use kernel::interfaces::transport::DependOnVerificationMailTransporter;
 use crate::services::{CreateNonVerifiedAccountService, ApproveAccountService, UpdateAccountService, CreateAccountService, DeleteAccountService, VerifyAccountService};
 
 // Default Impl

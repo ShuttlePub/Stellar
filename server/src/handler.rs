@@ -18,7 +18,7 @@ use application::{
         UpdateClientInteractor
     },
 };
-use kernel::{
+use kernel::interfaces::{
     repository::{
         DependOnAccountRepository,
         DependOnClientRegistry,
@@ -332,9 +332,9 @@ impl DependOnRejectAuthorizeTokenService for Handler {
 #[cfg(debug_assertions)]
 mod mock {
     use axum::async_trait;
-    use kernel::entities::{Address, MFACode};
+    use kernel::prelude::entities::{Address, MFACode};
     use kernel::KernelError;
-    use kernel::transport::VerificationMailTransporter;
+    use kernel::interfaces::transport::VerificationMailTransporter;
 
     #[derive(Clone)]
     pub struct MockVerificationMailer;

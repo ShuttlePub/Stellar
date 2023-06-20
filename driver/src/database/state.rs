@@ -1,7 +1,7 @@
 use deadpool_redis::{Pool, redis, Connection as RedisConnection};
-use kernel::entities::{State, TicketId};
+use kernel::prelude::entities::{State, TicketId};
 use kernel::KernelError;
-use kernel::repository::StateVolatileRepository;
+use kernel::interfaces::repository::StateVolatileRepository;
 use crate::DriverError;
 
 #[derive(Clone)]
@@ -88,7 +88,7 @@ fn namespace(key: impl AsRef<str>) -> String {
 #[cfg(test)]
 mod tests {
     use deadpool_redis::{Config, Runtime};
-    use kernel::entities::{State, TicketId};
+    use kernel::prelude::entities::{State, TicketId};
     use crate::database::state::StateRedisInternal;
 
     #[ignore = "It depends on Redis and does not work as is."]

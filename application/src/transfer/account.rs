@@ -1,4 +1,4 @@
-use kernel::entities::{Account, DestructAccount, DestructLoggedAt, NonVerifiedAccount, DestructNonVerifiedAccount};
+use kernel::prelude::entities::{Account, DestructAccount, DestructLoggedAt, NonVerifiedAccount, DestructNonVerifiedAccount};
 use kernel::external::{OffsetDateTime, Uuid};
 
 #[derive(Debug)]

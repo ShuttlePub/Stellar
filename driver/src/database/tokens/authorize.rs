@@ -1,6 +1,6 @@
 use deadpool_redis::{Pool, redis, Connection as RedisConnection};
-use kernel::entities::{AuthorizeToken, AuthorizeTokenId};
-use kernel::repository::AuthorizeTokenRepository;
+use kernel::prelude::entities::{AuthorizeToken, AuthorizeTokenId};
+use kernel::interfaces::repository::AuthorizeTokenRepository;
 use kernel::KernelError;
 use crate::DriverError;
 
@@ -92,7 +92,7 @@ fn namespace(key: impl AsRef<str>) -> String {
 #[cfg(test)]
 mod tests {
     use deadpool_redis::{Config, Runtime};
-    use kernel::entities::{AuthorizeToken, AuthorizeTokenId, ClientId, ResponseType, ScopeMethod};
+    use kernel::prelude::entities::{AuthorizeToken, AuthorizeTokenId, ClientId, ResponseType, ScopeMethod};
     use kernel::external::{Duration, OffsetDateTime, Uuid};
     use super::AuthorizeTokenRedisInternal;
 

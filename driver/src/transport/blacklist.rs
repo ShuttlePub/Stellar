@@ -3,7 +3,7 @@ use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::Deserialize;
 use kernel::KernelError;
-use kernel::transport::BlackListTransporter;
+use kernel::interfaces::transport::BlackListTransporter;
 use crate::DriverError;
 
 pub struct BlacklistRepository {

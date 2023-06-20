@@ -28,6 +28,9 @@ thiserror = { workspace = true }
 anyhow =  { workspace = true }
 
 [features]
+interfaces = []
+prelude = []
+default = ["interfaces", "prelude"]
 mock = []
 jsonwebkey = []
 url  = []

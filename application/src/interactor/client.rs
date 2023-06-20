@@ -1,11 +1,11 @@
 use kernel::{
-    repository::{
+    interfaces::repository::{
         ClientRegistry, 
         AccountRepository,
         DependOnAccountRepository,
         DependOnClientRegistry,
     },
-    entities::{
+    prelude::entities::{
         Address,
         Client,
         ClientDescription,
@@ -35,7 +35,7 @@ use kernel::{
     },
     external::Uuid,
 };
-use kernel::services::JwkSelectionService;
+use kernel::prelude::services::JwkSelectionService;
 
 use crate::{
     services::{

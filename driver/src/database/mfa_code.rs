@@ -1,7 +1,7 @@
 use deadpool_redis::{Pool, Connection as RedisConnection, redis};
-use kernel::entities::{MFACode, UserId};
+use kernel::prelude::entities::{MFACode, UserId};
 use kernel::KernelError;
-use kernel::repository::MFACodeVolatileRepository;
+use kernel::interfaces::repository::MFACodeVolatileRepository;
 use crate::DriverError;
 
 #[derive(Clone)]

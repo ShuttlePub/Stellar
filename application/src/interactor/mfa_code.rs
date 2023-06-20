@@ -1,4 +1,4 @@
-use kernel::repository::{DependOnAcceptedActionVolatileRepository, DependOnAccountRepository, DependOnMFACodeVolatileRepository, DependOnPendingActionVolatileRepository};
+use kernel::interfaces::repository::{DependOnAcceptedActionVolatileRepository, DependOnAccountRepository, DependOnMFACodeVolatileRepository, DependOnPendingActionVolatileRepository};
 use crate::services::VerifyMFACodeService;
 
 impl<T> VerifyMFACodeService for T

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use kernel::entities::{Account, Address, CreatedAt, Password, UserId, UserName};
+use kernel::prelude::entities::{Account, Address, CreatedAt, Password, UserId, UserName};
 use super::Admin;
 use crate::DriverError;
 

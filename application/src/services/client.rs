@@ -1,6 +1,6 @@
-use kernel::entities::{ClientId, ClientTypes};
+use kernel::prelude::entities::{ClientId, ClientTypes};
 use kernel::external::Uuid;
-use kernel::repository::{AccountRepository, ClientRegistry, DependOnAccountRepository, DependOnClientRegistry};
+use kernel::interfaces::repository::{AccountRepository, ClientRegistry, DependOnAccountRepository, DependOnClientRegistry};
 use crate::ApplicationError;
 use crate::transfer::client::{ClientDto, RegisterClientDto, UpdateClientDto};
 

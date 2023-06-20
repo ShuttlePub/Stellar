@@ -1,7 +1,7 @@
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
-use kernel::entities::{Account, Client, ClientId, UserId};
+use kernel::prelude::entities::{Account, Client, ClientId, UserId};
 use super::{GenIds, Config, constants::{CONFIG, GENNED, CACHED}};
 use crate::DriverError;
 

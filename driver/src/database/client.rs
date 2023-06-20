@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use sqlx::{PgConnection, Pool, Postgres};
 use sqlx::types::Json;
-use kernel::entities::{Address, Client, ClientId, ClientName, ClientSecret, ClientTypes, GrantType, RedirectUri, ResponseType, ScopeDescription, ScopeMethod, TokenEndPointAuthMethod};
+use kernel::prelude::entities::{Address, Client, ClientId, ClientName, ClientSecret, ClientTypes, GrantType, RedirectUri, ResponseType, ScopeDescription, ScopeMethod, TokenEndPointAuthMethod};
 use kernel::external::{JsonWebKey, OffsetDateTime, Uuid};
 use kernel::KernelError;
-use kernel::repository::ClientRegistry;
+use kernel::interfaces::repository::ClientRegistry;
 use try_ref::TryAsRef;
 use merge_opt::merge_opt_i2;
-use kernel::services::JwkSelectionService;
+use kernel::prelude::services::JwkSelectionService;
 use crate::DriverError;
 
 #[derive(Clone)]
@@ -578,7 +578,7 @@ mod tests {
     use std::time::{Duration, Instant};
     use sqlx::{PgConnection, Pool, Postgres};
     use sqlx::postgres::PgPoolOptions;
-    use kernel::entities::{Account, Address, Client, ClientId, ClientSecret, ClientTypes, ClientUri, Contacts, GrantType, Jwks, RedirectUri, RedirectUris, RegistrationAccessToken, RegistrationEndPoint, ResponseType, ScopeDescription, ScopeMethod, Scopes, TokenEndPointAuthMethod, UserId};
+    use kernel::prelude::entities::{Account, Address, Client, ClientId, ClientSecret, ClientTypes, ClientUri, Contacts, GrantType, Jwks, RedirectUri, RedirectUris, RegistrationAccessToken, RegistrationEndPoint, ResponseType, ScopeDescription, ScopeMethod, Scopes, TokenEndPointAuthMethod, UserId};
     use kernel::external::{OffsetDateTime, Uuid};
     use crate::database::account::PgAccountInternal;
     use crate::database::client::PgClientInternal;

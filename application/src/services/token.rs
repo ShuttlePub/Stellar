@@ -1,5 +1,5 @@
 use kernel::{
-    repository::{
+    interfaces::repository::{
         DependOnAccessTokenRepository,
         DependOnAccountRepository,
         DependOnPendingAuthorizeTokenRepository,
@@ -15,7 +15,7 @@ use kernel::{
         AuthorizeTokenRepository,
         PendingAuthorizeTokenRepository,
     },
-    entities::{
+    prelude::entities::{
         AuthorizeToken,
         AuthorizeTokenId,
         ClientId,

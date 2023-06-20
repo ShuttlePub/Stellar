@@ -1,5 +1,5 @@
 use kernel::{
-    entities::{
+    prelude::entities::{
         TokenEndPointAuthMethod,
         TermsUri,
         Scopes,
@@ -27,8 +27,8 @@ use kernel::{
         UserId
     }
 };
-use kernel::entities::Client;
-use kernel::services::JwkSelectionService;
+use kernel::prelude::entities::Client;
+use kernel::prelude::services::JwkSelectionService;
 use super::Stellar;
 use crate::DriverError;
 

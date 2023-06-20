@@ -14,7 +14,7 @@ use self::{
 
 use sqlx::{Pool, Postgres};
 use once_cell::sync::Lazy;
-use kernel::repository::{AccountRepository, ClientRegistry};
+use kernel::interfaces::repository::{AccountRepository, ClientRegistry};
 use crate::database::{AccountDataBase, ClientDataBase};
 use crate::DriverError;
 

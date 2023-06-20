@@ -4,9 +4,9 @@ use axum::http::StatusCode;
 use axum::Json;
 use axum::response::IntoResponse;
 use serde::Serialize;
-use kernel::entities::ClientName;
+use kernel::prelude::entities::ClientName;
 use kernel::external::{JsonWebKey, Uuid};
-use kernel::repository::{ClientRegistry, DependOnClientRegistry};
+use kernel::interfaces::repository::{ClientRegistry, DependOnClientRegistry};
 use crate::Handler;
 
 pub async fn stellar_info(

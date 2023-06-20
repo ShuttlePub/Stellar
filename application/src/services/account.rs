@@ -1,10 +1,10 @@
-use kernel::entities::{Account, Address, NonVerifiedAccount, Password, TicketId, UpdatedAt, UserId, UserName, MFACode, Session, SessionId, EstablishedAt};
+use kernel::prelude::entities::{Account, Address, NonVerifiedAccount, Password, TicketId, UpdatedAt, UserId, UserName, MFACode, Session, SessionId, EstablishedAt};
 use kernel::external::{Duration, OffsetDateTime, Uuid};
 use kernel::KernelError;
-use kernel::repository::{DependOnAccountRepository, DependOnNonVerifiedAccountRepository, AccountRepository, TemporaryAccountRepository, MFACodeVolatileRepository, DependOnMFACodeVolatileRepository, DependOnSessionVolatileRepository, SessionVolatileRepository, DependOnAcceptedActionVolatileRepository, AcceptedActionVolatileRepository};
+use kernel::interfaces::repository::{DependOnAccountRepository, DependOnNonVerifiedAccountRepository, AccountRepository, TemporaryAccountRepository, MFACodeVolatileRepository, DependOnMFACodeVolatileRepository, DependOnSessionVolatileRepository, SessionVolatileRepository, DependOnAcceptedActionVolatileRepository, AcceptedActionVolatileRepository};
 
 #[allow(unused_imports)]
-use kernel::transport::{
+use kernel::interfaces::transport::{
     DependOnVerificationMailTransporter,
     VerificationMailTransporter
 };

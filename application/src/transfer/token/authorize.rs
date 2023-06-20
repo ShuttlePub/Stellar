@@ -1,4 +1,4 @@
-use kernel::entities::{AuthorizeToken, DestructAuthorizeToken, DestructAuthorizeTokenContext};
+use kernel::prelude::entities::{AuthorizeToken, DestructAuthorizeToken, DestructAuthorizeTokenContext};
 use kernel::external::Uuid;
 
 #[derive(Debug)]

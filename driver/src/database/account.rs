@@ -1,6 +1,6 @@
 use kernel::{
-    repository::{AccountRepository, TemporaryAccountRepository},
-    entities::{Account, UserId, NonVerifiedAccount, TicketId, Address},
+    interfaces::repository::{AccountRepository, TemporaryAccountRepository},
+    prelude::entities::{Account, UserId, NonVerifiedAccount, TicketId, Address},
     KernelError
 };
 use deadpool_redis::Connection as RedisConnection;

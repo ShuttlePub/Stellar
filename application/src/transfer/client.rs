@@ -1,4 +1,4 @@
-use kernel::entities::{
+use kernel::prelude::entities::{
     Client,
     ClientSecret,
     DestructClient,

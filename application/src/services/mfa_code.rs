@@ -1,5 +1,5 @@
-use kernel::entities::{MFACode, TicketId};
-use kernel::repository::{AcceptedActionVolatileRepository, DependOnAcceptedActionVolatileRepository, DependOnAccountRepository, DependOnMFACodeVolatileRepository, DependOnPendingActionVolatileRepository, MFACodeVolatileRepository, PendingActionVolatileRepository};
+use kernel::prelude::entities::{MFACode, TicketId};
+use kernel::interfaces::repository::{AcceptedActionVolatileRepository, DependOnAcceptedActionVolatileRepository, DependOnAccountRepository, DependOnMFACodeVolatileRepository, DependOnPendingActionVolatileRepository, MFACodeVolatileRepository, PendingActionVolatileRepository};
 use crate::ApplicationError;
 use crate::transfer::mfa_code::{MFAActionDto, TicketIdDto};
 

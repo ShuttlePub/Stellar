@@ -1,12 +1,25 @@
-pub mod entities;
-pub mod repository;
-pub mod transport;
-pub mod services;
+mod entities;
+mod repository;
+mod transport;
+mod services;
 mod error;
 
 use once_cell::sync::Lazy;
 use url::Url;
+
 pub use self::error::KernelError;
+
+#[cfg(feature = "prelude")]
+pub mod prelude {
+    pub mod entities { pub use crate::entities::*; }
+    pub mod services { pub use crate::services::*; }
+}
+
+#[cfg(feature = "interfaces")]
+pub mod interfaces {
+    pub mod repository { pub use crate::repository::*; }
+    pub mod transport  { pub use crate::transport::*;  }
+}
 
 pub(crate) static BASE_URL: Lazy<Url> = Lazy::new(|| {
     dotenvy::var("BASE_URL").ok()

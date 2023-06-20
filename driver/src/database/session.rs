@@ -1,7 +1,7 @@
 use deadpool_redis::{Pool, redis, Connection as RedisConnection};
-use kernel::entities::{Session, SessionId};
+use kernel::prelude::entities::{Session, SessionId};
 use kernel::KernelError;
-use kernel::repository::SessionVolatileRepository;
+use kernel::interfaces::repository::SessionVolatileRepository;
 use crate::DriverError;
 
 #[derive(Clone)]
