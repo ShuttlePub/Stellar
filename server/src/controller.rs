@@ -56,7 +56,7 @@ pub trait InputPort<I>: 'static + Sync + Send {
 ///
 ///   `Note: The type here specifies the return value of the Service defined in the Application layer.`
 ///
-///         `The image is "Service -> Value -> OutputPort -> ViewModel".`
+///   `The image is "Service -> Value -> OutputPort -> ViewModel".`
 ///
 /// + `ViewModel` - ViewModel.
 ///
