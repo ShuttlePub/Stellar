@@ -12,7 +12,7 @@ use std::{future::IntoFuture, marker::PhantomData};
 /// + `I`   - ViewModel.
 /// + `Dto` - Data Transfer Object. See [`application::transfer`]
 ///
-///           It is expected to be the argument of the Service defined in the UseCase layer.
+///   `It is expected to be the argument of the Service defined in the UseCase layer.`
 ///
 /// ## Usage
 /// ```rust
@@ -54,8 +54,9 @@ pub trait InputPort<I>: 'static + Sync + Send {
 /// ### Type Argument
 /// + `I` - Data Transfer Object.
 ///
-///         Note: The type here specifies the return value of the Service defined in the Application layer.
-///               The image is "Service -> Value -> OutputPort -> ViewModel".
+///   `Note: The type here specifies the return value of the Service defined in the Application layer.`
+///
+///         `The image is "Service -> Value -> OutputPort -> ViewModel".`
 ///
 /// + `ViewModel` - ViewModel.
 ///

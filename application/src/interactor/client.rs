@@ -380,7 +380,7 @@ impl<T> DeleteClientService for T
 mod tests {
     use std::time::Duration;
     use mockall::predicate::always;
-    use kernel::entities::{
+    use kernel::prelude::entities::{
         Account,
         Address,
         Client,
@@ -396,7 +396,7 @@ mod tests {
         TokenEndPointAuthMethod
     };
     use kernel::external::{OffsetDateTime, Uuid};
-    use kernel::repository::{ClientRegistry, MockAccountRepository, MockClientRegistry};
+    use kernel::interfaces::repository::{ClientRegistry, MockAccountRepository, MockClientRegistry};
     use crate::interactor::{RegisterClientInteractor, UpdateClientInteractor};
     use crate::services::{RegisterClientService, UpdateClientService};
     use crate::transfer::client::{

@@ -83,7 +83,7 @@ impl PKCERedisInternal {
 #[cfg(test)]
 mod tests {
     use deadpool_redis::{Config, Runtime};
-    use kernel::entities::{AuthorizeTokenId, CodeChallenge};
+    use kernel::prelude::entities::{AuthorizeTokenId, CodeChallenge};
     use crate::database::pkce::PKCERedisInternal;
 
     //noinspection SpellCheckingInspection

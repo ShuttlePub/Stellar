@@ -43,7 +43,7 @@ impl SmtpInternal {
 
 #[cfg(test)]
 mod tests {
-    use kernel::entities::{MFACode, Address};
+    use kernel::prelude::entities::{MFACode, Address};
     use lettre::transport::smtp::authentication::Credentials;
 
     use crate::SmtpPool;
