@@ -1,12 +1,13 @@
 use kernel::{
     interfaces::repository::{AccountRepository, TemporaryAccountRepository},
-    prelude::entities::{Account, UserId, NonVerifiedAccount, TicketId, Address},
+    prelude::entities::{Account, TemporaryAccount, UserId, Address},
     KernelError
 };
 use deadpool_redis::Connection as RedisConnection;
 use deadpool_redis::redis;
 use sqlx::{Pool, Postgres, PgConnection};
 use kernel::external::{OffsetDateTime, Uuid};
+use crate::database::RedisPoolMng;
 
 use crate::DriverError;
 
@@ -204,82 +205,47 @@ impl NonVerifiedAccountDataBase {
 
 #[async_trait::async_trait]
 impl TemporaryAccountRepository for NonVerifiedAccountDataBase {
-    async fn create(&self, create: &NonVerifiedAccount) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
-        RedisInternal::create(create, &mut con).await?;
+    async fn create(&self, create: &TemporaryAccount) -> Result<(), KernelError> {
+        let mut con = RedisPoolMng::acquire(&self.pool).await?;
+        TemporaryAccountRedisInternal::create(create, &mut con).await?;
         
         Ok(())
     }
 
-    async fn validation(&self, coupon: &TicketId, valid: &TicketId, address: &Address) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
-        RedisInternal::validation(coupon, valid, address, &mut con).await?;
-        Ok(())
-    }
-
-    async fn find_by_id(&self, id: &TicketId) -> Result<Option<NonVerifiedAccount>, KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
-        let fetch = RedisInternal::find_by_id(id, &mut con).await?;
-        Ok(fetch)
-    }
-
-    async fn find_by_valid_id(&self, id: &TicketId) -> Result<Option<Address>, KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
-        let valid = RedisInternal::find_by_valid_id(id, &mut con).await?;
-        Ok(valid)
+    async fn find_by_id(&self, id: &UserId) -> Result<Option<TemporaryAccount>, KernelError> {
+        let mut con = RedisPoolMng::acquire(&self.pool).await?;
+        let found = TemporaryAccountRedisInternal::find_by_id(id, &mut con).await?;
+        Ok(found)
     }
 }
 
-pub(in crate::database) struct RedisInternal;
+pub(in crate::database) struct TemporaryAccountRedisInternal;
 
-impl RedisInternal {
-    pub async fn create(create: &NonVerifiedAccount, con: &mut RedisConnection) -> Result<(), DriverError> {
-        redis::pipe()
-            .cmd("SET")
-                .arg(create.id().as_ref())
-                .arg(create.address().as_ref())
+impl TemporaryAccountRedisInternal {
+    pub async fn create(create: &TemporaryAccount, con: &mut RedisConnection) -> Result<(), DriverError> {
+        redis::cmd("SET")
+            .arg(namespace(create.id()))
+            .arg(serde_json::to_vec(&create)?)
             .arg("EX")
-                .arg(6000)
-            .ignore()
-            .cmd("SET")
-                .arg(create.address().as_ref())
-                .arg(create.code().as_ref())
-            .arg("EX")
-                .arg(6010)
+            .arg(60 * 30)
             .query_async(&mut *con)
             .await?;
 
         Ok(())
     }
 
-    pub async fn validation(coupon: &TicketId, valid: &TicketId, address: &Address, con: &mut RedisConnection) -> Result<(), DriverError> {
-        redis::cmd("DEL").arg(coupon.as_ref()).query_async(&mut *con).await?;
-        redis::cmd("SET").arg(valid.as_ref()).arg(address.as_ref()).arg("EX").arg("6000").query_async(&mut *con).await?;
-        Ok(())
+    pub async fn find_by_id(id: &UserId, con: &mut RedisConnection) -> Result<Option<TemporaryAccount>, DriverError> {
+        let account: Option<Vec<u8>> = redis::cmd("GET")
+            .arg(namespace(id))
+            .query_async(&mut *con)
+            .await?;
+        let account = account
+            .map(|raw| serde_json::from_slice(&raw))
+            .transpose()?;
+        Ok(account)
     }
+}
 
-    //noinspection DuplicatedCode
-    pub async fn find_by_id(id: &TicketId, con: &mut RedisConnection) -> Result<Option<NonVerifiedAccount>, DriverError> {
-        let Some(address) = redis::cmd("GET").arg(id.as_ref()).query_async::<_, Option<String>>(&mut *con).await? else {
-            return Ok(None);
-        };
-
-        let Some(code) = redis::cmd("GET").arg(&address).query_async::<_, Option<String>>(&mut *con).await? else {
-            return Ok(None);
-        };
-
-        Ok(Some(NonVerifiedAccount::new(id.clone(), address, code)))
-    }
-
-    //noinspection DuplicatedCode
-    pub async fn find_by_valid_id(id: &TicketId, con: &mut RedisConnection) -> Result<Option<Address>, DriverError> {
-        let Some(address) = redis::cmd("GET").arg(id.as_ref()).query_async::<_, Option<String>>(&mut *con).await? else {
-            return Ok(None);
-        };
-        Ok(Some(Address::new(address)))
-    }
+fn namespace(id: impl AsRef<Uuid>) -> String {
+    format!("{}-temp", id.as_ref().as_hyphenated())
 }
