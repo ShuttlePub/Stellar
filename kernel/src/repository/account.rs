@@ -1,5 +1,5 @@
 use crate::{
-    entities::{Account, UserId, NonVerifiedAccount, TicketId, Address}, 
+    entities::{Account, UserId, Address, TemporaryAccount},
     KernelError
 };
 
@@ -23,13 +23,11 @@ pub trait DependOnAccountRepository: 'static + Sync + Send {
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
 pub trait TemporaryAccountRepository: 'static + Sync + Send {
-    async fn create(&self, create: &NonVerifiedAccount) -> Result<(), KernelError>;
-    async fn validation(&self, coupon: &TicketId, valid: &TicketId, address: &Address) -> Result<(), KernelError>;
-    async fn find_by_id(&self, id: &TicketId) -> Result<Option<NonVerifiedAccount>, KernelError>;
-    async fn find_by_valid_id(&self, id: &TicketId) -> Result<Option<Address>, KernelError>;
+    async fn create(&self, create: &TemporaryAccount) -> Result<(), KernelError>;
+    async fn find_by_id(&self, id: &UserId) -> Result<Option<TemporaryAccount>, KernelError>;
 }
 
-pub trait DependOnNonVerifiedAccountRepository: 'static + Sync + Send {
-    type NonVerifiedAccountRepository: TemporaryAccountRepository;
-    fn non_verified_account_repository(&self) -> &Self::NonVerifiedAccountRepository;
+pub trait DependOnTemporaryAccountRepository: 'static + Sync + Send {
+    type TemporaryAccountRepository: TemporaryAccountRepository;
+    fn temporary_account_repository(&self) -> &Self::TemporaryAccountRepository;
 }
