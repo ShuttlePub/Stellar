@@ -1,4 +1,5 @@
 use deadpool_redis::{Pool, Connection as RedisConnection, redis};
+use kernel::external::Uuid;
 use kernel::prelude::entities::{MFACode, UserId};
 use kernel::KernelError;
 use kernel::interfaces::repository::MFACodeVolatileRepository;
@@ -48,10 +49,10 @@ impl MFACodeRedisInternal {
         con: &mut RedisConnection
     ) -> Result<(), DriverError> {
         redis::cmd("SET")
-            .arg(AsRef::<[u8]>::as_ref(user_id))
+            .arg(namespace(user_id))
             .arg(code.as_ref())
         .arg("EX")
-            .arg(60 * 5)
+            .arg(60 * 15)
             .query_async(&mut *con)
             .await?;
         Ok(())
@@ -62,7 +63,7 @@ impl MFACodeRedisInternal {
         con: &mut RedisConnection
     ) -> Result<(), DriverError> {
         redis::cmd("DEL")
-            .arg(AsRef::<[u8]>::as_ref(user_id))
+            .arg(namespace(user_id))
             .query_async(&mut *con)
             .await?;
         Ok(())
@@ -73,10 +74,14 @@ impl MFACodeRedisInternal {
         con: &mut RedisConnection
     ) -> Result<Option<MFACode>, DriverError> {
         let code: Option<String> = redis::cmd("GET")
-            .arg(AsRef::<[u8]>::as_ref(user_id))
+            .arg(namespace(user_id))
             .query_async(&mut *con)
             .await?;
         let code = code.map(MFACode::new);
         Ok(code)
     }
+}
+
+fn namespace(id: impl AsRef<Uuid>) -> String {
+    format!("{}-mfa", id.as_ref().as_hyphenated())
 }

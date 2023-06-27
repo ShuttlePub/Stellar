@@ -2,6 +2,7 @@ use deadpool_redis::{Pool, Connection as RedisConnection, redis};
 use kernel::prelude::entities::{TicketId, UserId};
 use kernel::KernelError;
 use kernel::interfaces::repository::AcceptedActionVolatileRepository;
+use crate::database::RedisPoolMng;
 use crate::DriverError;
 
 #[derive(Clone)]
@@ -47,7 +48,7 @@ impl AcceptedActionRedisInternal {
         con: &mut RedisConnection
     ) -> Result<(), DriverError> {
         redis::cmd("SET")
-            .arg(ticket.as_ref())
+            .arg(namespace(ticket))
             .arg(AsRef::<[u8]>::as_ref(user_id))
             .arg("EX")
             .arg(60 * 10)
@@ -61,7 +62,7 @@ impl AcceptedActionRedisInternal {
         con: &mut RedisConnection
     ) -> Result<(), DriverError> {
         redis::cmd("DEL")
-            .arg(ticket.as_ref())
+            .arg(namespace(ticket))
             .query_async(&mut *con)
             .await?;
         Ok(())
@@ -71,13 +72,17 @@ impl AcceptedActionRedisInternal {
         ticket: &TicketId,
         con: &mut RedisConnection
     ) -> Result<Option<UserId>, DriverError> {
-        let raw: Option<String> = redis::cmd("GET")
-            .arg(ticket.as_ref())
+        let raw: Option<Vec<u8>> = redis::cmd("GET")
+            .arg(namespace(ticket))
             .query_async(&mut *con)
             .await?;
         let found = raw
-            .map(UserId::try_from)
+            .map(TryInto::try_into)
             .transpose()?;
         Ok(found)
     }
+}
+
+fn namespace(ticket: impl AsRef<str>) -> String {
+    format!("{}-accepted", ticket.as_ref())
 }

@@ -2,6 +2,7 @@ use deadpool_redis::{Pool, Connection as RedisConnection, redis};
 use kernel::prelude::entities::{TicketId, UserId};
 use kernel::KernelError;
 use kernel::interfaces::repository::PendingActionVolatileRepository;
+use crate::database::RedisPoolMng;
 use crate::DriverError;
 
 #[derive(Clone)]
@@ -51,7 +52,7 @@ impl PendingActionRedisInternal {
         con: &mut RedisConnection
     ) -> Result<(), DriverError> {
         redis::cmd("SET")
-            .arg(ticket.as_ref())
+            .arg(namespace(ticket))
             .arg(AsRef::<[u8]>::as_ref(user_id))
             .arg("EX")
             .arg(60 * 10)
@@ -66,7 +67,7 @@ impl PendingActionRedisInternal {
         con: &mut RedisConnection
     ) -> Result<(), DriverError> {
         redis::cmd("DEL")
-            .arg(ticket.as_ref())
+            .arg(namespace(ticket))
             .query_async(&mut *con)
             .await?;
         Ok(())
@@ -76,13 +77,17 @@ impl PendingActionRedisInternal {
         ticket: &TicketId,
         con: &mut RedisConnection
     ) -> Result<Option<UserId>, DriverError> {
-        let raw: Option<String> = redis::cmd("GET")
-            .arg(ticket.as_ref())
+        let raw: Option<Vec<u8>> = redis::cmd("GET")
+            .arg(namespace(ticket))
             .query_async(&mut *con)
             .await?;
         let user_id = raw
-            .map(UserId::try_from)
+            .map(TryInto::try_into)
             .transpose()?;
         Ok(user_id)
     }
+}
+
+fn namespace(ticket: impl AsRef<str>) -> String {
+    format!("{}-pending", ticket.as_ref())
 }
