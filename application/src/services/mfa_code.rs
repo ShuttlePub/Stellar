@@ -1,5 +1,13 @@
 use kernel::prelude::entities::{MFACode, TicketId};
-use kernel::interfaces::repository::{AcceptedActionVolatileRepository, DependOnAcceptedActionVolatileRepository, DependOnAccountRepository, DependOnMFACodeVolatileRepository, DependOnPendingActionVolatileRepository, MFACodeVolatileRepository, PendingActionVolatileRepository};
+use kernel::interfaces::repository::{
+    DependOnAcceptedActionVolatileRepository,
+    DependOnAccountRepository,
+    DependOnMFACodeVolatileRepository,
+    DependOnPendingActionVolatileRepository,
+    AcceptedActionVolatileRepository,
+    MFACodeVolatileRepository,
+    PendingActionVolatileRepository
+};
 use crate::ApplicationError;
 use crate::transfer::mfa_code::{MFAActionDto, TicketIdDto};
 
@@ -12,21 +20,25 @@ pub trait VerifyMFACodeService: 'static + Sync + Send
 {
     async fn verify(&self, action: MFAActionDto) -> Result<TicketIdDto, ApplicationError> {
         let pending = TicketId::new(action.pending);
-        let Some(account) = self.pending_action_volatile_repository().find(&pending).await? else {
-            return Err(ApplicationError::NotFound {
+        let account = self
+            .pending_action_volatile_repository()
+            .find(&pending)
+            .await?
+            .ok_or_else(|| ApplicationError::NotFound {
                 method: "find",
-                entity: "ticket#pending",
-                id: pending.into(),
-            })
-        };
+                entity: "ticket:pending",
+                id: pending.clone().into(),
+            })?;
 
-        let Some(origin) = self.mfa_code_volatile_repository().find_by_id(&account).await? else {
-            return Err(ApplicationError::NotFound {
-                method: "find",
+        let origin = self
+            .mfa_code_volatile_repository()
+            .find_by_id(&account)
+            .await?
+            .ok_or_else(|| ApplicationError::NotFound {
+                method: "find_by_id",
                 entity: "mfa_code",
-                id: account.to_string(),
-            })
-        };
+                id: account.clone().to_string(),
+            })?;
 
         let code = MFACode::new(action.code);
 

@@ -1,7 +1,7 @@
-use kernel::prelude::entities::{Account, Address, NonVerifiedAccount, Password, TicketId, UpdatedAt, UserId, UserName, MFACode, Session, SessionId, EstablishedAt};
+use kernel::prelude::entities::{Account, Address, Password, TicketId, UpdatedAt, UserId, UserName, MFACode, Session, SessionId, EstablishedAt, TemporaryAccount};
 use kernel::external::{Duration, OffsetDateTime, Uuid};
 use kernel::KernelError;
-use kernel::interfaces::repository::{DependOnAccountRepository, DependOnNonVerifiedAccountRepository, AccountRepository, TemporaryAccountRepository, MFACodeVolatileRepository, DependOnMFACodeVolatileRepository, DependOnSessionVolatileRepository, SessionVolatileRepository, DependOnAcceptedActionVolatileRepository, AcceptedActionVolatileRepository};
+use kernel::interfaces::repository::{DependOnAccountRepository, DependOnTemporaryAccountRepository, DependOnMFACodeVolatileRepository, DependOnSessionVolatileRepository, DependOnAcceptedActionVolatileRepository, AccountRepository, AcceptedActionVolatileRepository, MFACodeVolatileRepository, SessionVolatileRepository, TemporaryAccountRepository, DependOnPendingActionVolatileRepository, PendingActionVolatileRepository};
 
 #[allow(unused_imports)]
 use kernel::interfaces::transport::{
@@ -11,100 +11,84 @@ use kernel::interfaces::transport::{
 
 use crate::{
     transfer::{
-        account::CreateNonVerifiedAccountDto,
-        account::NonVerifiedAccountDto,
-        account::CreateAccountDto,
-        account::UpdateAccountDto,
-        account::AccountDto,
-        account::VerifyAccountDto,
+        account::{
+            CreateNonVerifiedAccountDto,
+            CreateAccountDto,
+            UpdateAccountDto,
+            AccountDto,
+            VerifyAccountDto
+        },
         session::SessionDto
     },
     ExpectUserAction,
     ApplicationError,
 };
+use crate::services::DependOnVerifyMFACodeService;
+use crate::transfer::mfa_code::TicketIdDto;
 
 #[async_trait::async_trait]
-pub trait CreateNonVerifiedAccountService: 'static + Send + Sync
-    + DependOnNonVerifiedAccountRepository
+pub trait CreateTemporaryAccountService: 'static + Send + Sync
+    + DependOnTemporaryAccountRepository
     + DependOnVerificationMailTransporter
+    + DependOnVerifyMFACodeService
 {
-    async fn create(&self, create: CreateNonVerifiedAccountDto) -> Result<NonVerifiedAccountDto, ApplicationError> {
+    async fn create(&self, create: CreateNonVerifiedAccountDto) -> Result<TicketIdDto, ApplicationError> {
+        let user_id = UserId::default();
         let ticket = TicketId::default();
         let code = MFACode::default();
         let CreateNonVerifiedAccountDto { address } = create;
-        let non_verified = NonVerifiedAccount::new(ticket, address, code);
+        let non_verified = TemporaryAccount::new(user_id, address);
 
-        self.non_verified_account_repository().create(&non_verified).await?;
+        self.temporary_account_repository().create(&non_verified).await?;
+        self.verify_mfa_code_service().pending_action_volatile_repository().create(&ticket, &user_id).await?;
+        self.verify_mfa_code_service().mfa_code_volatile_repository().create(&user_id, &code).await?;
+        self.verification_mail_transporter().send(non_verified.address(), &code).await?;
 
-        self.verification_mail_transporter().send(non_verified.address(), non_verified.code()).await?;
-
-        Ok(non_verified.into())
+        Ok(ticket.into())
     }
 }
 
 pub trait DependOnCreateNonVerifiedAccountService: 'static + Send + Sync {
-    type CreateNonVerifiedAccountService: CreateNonVerifiedAccountService;
+    type CreateNonVerifiedAccountService: CreateTemporaryAccountService;
     fn create_non_verified_account_service(&self) -> &Self::CreateNonVerifiedAccountService;
 }
 
-#[async_trait::async_trait]
-pub trait ApproveAccountService: 'static + Send + Sync
-    + DependOnNonVerifiedAccountRepository
-{
-    async fn approve(&self, id: &str, code: &str) -> Result<String, ApplicationError> {
-        let id = TicketId::new(id);
-        let code = MFACode::new(code);
-
-        let Some(nonverified) = self.non_verified_account_repository().find_by_id(&id).await? else {
-            return Err(ApplicationError::NotFound {
-                method: "find",
-                entity: "non-verified account",
-                id: id.into()
-            })
-        };
-
-        if !nonverified.is_match_verification_code(&code) {
-            return Err(ApplicationError::InvalidValue {
-                method: "2FA code verify",
-                value: "verification code".into()
-            });
-        };
-
-        let valid = TicketId::default();
-
-        self.non_verified_account_repository().validation(&id, &valid, nonverified.address()).await?;
-
-        Ok(valid.into())
-    }
-}
-
-pub trait DependOnApproveAccountService: 'static + Send + Sync {
-    type ApproveAccountService: ApproveAccountService;
-    fn approve_account_service(&self) -> &Self::ApproveAccountService;
-}
 
 #[async_trait::async_trait]
 pub trait CreateAccountService: 'static + Send + Sync
     + DependOnAccountRepository
-    + DependOnNonVerifiedAccountRepository
+    + DependOnTemporaryAccountRepository
+    + DependOnVerifyMFACodeService
 {
-    async fn create(&self, id: &str, create: CreateAccountDto) -> Result<AccountDto, ApplicationError> {
-        let id = TicketId::new(id);
+    async fn create(&self, ticket: &str, create: CreateAccountDto) -> Result<AccountDto, ApplicationError> {
+        let ticket = TicketId::new(ticket);
 
-        let Some(verified) = self.non_verified_account_repository()
-            .find_by_valid_id(&id).await? else {
-            return Err(ApplicationError::NotFound {
+        let account = self
+            .verify_mfa_code_service()
+            .accepted_action_volatile_repository()
+            .find(&ticket)
+            .await?
+            .ok_or_else(|| ApplicationError::NotFound {
                 method: "find",
-                entity: "temporary account",
-                id: id.into()
-            })
-        };
+                entity: "ticket:accepted",
+                id: ticket.into(),
+            })?;
+
+        let account = self
+            .temporary_account_repository()
+            .find_by_id(&account)
+            .await?
+            .ok_or_else(|| ApplicationError::NotFound {
+                method: "find_by_id",
+                entity: "account:temporary",
+                id: account.to_string(),
+            })?;
 
         let CreateAccountDto { name, pass } = create;
 
         let verified = Account::new(
             UserId::default(),
-            verified,
+            account.address().as_ref(),
             name,
             pass,
             OffsetDateTime::now_utc(),
@@ -215,10 +199,9 @@ pub trait DependOnDeleteAccountService: 'static + Send + Sync {
 #[async_trait::async_trait]
 pub trait VerifyAccountService: 'static + Send + Sync
     + DependOnAccountRepository
-    + DependOnSessionVolatileRepository
-    + DependOnMFACodeVolatileRepository
     + DependOnVerificationMailTransporter
-    + DependOnAcceptedActionVolatileRepository
+    + DependOnSessionVolatileRepository
+    + DependOnVerifyMFACodeService
 {
     async fn verify(&self, verify: VerifyAccountDto) -> Result<SessionDto, ApplicationError> {
         let VerifyAccountDto { ticket, address, pass, session, .. } = verify;
@@ -264,22 +247,26 @@ pub trait VerifyAccountService: 'static + Send + Sync
                 account.pass().verify(pass.unwrap())?;
 
                 let code = MFACode::default();
-                self.mfa_code_volatile_repository().create(account.id(), &code).await?;
+                self.verify_mfa_code_service()
+                    .mfa_code_volatile_repository()
+                    .create(account.id(), &code).await?;
                 self.verification_mail_transporter().send(account.address(), &code).await?;
 
                 Err(ApplicationError::RequireUserAction(ExpectUserAction::MFA))
             },
             Some(ticket) => {
                 let ticket = TicketId::new(ticket);
-                let Some(account) = self.accepted_action_volatile_repository().find(&ticket).await? else {
-                    return Err(ApplicationError::NotFound {
+                let usr = self
+                    .verify_mfa_code_service()
+                    .accepted_action_volatile_repository()
+                    .find(&ticket)
+                    .await?
+                    .ok_or_else(|| ApplicationError::NotFound {
                         method: "find",
-                        entity: "verified_ticket",
+                        entity: "ticket:accepted",
                         id: ticket.into(),
-                    })
-                };
+                    })?;
                 let id = SessionId::default();
-                let usr = account;
                 let exp = Duration::new(60 * 60, 0);
                 let est = EstablishedAt::default();
                 let session = Session::new(id, usr, exp, est);

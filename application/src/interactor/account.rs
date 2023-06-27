@@ -1,22 +1,26 @@
-use kernel::interfaces::repository::{DependOnAcceptedActionVolatileRepository, DependOnAccountRepository, DependOnMFACodeVolatileRepository, DependOnNonVerifiedAccountRepository, DependOnSessionVolatileRepository};
+use kernel::interfaces::repository::{DependOnAccountRepository, DependOnTemporaryAccountRepository, DependOnSessionVolatileRepository};
 use kernel::interfaces::transport::DependOnVerificationMailTransporter;
-use crate::services::{CreateNonVerifiedAccountService, ApproveAccountService, UpdateAccountService, CreateAccountService, DeleteAccountService, VerifyAccountService};
+use crate::services::{
+    CreateTemporaryAccountService,
+    UpdateAccountService,
+    CreateAccountService,
+    DeleteAccountService,
+    VerifyAccountService,
+    DependOnVerifyMFACodeService
+};
 
 // Default Impl
-impl<T> CreateNonVerifiedAccountService for T
-    where T: DependOnNonVerifiedAccountRepository
-           + DependOnVerificationMailTransporter {}
-
-
-// Default Impl
-impl<T> ApproveAccountService for T
-    where T: DependOnNonVerifiedAccountRepository {}
+impl<T> CreateTemporaryAccountService for T
+    where T: DependOnTemporaryAccountRepository
+           + DependOnVerificationMailTransporter
+           + DependOnVerifyMFACodeService {}
 
 
 // Default Impl
 impl<T> CreateAccountService for T
     where T: DependOnAccountRepository
-    + DependOnNonVerifiedAccountRepository {}
+           + DependOnTemporaryAccountRepository
+           + DependOnVerifyMFACodeService {}
 
 
 // Default Impl
@@ -33,6 +37,5 @@ impl<T> DeleteAccountService for T
 impl<T> VerifyAccountService for T
     where T: DependOnAccountRepository
            + DependOnSessionVolatileRepository
-           + DependOnMFACodeVolatileRepository
            + DependOnVerificationMailTransporter
-           + DependOnAcceptedActionVolatileRepository {}
+           + DependOnVerifyMFACodeService {}

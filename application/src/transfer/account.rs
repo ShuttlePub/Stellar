@@ -1,4 +1,4 @@
-use kernel::prelude::entities::{Account, DestructAccount, DestructLoggedAt, NonVerifiedAccount, DestructNonVerifiedAccount};
+use kernel::prelude::entities::{Account, DestructAccount, DestructLoggedAt};
 use kernel::external::{OffsetDateTime, Uuid};
 
 #[derive(Debug)]
@@ -89,34 +89,6 @@ pub struct VerifyAccountDto {
     pub session: Option<String>,
 }
 
-
-#[derive(Debug)]
-pub struct NonVerifiedAccountDto {
-    pub id: String,
-    pub address: String,
-    pub code: String
-}
-
-impl NonVerifiedAccountDto {
-    pub fn new(id: impl Into<String>, address: impl Into<String>, code: impl Into<String>) -> Self {
-        Self { id: id.into(), address: address.into(), code: code.into() }
-    }
-}
-
-impl From<NonVerifiedAccount> for NonVerifiedAccountDto {
-    fn from(origin: NonVerifiedAccount) -> Self {
-        let DestructNonVerifiedAccount {
-            id,
-            address,
-            code,
-        } = origin.into_destruct();
-        Self { 
-            id: id.into(),
-            address: address.into(),
-            code: code.into()
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct CreateNonVerifiedAccountDto {
