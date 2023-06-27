@@ -18,22 +18,19 @@ impl AcceptedActionVolatileDataBase {
 #[async_trait::async_trait]
 impl AcceptedActionVolatileRepository for AcceptedActionVolatileDataBase {
     async fn create(&self, ticket: &TicketId, user_id: &UserId) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = RedisPoolMng::acquire(&self.pool).await?;
         AcceptedActionRedisInternal::create(ticket, user_id, &mut con).await?;
         Ok(())
     }
 
     async fn revoke(&self, ticket: &TicketId) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = RedisPoolMng::acquire(&self.pool).await?;
         AcceptedActionRedisInternal::revoke(ticket, &mut con).await?;
         Ok(())
     }
 
     async fn find(&self, ticket: &TicketId) -> Result<Option<UserId>, KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = RedisPoolMng::acquire(&self.pool).await?;
         let found = AcceptedActionRedisInternal::find(ticket, &mut con).await?;
         Ok(found)
     }

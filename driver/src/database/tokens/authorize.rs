@@ -2,6 +2,7 @@ use deadpool_redis::{Pool, redis, Connection as RedisConnection};
 use kernel::prelude::entities::{AuthorizeToken, AuthorizeTokenId};
 use kernel::interfaces::repository::AuthorizeTokenRepository;
 use kernel::KernelError;
+use crate::database::RedisPoolMng;
 use crate::DriverError;
 
 #[derive(Clone)]
@@ -13,27 +14,28 @@ impl AuthorizeTokenVolatileDataBase {
     pub fn new(pool: Pool) -> Self {
         Self { pool }
     }
+
+    pub async fn acquire(&self) -> Result<RedisConnection, DriverError> {
+        RedisPoolMng::acquire(&self.pool).await
+    }
 }
 
 #[async_trait::async_trait]
 impl AuthorizeTokenRepository for AuthorizeTokenVolatileDataBase {
     async fn save(&self, id: &AuthorizeTokenId, token: &AuthorizeToken) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.acquire().await?;
         AuthorizeTokenRedisInternal::save(id, token, &mut con).await?;
         Ok(())
     }
 
     async fn dele(&self, id: &AuthorizeTokenId) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.acquire().await?;
         AuthorizeTokenRedisInternal::dele(id, &mut con).await?;
         Ok(())
     }
 
     async fn find(&self, id: &AuthorizeTokenId) -> Result<Option<AuthorizeToken>, KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.acquire().await?;
         let found = AuthorizeTokenRedisInternal::find(id, &mut con).await?;
         Ok(found)
     }
