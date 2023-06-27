@@ -5,11 +5,19 @@ use uuid::Uuid;
 use crate::KernelError;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(transparent)]
 pub struct UserId(Uuid);
 
 impl UserId {
     pub fn new(id: impl Into<Uuid>) -> Self {
         Self(id.into())
+    }
+}
+
+impl TryFrom<Vec<u8>> for UserId {
+    type Error = KernelError;
+    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+        Ok(Self(Uuid::from_slice(value.as_slice())?))
     }
 }
 
