@@ -1,7 +1,6 @@
 use application::{
     services::{
         DependOnCreateNonVerifiedAccountService,
-        DependOnApproveAccountService,
         DependOnCreateAccountService,
         DependOnDeleteAccountService,
         DependOnUpdateAccountService,
@@ -22,7 +21,7 @@ use kernel::interfaces::{
     repository::{
         DependOnAccountRepository,
         DependOnClientRegistry,
-        DependOnNonVerifiedAccountRepository,
+        DependOnTemporaryAccountRepository,
         DependOnAuthorizeTokenRepository,
         DependOnPendingAuthorizeTokenRepository,
         DependOnPKCEVolatileRepository,
@@ -159,10 +158,10 @@ impl DependOnClientRegistry for Handler {
 
 
 
-impl DependOnNonVerifiedAccountRepository for Handler {
-    type NonVerifiedAccountRepository = NonVerifiedAccountDataBase;
+impl DependOnTemporaryAccountRepository for Handler {
+    type TemporaryAccountRepository = NonVerifiedAccountDataBase;
 
-    fn non_verified_account_repository(&self) -> &Self::NonVerifiedAccountRepository {
+    fn temporary_account_repository(&self) -> &Self::TemporaryAccountRepository {
         &self.nvac_repo
     }
 }
@@ -244,14 +243,6 @@ impl DependOnVerificationMailTransporter for Handler {
     type VerificationMailTransporter = MockVerificationMailer;
     fn verification_mail_transporter(&self) -> &Self::VerificationMailTransporter {
         &self.mailer
-    }
-}
-
-impl DependOnApproveAccountService for Handler {
-    type ApproveAccountService = Self;
-
-    fn approve_account_service(&self) -> &Self::ApproveAccountService {
-       self
     }
 }
 
