@@ -1,6 +1,9 @@
 use application::{
-    transfer::account::{CreateAccountDto, CreateNonVerifiedAccountDto, NonVerifiedAccountDto},
-    services::{DependOnCreateAccountService, DependOnCreateNonVerifiedAccountService}
+    transfer::{
+        account::{CreateAccountDto, CreateNonVerifiedAccountDto},
+        mfa_code::TicketIdDto
+    },
+    services::{DependOnCreateAccountService, DependOnCreateNonVerifiedAccountService},
 };
 use axum::{response::IntoResponse, http::StatusCode, extract::{State, Query}, Json};
 
@@ -38,8 +41,8 @@ pub async fn signup(
             };
             let non_verified = CreateNonVerifiedAccountDto::new(address);
 
-            use application::services::CreateNonVerifiedAccountService;
-            let NonVerifiedAccountDto { id, .. } = handler
+            use application::services::CreateTemporaryAccountService;
+            let TicketIdDto(id) = handler
                 .create_non_verified_account_service()
                 .create(non_verified).await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
