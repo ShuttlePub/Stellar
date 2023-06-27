@@ -2,8 +2,6 @@ use serde::{Deserialize, Serialize};
 use destructure::Destructure;
 use time::OffsetDateTime;
 use uuid::Uuid;
-use crate::entities::volatiles::{TicketId, MFACode};
-
 use crate::KernelError;
 
 use super::time::{LoggedAt, VerifiedAt};
@@ -97,30 +95,21 @@ impl Account {
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, Destructure)]
-pub struct NonVerifiedAccount {
-    id: TicketId,
+pub struct TemporaryAccount {
+    id: UserId,
     address: Address,
-    code: MFACode,
 }
 
-impl NonVerifiedAccount {
-    pub fn new(id: impl Into<String>, address: impl Into<String>, code: impl Into<String>) -> Self {
-        Self { id: TicketId::new(id), address: Address::new(address), code: MFACode::new(code) }
+impl TemporaryAccount {
+    pub fn new(id: impl Into<Uuid>, address: impl Into<String>) -> Self {
+        Self { id: UserId::new(id), address: Address::new(address) }
     }
 
-    pub fn is_match_verification_code(&self, code: &MFACode) -> bool {
-        self.code.as_ref() == code.as_ref()
-    }
-
-    pub fn id(&self) -> &TicketId {
+    pub fn id(&self) -> &UserId {
         &self.id
     }
 
     pub fn address(&self) -> &Address {
         &self.address
-    }
-
-    pub fn code(&self) -> &MFACode {
-        &self.code
     }
 }
