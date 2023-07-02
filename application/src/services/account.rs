@@ -12,7 +12,7 @@ use kernel::interfaces::transport::{
 use crate::{
     transfer::{
         account::{
-            CreateNonVerifiedAccountDto,
+            CreateTemporaryAccountDto,
             CreateAccountDto,
             UpdateAccountDto,
             AccountDto,
@@ -32,11 +32,11 @@ pub trait CreateTemporaryAccountService: 'static + Send + Sync
     + DependOnVerificationMailTransporter
     + DependOnVerifyMFACodeService
 {
-    async fn create(&self, create: CreateNonVerifiedAccountDto) -> Result<TicketIdDto, ApplicationError> {
+    async fn create(&self, create: CreateTemporaryAccountDto) -> Result<TicketIdDto, ApplicationError> {
         let user_id = UserId::default();
         let ticket = TicketId::default();
         let code = MFACode::default();
-        let CreateNonVerifiedAccountDto { address } = create;
+        let CreateTemporaryAccountDto { address } = create;
         let non_verified = TemporaryAccount::new(user_id, address);
 
         self.temporary_account_repository().create(&non_verified).await?;

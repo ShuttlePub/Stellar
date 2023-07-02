@@ -1,6 +1,6 @@
 use application::{
     transfer::{
-        account::{CreateAccountDto, CreateNonVerifiedAccountDto},
+        account::{CreateAccountDto, CreateTemporaryAccountDto},
         mfa_code::TicketIdDto
     },
     services::{DependOnCreateAccountService, DependOnCreateNonVerifiedAccountService},
@@ -39,7 +39,7 @@ pub async fn signup(
             let Some(address) = form.address else {
                 return Err(StatusCode::BAD_REQUEST);
             };
-            let non_verified = CreateNonVerifiedAccountDto::new(address);
+            let non_verified = CreateTemporaryAccountDto::new(address);
 
             use application::services::CreateTemporaryAccountService;
             let TicketIdDto(id) = handler

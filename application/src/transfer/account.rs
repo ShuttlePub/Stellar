@@ -91,11 +91,11 @@ pub struct VerifyAccountDto {
 
 
 #[derive(Debug)]
-pub struct CreateNonVerifiedAccountDto {
+pub struct CreateTemporaryAccountDto {
     pub address: String,
 }
 
-impl CreateNonVerifiedAccountDto {
+impl CreateTemporaryAccountDto {
     pub fn new(
         address: impl Into<String>,
     ) -> Self {
