@@ -1,9 +1,10 @@
 use std::net::SocketAddr;
 
 use axum::{Router, Server, routing::{post, get}, response::IntoResponse, http::StatusCode};
-use server::{Handler, routes::{login, verify, signup, stellar_info, authorization, decision}};
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
+use server::{Handler, routes::{login, verify, signup, stellar_info, authorization, decision}};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -37,11 +38,18 @@ async fn main() -> anyhow::Result<()> {
         .route("/signup", post(signup))
         .route("/verify", post(verify));
 
+    // Todo: Cors Setup
+    let cors = CorsLayer::new()
+        .allow_headers(Any)
+        .allow_methods(Any)
+        .allow_origin(Any);
+
     let app = Router::new()
         .nest("/", statics)
         .nest("/clients", clients)
         .nest("/accounts", accounts)
         .layer(TraceLayer::new_for_http())
+        .layer(cors)
         .with_state(handler);
 
     let bind = SocketAddr::from(([0, 0, 0, 0], 3854));
