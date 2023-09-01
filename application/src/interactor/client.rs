@@ -98,7 +98,7 @@ where
                 method: "find_by_id",
                 entity: "account",
                 id: owner.to_string(),
-            })
+            });
         };
 
         let owner = owner.into_destruct();
@@ -253,7 +253,7 @@ where
                 method: "find_by_id",
                 entity: "client",
                 id: client_id.to_string(),
-            })
+            });
         };
 
         if let ClientTypes::Confidential(secret) = client.types() {
@@ -271,7 +271,7 @@ where
                 method: "find_by_id",
                 entity: "account",
                 id: client.owner().to_string(),
-            })
+            });
         };
 
         if let Err(e) = owner_ac.pass().verify(pass_phrase) {

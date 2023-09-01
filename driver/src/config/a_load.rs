@@ -29,7 +29,7 @@ pub fn load(path: impl AsRef<Path>) -> Result<Option<(Account, Client)>, DriverE
         .open(path.join(CACHED).as_path())?;
 
     let Some(config) = checkin(&mut config, &mut cached)? else {
-        return Ok(None)
+        return Ok(None);
     };
 
     let loaded = loadin(config, &mut genned)?;

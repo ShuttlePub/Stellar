@@ -54,7 +54,7 @@ pub trait DeleteClientService:
                 method: "find_by_id",
                 entity: "client",
                 id: client_id.to_string(),
-            })
+            });
         };
 
         if let ClientTypes::Confidential(secret) = client.types() {
@@ -72,7 +72,7 @@ pub trait DeleteClientService:
                 method: "find_by_id",
                 entity: "account",
                 id: client.owner().to_string(),
-            })
+            });
         };
 
         if let Err(e) = owner_ac.pass().verify(pass_phrase) {

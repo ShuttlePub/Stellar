@@ -34,7 +34,7 @@ pub async fn initialize(pool: Pool<Postgres>) -> Result<(), DriverError> {
         None => {
             let Some((admin, stellar)) = load(&*BASE)? else {
                 tracing::info!("No change in config. skipped this task.");
-                return Ok(())
+                return Ok(());
             };
 
             account_database.update(&admin).await?;

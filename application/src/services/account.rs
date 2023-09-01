@@ -143,13 +143,12 @@ pub trait UpdateAccountService: 'static + Send + Sync + DependOnAccountRepositor
             pass,
         } = update;
         let id = UserId::new(id);
-        let Some(account) = self.account_repository()
-            .find_by_id(&id).await? else {
+        let Some(account) = self.account_repository().find_by_id(&id).await? else {
             return Err(ApplicationError::NotFound {
                 method: "update",
                 entity: "Account",
-                id: AsRef::<Uuid>::as_ref(&id).to_string()
-            })
+                id: AsRef::<Uuid>::as_ref(&id).to_string(),
+            });
         };
 
         account.pass().verify(&pass).map_err(|e| match e {
@@ -191,13 +190,12 @@ pub trait DependOnUpdateAccountService: 'static + Send + Sync {
 pub trait DeleteAccountService: 'static + Send + Sync + DependOnAccountRepository {
     async fn delete(&self, pass: &str, delete: &Uuid) -> Result<(), ApplicationError> {
         let id = UserId::new(*delete);
-        let Some(account) = self.account_repository()
-            .find_by_id(&id).await? else {
+        let Some(account) = self.account_repository().find_by_id(&id).await? else {
             return Err(ApplicationError::NotFound {
                 method: "delete",
                 entity: "account",
-                id: AsRef::<Uuid>::as_ref(&id).to_string()
-            })
+                id: AsRef::<Uuid>::as_ref(&id).to_string(),
+            });
         };
 
         account.pass().verify(pass).map_err(|e| match e {
@@ -274,12 +272,13 @@ pub trait VerifyAccountService:
 
                 let address = Address::new(address.unwrap());
 
-                let Some(account) = self.account_repository().find_by_address(&address).await? else {
+                let Some(account) = self.account_repository().find_by_address(&address).await?
+                else {
                     return Err(ApplicationError::NotFound {
                         method: "find_by_address",
                         entity: "account",
                         id: address.into(),
-                    })
+                    });
                 };
 
                 account.pass().verify(pass.unwrap())?;

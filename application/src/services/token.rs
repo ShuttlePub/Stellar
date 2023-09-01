@@ -48,7 +48,7 @@ pub trait PendingAuthorizeTokenService:
                 method: "find_by_id",
                 entity: "client",
                 id: client_id.to_string(),
-            })
+            });
         };
 
         let code_challenge = CodeChallenge::new(code_challenge)?;
@@ -160,12 +160,16 @@ pub trait AcceptAuthorizeTokenService:
         accept: AcceptUserFormDto,
     ) -> Result<AuthorizeTokenDto, ApplicationError> {
         let ticket = TicketId::new(ticket);
-        let Some(token) = self.pending_authorize_token_repository().find(&ticket).await? else {
+        let Some(token) = self
+            .pending_authorize_token_repository()
+            .find(&ticket)
+            .await?
+        else {
             return Err(ApplicationError::NotFound {
                 method: "find",
                 entity: "ticket",
                 id: format!("Ticket not found or expired, ticket: {:?}", ticket),
-            })
+            });
         };
 
         let Some(origin) = self.state_volatile_repository().find(&ticket).await? else {
@@ -173,7 +177,7 @@ pub trait AcceptAuthorizeTokenService:
                 method: "find",
                 entity: "state",
                 id: ticket.as_ref().to_string(),
-            })
+            });
         };
 
         if origin.ne(state) {
@@ -192,7 +196,7 @@ pub trait AcceptAuthorizeTokenService:
                 method: "find_by_address",
                 entity: "account",
                 id: format!("account not found. adr: {:?}", address),
-            })
+            });
         };
 
         account.pass().verify(pass)?;
