@@ -42,11 +42,11 @@ pub(crate) static BASE_URL: Lazy<Url> = Lazy::new(|| {
 #[cfg(feature = "time")]
 #[cfg(feature = "uuid")]
 #[cfg(feature = "jsonwebkey")]
+#[allow(ambiguous_glob_reexports)]
 pub mod external {
     #[cfg(feature = "jsonwebkey")]
     pub use jsonwebkey::Error as JWKError;
     #[cfg(feature = "jsonwebkey")]
-    #[allow(ambiguous_glob_reexports)]
     pub use jsonwebkey::*;
     #[cfg(feature = "time")]
     pub use time::Error as TimeError;
@@ -59,6 +59,5 @@ pub mod external {
     #[cfg(feature = "uuid")]
     pub use uuid::Error as UuidError;
     #[cfg(feature = "uuid")]
-    #[allow(ambiguous_glob_reexports)]
     pub use uuid::*;
 }
