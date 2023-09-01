@@ -213,6 +213,7 @@ impl DependOnVerificationMailTransporter for Handler {
     }
 }
 
+#[cfg(debug_assertions)]
 impl DependOnVerificationMailTransporter for Handler {
     type VerificationMailTransporter = MockVerificationMailer;
     fn verification_mail_transporter(&self) -> &Self::VerificationMailTransporter {
