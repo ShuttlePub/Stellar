@@ -1,4 +1,4 @@
-FROM rust:1.68.1 AS build-stage
+FROM rust:1.72.0 AS build-stage
 
 RUN mkdir /stellar
 WORKDIR /stellar
