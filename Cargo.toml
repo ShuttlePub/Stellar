@@ -5,6 +5,8 @@ members = [
   "driver",
   "server"
 ]
+resolver = "2"
+
 
 [workspace.dependencies]
 anyhow = "1"
