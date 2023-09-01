@@ -1,15 +1,10 @@
-use crate::{
-    KernelError,
-    entities::{
-        AccessToken,
-        AccessTokenId,
-        AuthorizeToken,
-        AuthorizeTokenId,
-        CodeChallenge,
-        State
-    }
-};
 use crate::entities::TicketId;
+use crate::{
+    entities::{
+        AccessToken, AccessTokenId, AuthorizeToken, AuthorizeTokenId, CodeChallenge, State,
+    },
+    KernelError,
+};
 
 /// Pending AuthorizeToken storage process is summarized.
 ///
@@ -43,7 +38,6 @@ pub trait DependOnPendingAuthorizeTokenRepository: 'static + Sync + Send {
     fn pending_authorize_token_repository(&self) -> &Self::PendingAuthorizeTokenRepository;
 }
 
-
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
 pub trait AuthorizeTokenRepository: 'static + Sync + Send {
@@ -57,20 +51,23 @@ pub trait DependOnAuthorizeTokenRepository: 'static + Sync + Send {
     fn authorize_token_repository(&self) -> &Self::AuthorizeTokenRepository;
 }
 
-
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
 pub trait PKCEVolatileRepository: 'static + Sync + Send {
-    async fn save(&self, token_id: &AuthorizeTokenId, code: &CodeChallenge) -> Result<(), KernelError>;
+    async fn save(
+        &self,
+        token_id: &AuthorizeTokenId,
+        code: &CodeChallenge,
+    ) -> Result<(), KernelError>;
     async fn dele(&self, token_id: &AuthorizeTokenId) -> Result<(), KernelError>;
-    async fn find(&self, token_id: &AuthorizeTokenId) -> Result<Option<CodeChallenge>, KernelError>;
+    async fn find(&self, token_id: &AuthorizeTokenId)
+        -> Result<Option<CodeChallenge>, KernelError>;
 }
 
 pub trait DependOnPKCEVolatileRepository: 'static + Sync + Send {
     type PKCEVolatileRepository: PKCEVolatileRepository;
     fn pkce_volatile_repository(&self) -> &Self::PKCEVolatileRepository;
 }
-
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
@@ -84,7 +81,6 @@ pub trait DependOnStateVolatileRepository: 'static + Sync + Send {
     type StateVolatileRepository: StateVolatileRepository;
     fn state_volatile_repository(&self) -> &Self::StateVolatileRepository;
 }
-
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]
@@ -100,7 +96,6 @@ pub trait DependOnAccessTokenRepository: 'static + Sync + Send {
     type AccessTokenRepository: AccessTokenRepository;
     fn access_token_repository(&self) -> &Self::AccessTokenRepository;
 }
-
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]

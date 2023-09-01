@@ -1,10 +1,12 @@
 use std::str::FromStr;
 
-use serde::{Deserialize, Deserializer};
-use serde::de::Error;
-use application::transfer::client::{GrantTypeDto, RegisterClientDto, ResponseTypeDto, ScopeDto, TokenEndPointAuthMethodDto};
-use kernel::external::Uuid;
 use crate::ServerError;
+use application::transfer::client::{
+    GrantTypeDto, RegisterClientDto, ResponseTypeDto, ScopeDto, TokenEndPointAuthMethodDto,
+};
+use kernel::external::Uuid;
+use serde::de::Error;
+use serde::{Deserialize, Deserializer};
 
 #[allow(unused)]
 /// Reference RFC7591
@@ -43,7 +45,7 @@ impl RegistrationForm {
             contacts,
             policy_uri,
             jwks_uri,
-            jwks
+            jwks,
         } = self;
         Ok(RegisterClientDto {
             name,
@@ -54,19 +56,13 @@ impl RegistrationForm {
             owner_id: owner,
             policy_uri,
             auth_method: tepam.into(),
-            grant_types: grant_types.into_iter()
-                .map(Into::into)
-                .collect(),
-            response_types: response_types.into_iter()
-                .map(Into::into)
-                .collect(),
+            grant_types: grant_types.into_iter().map(Into::into).collect(),
+            response_types: response_types.into_iter().map(Into::into).collect(),
             redirect_uris,
-            scopes: scopes.into_iter()
-                .map(Into::into)
-                .collect(),
+            scopes: scopes.into_iter().map(Into::into).collect(),
             contacts,
             jwks,
-            jwks_uri
+            jwks_uri,
         })
     }
 }
@@ -87,8 +83,8 @@ impl Default for TokenEndPointAuthMethod {
 }
 
 impl FromStr for TokenEndPointAuthMethod {
-    /// Even if an invalid value exists, 
-    /// it is returned as described in the Default Trait, 
+    /// Even if an invalid value exists,
+    /// it is returned as described in the Default Trait,
     /// so errors can be ignored.
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -97,26 +93,27 @@ impl FromStr for TokenEndPointAuthMethod {
             "client_secret_basic" => Self::ClientSecretBasic,
             "private_key_jwt" => Self::PrivateKeyJWT,
             "none" => Self::None,
-            _ => Self::default()
+            _ => Self::default(),
         })
     }
 }
 
 impl From<TokenEndPointAuthMethod> for TokenEndPointAuthMethodDto {
     fn from(value: TokenEndPointAuthMethod) -> Self {
-       match value {
-           TokenEndPointAuthMethod::ClientSecretPost => Self::ClientSecretPost,
-           TokenEndPointAuthMethod::ClientSecretBasic => Self::ClientSecretBasic,
-           TokenEndPointAuthMethod::PrivateKeyJWT => Self::PrivateKeyJWT,
-           TokenEndPointAuthMethod::None => Self::None
-       }
+        match value {
+            TokenEndPointAuthMethod::ClientSecretPost => Self::ClientSecretPost,
+            TokenEndPointAuthMethod::ClientSecretBasic => Self::ClientSecretBasic,
+            TokenEndPointAuthMethod::PrivateKeyJWT => Self::PrivateKeyJWT,
+            TokenEndPointAuthMethod::None => Self::None,
+        }
     }
 }
 
 impl<'de> Deserialize<'de> for TokenEndPointAuthMethod {
     //noinspection DuplicatedCode
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-      where D: serde::Deserializer<'de>
+    where
+        D: serde::Deserializer<'de>,
     {
         // See L43 comment.
         Ok(Self::from_str(Deserialize::deserialize(deserializer)?).unwrap())
@@ -141,11 +138,11 @@ impl Default for GrantType {
 }
 
 impl FromStr for GrantType {
-    /// Even if an invalid value exists, 
-    /// it is returned as described in the Default Trait, 
+    /// Even if an invalid value exists,
+    /// it is returned as described in the Default Trait,
     /// so errors can be ignored.
     type Err = ();
-    fn from_str(s: &str) -> Result<Self, Self::Err> {            
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             "authorization_code" => Self::AuthorizationCode,
             "implicit" => Self::Implicit,
@@ -154,7 +151,7 @@ impl FromStr for GrantType {
             "refresh_token" => Self::RefreshToken,
             "urn:ietf:params:oauth:grant-type:jwt-bearer" => Self::JWTBearer,
             "urn:ietf:params:oauth:grant-type:saml2-bearer" => Self::Saml2Bearer,
-            _ => Self::default() // Here it is.
+            _ => Self::default(), // Here it is.
         })
     }
 }
@@ -168,7 +165,7 @@ impl From<GrantType> for GrantTypeDto {
             GrantType::ClientCredentials => Self::ClientCredentials,
             GrantType::RefreshToken => Self::RefreshToken,
             GrantType::JWTBearer => Self::JWTBearer,
-            GrantType::Saml2Bearer => Self::Saml2Bearer
+            GrantType::Saml2Bearer => Self::Saml2Bearer,
         }
     }
 }
@@ -176,7 +173,8 @@ impl From<GrantType> for GrantTypeDto {
 impl<'de> Deserialize<'de> for GrantType {
     //noinspection DuplicatedCode
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-      where D: serde::Deserializer<'de> 
+    where
+        D: serde::Deserializer<'de>,
     {
         // See L74 comment.
         Ok(Self::from_str(Deserialize::deserialize(deserializer)?).unwrap())
@@ -186,7 +184,7 @@ impl<'de> Deserialize<'de> for GrantType {
 #[derive(Debug)]
 pub enum ResponseType {
     Token,
-    Code
+    Code,
 }
 
 impl FromStr for ResponseType {
@@ -196,25 +194,30 @@ impl FromStr for ResponseType {
         Ok(match s {
             "token" => Self::Token,
             "code" => Self::Code,
-            _ => return Err(ServerError::InvalidValue {
-                method: "from_str in response type",
-                value: s.to_string(),
-            })
+            _ => {
+                return Err(ServerError::InvalidValue {
+                    method: "from_str in response type",
+                    value: s.to_string(),
+                })
+            }
         })
     }
 }
 
 impl From<ResponseType> for ResponseTypeDto {
     fn from(value: ResponseType) -> Self {
-       match value {
-           ResponseType::Token => Self::Token,
-           ResponseType::Code => Self::Code
-       }
+        match value {
+            ResponseType::Token => Self::Token,
+            ResponseType::Code => Self::Code,
+        }
     }
 }
 
 impl<'de> Deserialize<'de> for ResponseType {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
         Self::from_str(Deserialize::deserialize(deserializer)?)
             .map_err(|e| D::Error::custom(e.to_string()))
     }
@@ -230,7 +233,7 @@ impl From<Scope> for ScopeDto {
     fn from(value: Scope) -> Self {
         Self {
             method: value.name,
-            description: value.desc
+            description: value.desc,
         }
     }
 }

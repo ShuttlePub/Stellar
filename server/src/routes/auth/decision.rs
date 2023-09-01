@@ -1,14 +1,17 @@
-use axum::{http::StatusCode, extract::State, response::IntoResponse};
-use axum::extract::Query;
-use application::services::{AcceptAuthorizeTokenService, DependOnAcceptAuthorizeTokenService, DependOnRejectAuthorizeTokenService, RejectAuthorizeTokenService};
-use application::transfer::token::AcceptUserFormDto;
 use crate::{Handler, ServerError};
+use application::services::{
+    AcceptAuthorizeTokenService, DependOnAcceptAuthorizeTokenService,
+    DependOnRejectAuthorizeTokenService, RejectAuthorizeTokenService,
+};
+use application::transfer::token::AcceptUserFormDto;
+use axum::extract::Query;
+use axum::{extract::State, http::StatusCode, response::IntoResponse};
 
 use self::forms::*;
 
 pub async fn accept(
     State(handler): State<Handler>,
-    Query(query): Query<UserQueryAccept>
+    Query(query): Query<UserQueryAccept>,
 ) -> Result<impl IntoResponse, ServerError> {
     let input = AcceptUserFormDto {
         address: "".to_string(),
@@ -23,7 +26,7 @@ pub async fn accept(
 
 pub async fn reject(
     State(handler): State<Handler>,
-    Query(query): Query<UserQueryReject>
+    Query(query): Query<UserQueryReject>,
 ) -> Result<impl IntoResponse, ServerError> {
     handler
         .reject_authorize_token_service()
@@ -32,18 +35,17 @@ pub async fn reject(
     Ok(StatusCode::OK)
 }
 
-
 mod forms {
     use serde::Deserialize;
 
     #[derive(Deserialize)]
     pub struct UserQueryAccept {
         pub ticket: String,
-        pub state: String
+        pub state: String,
     }
 
     #[derive(Deserialize)]
     pub struct UserQueryReject {
-        pub ticket: String
+        pub ticket: String,
     }
 }

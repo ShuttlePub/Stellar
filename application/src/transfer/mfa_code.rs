@@ -3,7 +3,7 @@ use kernel::prelude::entities::TicketId;
 #[derive(Debug)]
 pub struct MFAActionDto {
     pub pending: String,
-    pub code: String
+    pub code: String,
 }
 
 #[derive(Debug)]

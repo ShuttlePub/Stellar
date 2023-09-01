@@ -1,12 +1,12 @@
-use deadpool_redis::{Pool, redis, Connection as RedisConnection};
+use crate::DriverError;
+use deadpool_redis::{redis, Connection as RedisConnection, Pool};
+use kernel::interfaces::repository::SessionVolatileRepository;
 use kernel::prelude::entities::{Session, SessionId};
 use kernel::KernelError;
-use kernel::interfaces::repository::SessionVolatileRepository;
-use crate::DriverError;
 
 #[derive(Clone)]
 pub struct SessionVolatileDataBase {
-    pool: Pool
+    pool: Pool,
 }
 
 impl SessionVolatileDataBase {
@@ -18,22 +18,19 @@ impl SessionVolatileDataBase {
 #[async_trait::async_trait]
 impl SessionVolatileRepository for SessionVolatileDataBase {
     async fn establish(&self, session: &Session) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         SessionRedisInternal::create(session, &mut con).await?;
         Ok(())
     }
 
     async fn revoke(&self, id: &SessionId) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         SessionRedisInternal::delete(id, &mut con).await?;
         Ok(())
     }
 
     async fn find(&self, id: &SessionId) -> Result<Option<Session>, KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         let found = SessionRedisInternal::find(id, &mut con).await?;
         Ok(found)
     }
@@ -42,10 +39,7 @@ impl SessionVolatileRepository for SessionVolatileDataBase {
 pub(in crate::database) struct SessionRedisInternal;
 
 impl SessionRedisInternal {
-    async fn create(
-        session: &Session,
-        con: &mut RedisConnection
-    ) -> Result<(), DriverError> {
+    async fn create(session: &Session, con: &mut RedisConnection) -> Result<(), DriverError> {
         redis::cmd("SET")
             .arg(session.id().as_ref())
             .arg(serde_json::to_string(session)?)
@@ -54,10 +48,7 @@ impl SessionRedisInternal {
         Ok(())
     }
 
-    async fn delete(
-        id: &SessionId,
-        con: &mut RedisConnection
-    ) -> Result<(), DriverError> {
+    async fn delete(id: &SessionId, con: &mut RedisConnection) -> Result<(), DriverError> {
         redis::cmd("DEL")
             .arg(id.as_ref())
             .query_async(&mut *con)
@@ -67,13 +58,14 @@ impl SessionRedisInternal {
 
     async fn find(
         id: &SessionId,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<Option<Session>, DriverError> {
         let raw: Option<String> = redis::cmd("GET")
             .arg(id.as_ref())
             .query_async(&mut *con)
             .await?;
-        let session = raw.map(|s| serde_json::from_str::<Session>(&s))
+        let session = raw
+            .map(|s| serde_json::from_str::<Session>(&s))
             .transpose()?;
         Ok(session)
     }

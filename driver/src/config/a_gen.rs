@@ -1,16 +1,18 @@
+use super::{
+    constants::{CACHED, CONFIG, GENNED},
+    Config, GenIds,
+};
+use crate::DriverError;
+use kernel::prelude::entities::{Account, Client, ClientId, UserId};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
-use kernel::prelude::entities::{Account, Client, ClientId, UserId};
-use super::{GenIds, Config, constants::{CONFIG, GENNED, CACHED}};
-use crate::DriverError;
 
 pub fn generate(path: impl AsRef<Path>) -> Result<Option<(Account, Client)>, DriverError> {
     let path = path.as_ref();
 
-    if path.join(CONFIG).as_path().exists()
-        && path.join(GENNED).as_path().exists() {
-        return Ok(None)
+    if path.join(CONFIG).as_path().exists() && path.join(GENNED).as_path().exists() {
+        return Ok(None);
     }
 
     let mut config = OpenOptions::new()
@@ -31,13 +33,18 @@ pub fn generate(path: impl AsRef<Path>) -> Result<Option<(Account, Client)>, Dri
         .create(true)
         .open(path.join(CACHED).as_path())?;
 
-
     let generated = writein(&mut config, &mut genned, &mut cached)?;
 
-    tracing::info!("+-------------------------------------------------------------------------------+");
+    tracing::info!(
+        "+-------------------------------------------------------------------------------+"
+    );
     tracing::info!("* Config file generated.");
-    tracing::info!("* It is strongly recommended to edit the default values as they are not secure.");
-    tracing::info!("+-------------------------------------------------------------------------------+");
+    tracing::info!(
+        "* It is strongly recommended to edit the default values as they are not secure."
+    );
+    tracing::info!(
+        "+-------------------------------------------------------------------------------+"
+    );
 
     Ok(Some(generated))
 }
@@ -45,7 +52,7 @@ pub fn generate(path: impl AsRef<Path>) -> Result<Option<(Account, Client)>, Dri
 fn writein(
     config: &mut File,
     genned: &mut File,
-    cached: &mut File
+    cached: &mut File,
 ) -> Result<(Account, Client), DriverError> {
     let default = Config::default();
 
@@ -75,7 +82,6 @@ fn writein(
 
     default.formed(admin_id, stellar_id)
 }
-
 
 #[cfg(test)]
 mod tests {

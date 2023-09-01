@@ -1,18 +1,18 @@
-use kernel::prelude::entities::{MFACode, TicketId};
-use kernel::interfaces::repository::{
-    DependOnAcceptedActionVolatileRepository,
-    DependOnAccountRepository,
-    DependOnMFACodeVolatileRepository,
-    DependOnPendingActionVolatileRepository,
-    AcceptedActionVolatileRepository,
-    MFACodeVolatileRepository,
-    PendingActionVolatileRepository
-};
-use crate::ApplicationError;
 use crate::transfer::mfa_code::{MFAActionDto, TicketIdDto};
+use crate::ApplicationError;
+use kernel::interfaces::repository::{
+    AcceptedActionVolatileRepository, DependOnAcceptedActionVolatileRepository,
+    DependOnAccountRepository, DependOnMFACodeVolatileRepository,
+    DependOnPendingActionVolatileRepository, MFACodeVolatileRepository,
+    PendingActionVolatileRepository,
+};
+use kernel::prelude::entities::{MFACode, TicketId};
 
 #[async_trait::async_trait]
-pub trait VerifyMFACodeService: 'static + Sync + Send
+pub trait VerifyMFACodeService:
+    'static
+    + Sync
+    + Send
     + DependOnAccountRepository
     + DependOnMFACodeVolatileRepository
     + DependOnPendingActionVolatileRepository
@@ -46,20 +46,23 @@ pub trait VerifyMFACodeService: 'static + Sync + Send
             return Err(ApplicationError::InvalidValue {
                 method: "MFACode equivalence comparison",
                 value: code.into(),
-            })
+            });
         }
 
-        self.pending_action_volatile_repository().revoke(&pending).await?;
+        self.pending_action_volatile_repository()
+            .revoke(&pending)
+            .await?;
         self.mfa_code_volatile_repository().revoke(&account).await?;
 
         let verified = TicketId::default();
 
-        self.accepted_action_volatile_repository().create(&verified, &account).await?;
+        self.accepted_action_volatile_repository()
+            .create(&verified, &account)
+            .await?;
 
         Ok(verified.into())
     }
 }
-
 
 pub trait DependOnVerifyMFACodeService: 'static + Sync + Send {
     type VerifyMFACodeService: VerifyMFACodeService;

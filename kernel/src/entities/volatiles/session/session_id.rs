@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::services::RandomizeService;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Deserialize, Serialize)]
 pub struct SessionId(String);

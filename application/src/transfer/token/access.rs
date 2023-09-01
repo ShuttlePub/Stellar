@@ -1,9 +1,5 @@
 #[derive(Debug)]
-pub struct AccessTokenDto {
-
-}
+pub struct AccessTokenDto {}
 
 #[derive(Debug)]
-pub struct CreateAccessTokenDto {
-
-}
+pub struct CreateAccessTokenDto {}

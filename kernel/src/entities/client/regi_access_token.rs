@@ -1,6 +1,6 @@
+use crate::KernelError;
 use rand::distributions::{Alphanumeric, Distribution};
 use serde::{Deserialize, Serialize};
-use crate::KernelError;
 
 #[derive(Debug, Clone, Hash, Deserialize, Serialize)]
 pub struct RegistrationAccessToken(String);
@@ -29,11 +29,13 @@ impl AsRef<str> for RegistrationAccessToken {
 
 impl Default for RegistrationAccessToken {
     fn default() -> Self {
-        Self::new(
-            format!("reg-{}", Alphanumeric.sample_iter(&mut rand::thread_rng())
+        Self::new(format!(
+            "reg-{}",
+            Alphanumeric
+                .sample_iter(&mut rand::thread_rng())
                 .take(60)
                 .map(char::from)
-                .collect::<String>())
-        )
+                .collect::<String>()
+        ))
     }
 }

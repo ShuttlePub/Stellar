@@ -1,12 +1,12 @@
-use deadpool_redis::{Pool, Connection as RedisConnection, redis};
-use kernel::prelude::entities::{AuthorizeToken, TicketId};
-use kernel::interfaces::repository::PendingAuthorizeTokenRepository;
-use kernel::KernelError;
 use crate::DriverError;
+use deadpool_redis::{redis, Connection as RedisConnection, Pool};
+use kernel::interfaces::repository::PendingAuthorizeTokenRepository;
+use kernel::prelude::entities::{AuthorizeToken, TicketId};
+use kernel::KernelError;
 
 #[derive(Clone)]
 pub struct PendingAuthorizeTokenVolatileDataBase {
-    pool: Pool
+    pool: Pool,
 }
 
 impl PendingAuthorizeTokenVolatileDataBase {
@@ -18,22 +18,19 @@ impl PendingAuthorizeTokenVolatileDataBase {
 #[async_trait::async_trait]
 impl PendingAuthorizeTokenRepository for PendingAuthorizeTokenVolatileDataBase {
     async fn save(&self, ticket: &TicketId, create: &AuthorizeToken) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         PendingAuthorizeTokenRedisInternal::save(ticket, create, &mut con).await?;
         Ok(())
     }
 
     async fn dele(&self, ticket: &TicketId) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         PendingAuthorizeTokenRedisInternal::dele(ticket, &mut con).await?;
         Ok(())
     }
 
     async fn find(&self, ticket: &TicketId) -> Result<Option<AuthorizeToken>, KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         let found = PendingAuthorizeTokenRedisInternal::find(ticket, &mut con).await?;
         Ok(found)
     }
@@ -46,7 +43,7 @@ impl PendingAuthorizeTokenRedisInternal {
     pub async fn save(
         ticket: &TicketId,
         create: &AuthorizeToken,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<(), DriverError> {
         redis::cmd("SET")
             .arg(namespace(ticket))
@@ -59,10 +56,7 @@ impl PendingAuthorizeTokenRedisInternal {
     }
 
     //noinspection DuplicatedCode
-    pub async fn dele(
-        ticket: &TicketId,
-        con: &mut RedisConnection
-    ) -> Result<(), DriverError> {
+    pub async fn dele(ticket: &TicketId, con: &mut RedisConnection) -> Result<(), DriverError> {
         redis::cmd("DEL")
             .arg(namespace(ticket))
             .query_async(&mut *con)
@@ -72,7 +66,7 @@ impl PendingAuthorizeTokenRedisInternal {
 
     pub async fn find(
         ticket: &TicketId,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<Option<AuthorizeToken>, DriverError> {
         let raw: Option<String> = redis::cmd("GET")
             .arg(namespace(ticket))
@@ -89,13 +83,14 @@ fn namespace(key: impl AsRef<str>) -> String {
     format!("{}-pending-authz-token", key.as_ref())
 }
 
-
 #[cfg(test)]
 mod tests {
-    use deadpool_redis::{Config, Runtime};
-    use kernel::prelude::entities::{AuthorizeToken, AuthorizeTokenId, ClientId, ResponseType, ScopeMethod, TicketId};
-    use kernel::external::{Duration, OffsetDateTime, Uuid};
     use super::PendingAuthorizeTokenRedisInternal;
+    use deadpool_redis::{Config, Runtime};
+    use kernel::external::{Duration, OffsetDateTime, Uuid};
+    use kernel::prelude::entities::{
+        AuthorizeToken, AuthorizeTokenId, ClientId, ResponseType, ScopeMethod, TicketId,
+    };
 
     #[ignore = "It depends on Redis and does not work as is."]
     #[tokio::test]
@@ -121,7 +116,7 @@ mod tests {
             scopes,
             response_type,
             redirect_uri,
-            expired_in
+            expired_in,
         );
 
         let cfg = Config::from_url("redis://localhost:6379/");

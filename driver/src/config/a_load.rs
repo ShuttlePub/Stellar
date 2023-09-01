@@ -1,10 +1,13 @@
+use super::{
+    constants::{CACHED, CONFIG, GENNED},
+    model::Config,
+    GenIds,
+};
+use crate::DriverError;
+use kernel::prelude::entities::{Account, Client};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
-use kernel::prelude::entities::{Account, Client};
-use super::{model::Config, constants::{CACHED, CONFIG, GENNED}, GenIds};
-use crate::DriverError;
-
 
 pub fn load(path: impl AsRef<Path>) -> Result<Option<(Account, Client)>, DriverError> {
     let path = path.as_ref();
@@ -40,10 +43,7 @@ pub fn load(path: impl AsRef<Path>) -> Result<Option<(Account, Client)>, DriverE
 /// ### Successfully Return Value Kind
 /// * [`Ok(None)`] -  if there is no difference in information and the data was loaded successfully
 /// * [`Ok(Some(Config))`] - if there is a difference and the data was loaded successfully.
-fn checkin(
-    config: &mut File,
-    cached: &mut File
-) -> Result<Option<Config>, DriverError> {
+fn checkin(config: &mut File, cached: &mut File) -> Result<Option<Config>, DriverError> {
     let mut origin = Vec::new();
     let _ = config.read_to_end(&mut origin)?;
 
@@ -58,35 +58,36 @@ fn checkin(
         cached.seek(SeekFrom::Start(0))?;
         cached.write_all(hashed.as_bytes())?;
         cached.flush()?;
-        let config = toml::from_str::<Config>(origin
-            .into_iter()
-            .map(char::from)
-            .collect::<String>()
-            .as_str())?;
-        return Ok(Some(config))
+        let config = toml::from_str::<Config>(
+            origin
+                .into_iter()
+                .map(char::from)
+                .collect::<String>()
+                .as_str(),
+        )?;
+        return Ok(Some(config));
     }
 
     Ok(None)
 }
 
-fn loadin(
-    config: Config,
-    genned: &mut File
-) -> Result<(Account, Client), DriverError> {
+fn loadin(config: Config, genned: &mut File) -> Result<(Account, Client), DriverError> {
     let mut ids: Vec<u8> = Vec::new();
     genned.read_to_end(&mut ids)?;
 
-    let GenIds { admin_id, stellar_id } = rmp_serde::from_slice(&ids)?;
+    let GenIds {
+        admin_id,
+        stellar_id,
+    } = rmp_serde::from_slice(&ids)?;
 
     config.formed(admin_id, stellar_id)
 }
 
-
 #[cfg(test)]
 mod tests {
+    use super::load;
     use std::fs::File;
     use std::io::Read;
-    use super::load;
 
     #[ignore = "Depend on file manipulation, this test will ignore."]
     #[test]

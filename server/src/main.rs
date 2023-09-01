@@ -1,10 +1,18 @@
 use std::net::SocketAddr;
 
-use axum::{Router, Server, routing::{post, get}, response::IntoResponse, http::StatusCode};
+use axum::{
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{get, post},
+    Router, Server,
+};
+use server::{
+    routes::{authorization, decision, login, signup, stellar_info, verify},
+    Handler,
+};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
-use server::{Handler, routes::{login, verify, signup, stellar_info, authorization, decision}};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -27,11 +35,12 @@ async fn main() -> anyhow::Result<()> {
         .route("/.well-known", get(|| async { todo!() }))
         .route("/hc", get(healthcheck));
 
-    let clients = Router::new()
-        .route("/stellar", get(stellar_info))
-        .route("/authorize", get(authorization)
+    let clients = Router::new().route("/stellar", get(stellar_info)).route(
+        "/authorize",
+        get(authorization)
             .patch(decision::accept)
-            .delete(decision::reject));
+            .delete(decision::reject),
+    );
 
     let accounts = Router::new()
         .route("/login", post(login))

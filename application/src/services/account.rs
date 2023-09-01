@@ -1,48 +1,68 @@
-use kernel::prelude::entities::{Account, Address, Password, TicketId, UpdatedAt, UserId, UserName, MFACode, Session, SessionId, EstablishedAt, TemporaryAccount};
 use kernel::external::{Duration, OffsetDateTime, Uuid};
+use kernel::interfaces::repository::{
+    AcceptedActionVolatileRepository, AccountRepository, DependOnAcceptedActionVolatileRepository,
+    DependOnAccountRepository, DependOnMFACodeVolatileRepository,
+    DependOnPendingActionVolatileRepository, DependOnSessionVolatileRepository,
+    DependOnTemporaryAccountRepository, MFACodeVolatileRepository, PendingActionVolatileRepository,
+    SessionVolatileRepository, TemporaryAccountRepository,
+};
+use kernel::prelude::entities::{
+    Account, Address, EstablishedAt, MFACode, Password, Session, SessionId, TemporaryAccount,
+    TicketId, UpdatedAt, UserId, UserName,
+};
 use kernel::KernelError;
-use kernel::interfaces::repository::{DependOnAccountRepository, DependOnTemporaryAccountRepository, DependOnMFACodeVolatileRepository, DependOnSessionVolatileRepository, DependOnAcceptedActionVolatileRepository, AccountRepository, AcceptedActionVolatileRepository, MFACodeVolatileRepository, SessionVolatileRepository, TemporaryAccountRepository, DependOnPendingActionVolatileRepository, PendingActionVolatileRepository};
 
 #[allow(unused_imports)]
 use kernel::interfaces::transport::{
-    DependOnVerificationMailTransporter,
-    VerificationMailTransporter
+    DependOnVerificationMailTransporter, VerificationMailTransporter,
 };
 
+use crate::services::DependOnVerifyMFACodeService;
+use crate::transfer::mfa_code::TicketIdDto;
 use crate::{
     transfer::{
         account::{
-            CreateTemporaryAccountDto,
-            CreateAccountDto,
-            UpdateAccountDto,
-            AccountDto,
-            VerifyAccountDto
+            AccountDto, CreateAccountDto, CreateTemporaryAccountDto, UpdateAccountDto,
+            VerifyAccountDto,
         },
-        session::SessionDto
+        session::SessionDto,
     },
-    ExpectUserAction,
-    ApplicationError,
+    ApplicationError, ExpectUserAction,
 };
-use crate::services::DependOnVerifyMFACodeService;
-use crate::transfer::mfa_code::TicketIdDto;
 
 #[async_trait::async_trait]
-pub trait CreateTemporaryAccountService: 'static + Send + Sync
+pub trait CreateTemporaryAccountService:
+    'static
+    + Send
+    + Sync
     + DependOnTemporaryAccountRepository
     + DependOnVerificationMailTransporter
     + DependOnVerifyMFACodeService
 {
-    async fn create(&self, create: CreateTemporaryAccountDto) -> Result<TicketIdDto, ApplicationError> {
+    async fn create(
+        &self,
+        create: CreateTemporaryAccountDto,
+    ) -> Result<TicketIdDto, ApplicationError> {
         let user_id = UserId::default();
         let ticket = TicketId::default();
         let code = MFACode::default();
         let CreateTemporaryAccountDto { address } = create;
         let non_verified = TemporaryAccount::new(user_id, address);
 
-        self.temporary_account_repository().create(&non_verified).await?;
-        self.verify_mfa_code_service().pending_action_volatile_repository().create(&ticket, &user_id).await?;
-        self.verify_mfa_code_service().mfa_code_volatile_repository().create(&user_id, &code).await?;
-        self.verification_mail_transporter().send(non_verified.address(), &code).await?;
+        self.temporary_account_repository()
+            .create(&non_verified)
+            .await?;
+        self.verify_mfa_code_service()
+            .pending_action_volatile_repository()
+            .create(&ticket, &user_id)
+            .await?;
+        self.verify_mfa_code_service()
+            .mfa_code_volatile_repository()
+            .create(&user_id, &code)
+            .await?;
+        self.verification_mail_transporter()
+            .send(non_verified.address(), &code)
+            .await?;
 
         Ok(ticket.into())
     }
@@ -53,14 +73,20 @@ pub trait DependOnCreateNonVerifiedAccountService: 'static + Send + Sync {
     fn create_non_verified_account_service(&self) -> &Self::CreateNonVerifiedAccountService;
 }
 
-
 #[async_trait::async_trait]
-pub trait CreateAccountService: 'static + Send + Sync
+pub trait CreateAccountService:
+    'static
+    + Send
+    + Sync
     + DependOnAccountRepository
     + DependOnTemporaryAccountRepository
     + DependOnVerifyMFACodeService
 {
-    async fn create(&self, ticket: &str, create: CreateAccountDto) -> Result<AccountDto, ApplicationError> {
+    async fn create(
+        &self,
+        ticket: &str,
+        create: CreateAccountDto,
+    ) -> Result<AccountDto, ApplicationError> {
         let ticket = TicketId::new(ticket);
 
         let account = self
@@ -93,7 +119,7 @@ pub trait CreateAccountService: 'static + Send + Sync
             pass,
             OffsetDateTime::now_utc(),
             OffsetDateTime::now_utc(),
-            OffsetDateTime::now_utc()
+            OffsetDateTime::now_utc(),
         )?;
 
         self.account_repository().create(&verified).await?;
@@ -108,11 +134,14 @@ pub trait DependOnCreateAccountService: 'static + Send + Sync {
 }
 
 #[async_trait::async_trait]
-pub trait UpdateAccountService: 'static + Send + Sync
-    + DependOnAccountRepository
-{
+pub trait UpdateAccountService: 'static + Send + Sync + DependOnAccountRepository {
     async fn update(&self, update: UpdateAccountDto) -> Result<AccountDto, ApplicationError> {
-        let UpdateAccountDto { id, address, name, pass } = update;
+        let UpdateAccountDto {
+            id,
+            address,
+            name,
+            pass,
+        } = update;
         let id = UserId::new(id);
         let Some(account) = self.account_repository()
             .find_by_id(&id).await? else {
@@ -123,16 +152,15 @@ pub trait UpdateAccountService: 'static + Send + Sync
             })
         };
 
-        account.pass().verify(&pass)
-            .map_err(|e| match e {
-                KernelError::Cryption(e) => ApplicationError::External(anyhow::Error::new(e)),
-                KernelError::InvalidPassword(_) => ApplicationError::Verification {
-                    method: "on update in verification",
-                    entity: "account",
-                    id: AsRef::<Uuid>::as_ref(&id).to_string()
-                },
-                _ => unreachable!()
-            })?;
+        account.pass().verify(&pass).map_err(|e| match e {
+            KernelError::Cryption(e) => ApplicationError::External(anyhow::Error::new(e)),
+            KernelError::InvalidPassword(_) => ApplicationError::Verification {
+                method: "on update in verification",
+                entity: "account",
+                id: AsRef::<Uuid>::as_ref(&id).to_string(),
+            },
+            _ => unreachable!(),
+        })?;
 
         let mut account = account.into_destruct();
         let mut date = account.date.into_destruct();
@@ -160,9 +188,7 @@ pub trait DependOnUpdateAccountService: 'static + Send + Sync {
 }
 
 #[async_trait::async_trait]
-pub trait DeleteAccountService: 'static + Send + Sync
-    + DependOnAccountRepository
-{
+pub trait DeleteAccountService: 'static + Send + Sync + DependOnAccountRepository {
     async fn delete(&self, pass: &str, delete: &Uuid) -> Result<(), ApplicationError> {
         let id = UserId::new(*delete);
         let Some(account) = self.account_repository()
@@ -174,16 +200,15 @@ pub trait DeleteAccountService: 'static + Send + Sync
             })
         };
 
-        account.pass().verify(pass)
-            .map_err(|e| match e {
-                KernelError::Cryption(e) => ApplicationError::External(anyhow::Error::new(e)),
-                KernelError::InvalidPassword(_) => ApplicationError::Verification {
-                    method: "on delete in verification",
-                    entity: "account",
-                    id: AsRef::<Uuid>::as_ref(&id).to_string()
-                },
-                _ => unreachable!()
-            })?;
+        account.pass().verify(pass).map_err(|e| match e {
+            KernelError::Cryption(e) => ApplicationError::External(anyhow::Error::new(e)),
+            KernelError::InvalidPassword(_) => ApplicationError::Verification {
+                method: "on delete in verification",
+                entity: "account",
+                id: AsRef::<Uuid>::as_ref(&id).to_string(),
+            },
+            _ => unreachable!(),
+        })?;
 
         self.account_repository().delete(&id).await?;
 
@@ -197,20 +222,31 @@ pub trait DependOnDeleteAccountService: 'static + Send + Sync {
 }
 
 #[async_trait::async_trait]
-pub trait VerifyAccountService: 'static + Send + Sync
+pub trait VerifyAccountService:
+    'static
+    + Send
+    + Sync
     + DependOnAccountRepository
     + DependOnVerificationMailTransporter
     + DependOnSessionVolatileRepository
     + DependOnVerifyMFACodeService
 {
     async fn verify(&self, verify: VerifyAccountDto) -> Result<SessionDto, ApplicationError> {
-        let VerifyAccountDto { ticket, address, pass, session, .. } = verify;
+        let VerifyAccountDto {
+            ticket,
+            address,
+            pass,
+            session,
+            ..
+        } = verify;
 
         if let Some(session) = session {
             let session = SessionId::new(session);
             if let Some(valid) = self.session_volatile_repository().find(&session).await? {
                 return if valid.exp().is_expired() {
-                    self.session_volatile_repository().revoke(valid.id()).await?;
+                    self.session_volatile_repository()
+                        .revoke(valid.id())
+                        .await?;
                     Err(ApplicationError::RequireUserAction(ExpectUserAction::Login))
                 } else {
                     let id = SessionId::default();
@@ -218,10 +254,12 @@ pub trait VerifyAccountService: 'static + Send + Sync
                     let exp = Duration::new(60 * 60, 0);
                     let est = EstablishedAt::default();
                     let regen = Session::new(id, usr, exp, est);
-                    self.session_volatile_repository().revoke(valid.id()).await?;
+                    self.session_volatile_repository()
+                        .revoke(valid.id())
+                        .await?;
                     self.session_volatile_repository().establish(&regen).await?;
                     Ok(regen.into())
-                }
+                };
             }
         }
 
@@ -231,7 +269,7 @@ pub trait VerifyAccountService: 'static + Send + Sync
                     return Err(ApplicationError::InvalidValue {
                         method: "required field valid",
                         value: "required field `address` and `pass`.".to_string(),
-                    })
+                    });
                 }
 
                 let address = Address::new(address.unwrap());
@@ -249,11 +287,14 @@ pub trait VerifyAccountService: 'static + Send + Sync
                 let code = MFACode::default();
                 self.verify_mfa_code_service()
                     .mfa_code_volatile_repository()
-                    .create(account.id(), &code).await?;
-                self.verification_mail_transporter().send(account.address(), &code).await?;
+                    .create(account.id(), &code)
+                    .await?;
+                self.verification_mail_transporter()
+                    .send(account.address(), &code)
+                    .await?;
 
                 Err(ApplicationError::RequireUserAction(ExpectUserAction::MFA))
-            },
+            }
             Some(ticket) => {
                 let ticket = TicketId::new(ticket);
                 let usr = self
@@ -270,7 +311,9 @@ pub trait VerifyAccountService: 'static + Send + Sync
                 let exp = Duration::new(60 * 60, 0);
                 let est = EstablishedAt::default();
                 let session = Session::new(id, usr, exp, est);
-                self.session_volatile_repository().establish(&session).await?;
+                self.session_volatile_repository()
+                    .establish(&session)
+                    .await?;
 
                 Ok(session.into())
             }

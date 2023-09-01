@@ -1,78 +1,50 @@
+use kernel::prelude::services::JwkSelectionService;
 use kernel::{
+    external::Uuid,
     interfaces::repository::{
-        ClientRegistry, 
-        AccountRepository,
-        DependOnAccountRepository,
-        DependOnClientRegistry,
+        AccountRepository, ClientRegistry, DependOnAccountRepository, DependOnClientRegistry,
     },
     prelude::entities::{
-        Address,
-        Client,
-        ClientDescription,
-        ClientId,
-        ClientName,
-        ClientSecret,
-        ClientTypes,
-        ClientUri,
-        Contacts,
-        GrantType,
-        GrantTypes,
-        Jwks,
-        LogoUri,
-        PolicyUri,
-        RedirectUri,
-        RedirectUris,
-        RegistrationAccessToken,
-        RegistrationEndPoint,
-        ResponseType,
-        ResponseTypes,
-        ScopeDescription,
-        ScopeMethod,
-        Scopes,
-        TermsUri,
-        TokenEndPointAuthMethod,
-        UserId
+        Address, Client, ClientDescription, ClientId, ClientName, ClientSecret, ClientTypes,
+        ClientUri, Contacts, GrantType, GrantTypes, Jwks, LogoUri, PolicyUri, RedirectUri,
+        RedirectUris, RegistrationAccessToken, RegistrationEndPoint, ResponseType, ResponseTypes,
+        ScopeDescription, ScopeMethod, Scopes, TermsUri, TokenEndPointAuthMethod, UserId,
     },
-    external::Uuid,
 };
-use kernel::prelude::services::JwkSelectionService;
 
+use crate::services::DeleteClientService;
 use crate::{
-    services::{
-        RegisterClientService,
-        UpdateClientService
+    services::{RegisterClientService, UpdateClientService},
+    transfer::client::{
+        ClientDto, GrantTypeDto, RegisterClientDto, ResponseTypeDto, TokenEndPointAuthMethodDto,
+        UpdateClientDto,
     },
     ApplicationError,
-    transfer::client::{
-        ResponseTypeDto,
-        GrantTypeDto,
-        RegisterClientDto,
-        ClientDto,
-        TokenEndPointAuthMethodDto,
-        UpdateClientDto
-    }
 };
-use crate::services::DeleteClientService;
-
 
 #[derive(Clone)]
 pub struct RegisterClientInteractor<C, A> {
     registry: C,
-    repository: A
+    repository: A,
 }
 
 impl<C, A> RegisterClientInteractor<C, A>
-    where C: ClientRegistry,
-          A: AccountRepository
+where
+    C: ClientRegistry,
+    A: AccountRepository,
 {
     pub fn new(registry: C, repository: A) -> Self {
-        Self { registry, repository }
+        Self {
+            registry,
+            repository,
+        }
     }
 }
 
 impl<C, A> DependOnClientRegistry for RegisterClientInteractor<C, A>
-    where C: ClientRegistry,
-          A: AccountRepository
+where
+    C: ClientRegistry,
+    A: AccountRepository,
 {
     type ClientRegistry = C;
 
@@ -82,8 +54,9 @@ impl<C, A> DependOnClientRegistry for RegisterClientInteractor<C, A>
 }
 
 impl<C, A> DependOnAccountRepository for RegisterClientInteractor<C, A>
-    where C: ClientRegistry,
-          A: AccountRepository
+where
+    C: ClientRegistry,
+    A: AccountRepository,
 {
     type AccountRepository = A;
 
@@ -94,8 +67,9 @@ impl<C, A> DependOnAccountRepository for RegisterClientInteractor<C, A>
 
 #[async_trait::async_trait]
 impl<C, A> RegisterClientService for RegisterClientInteractor<C, A>
-    where C: ClientRegistry,
-          A: AccountRepository
+where
+    C: ClientRegistry,
+    A: AccountRepository,
 {
     //noinspection DuplicatedCode
     async fn register(&self, register: RegisterClientDto) -> Result<ClientDto, ApplicationError> {
@@ -114,7 +88,7 @@ impl<C, A> RegisterClientService for RegisterClientInteractor<C, A>
             scopes,
             contacts,
             jwks,
-            jwks_uri
+            jwks_uri,
         } = register;
 
         let owner = UserId::new(owner_id);
@@ -143,12 +117,17 @@ impl<C, A> RegisterClientService for RegisterClientInteractor<C, A>
         let tos_uri = TermsUri::new(tos_uri)?;
         let policy_uri = PolicyUri::new(policy_uri)?;
         let auth_method = match auth_method {
-            TokenEndPointAuthMethodDto::ClientSecretPost => TokenEndPointAuthMethod::ClientSecretPost,
-            TokenEndPointAuthMethodDto::ClientSecretBasic => TokenEndPointAuthMethod::ClientSecretBasic,
+            TokenEndPointAuthMethodDto::ClientSecretPost => {
+                TokenEndPointAuthMethod::ClientSecretPost
+            }
+            TokenEndPointAuthMethodDto::ClientSecretBasic => {
+                TokenEndPointAuthMethod::ClientSecretBasic
+            }
             TokenEndPointAuthMethodDto::None => TokenEndPointAuthMethod::None,
-            TokenEndPointAuthMethodDto::PrivateKeyJWT => TokenEndPointAuthMethod::PrivateKeyJWT
+            TokenEndPointAuthMethodDto::PrivateKeyJWT => TokenEndPointAuthMethod::PrivateKeyJWT,
         };
-        let grant_types = grant_types.into_iter()
+        let grant_types = grant_types
+            .into_iter()
             .map(|types| match types {
                 GrantTypeDto::AuthorizationCode => GrantType::AuthorizationCode,
                 GrantTypeDto::Implicit => GrantType::Implicit,
@@ -156,31 +135,34 @@ impl<C, A> RegisterClientService for RegisterClientInteractor<C, A>
                 GrantTypeDto::ClientCredentials => GrantType::ClientCredentials,
                 GrantTypeDto::RefreshToken => GrantType::RefreshToken,
                 GrantTypeDto::JWTBearer => GrantType::JWTBearer,
-                GrantTypeDto::Saml2Bearer => GrantType::Saml2Bearer
+                GrantTypeDto::Saml2Bearer => GrantType::Saml2Bearer,
             })
             .collect::<GrantTypes>();
 
-        let response_types = response_types.into_iter()
+        let response_types = response_types
+            .into_iter()
             .map(|types| match types {
                 ResponseTypeDto::Code => ResponseType::Code,
-                ResponseTypeDto::Token => ResponseType::Token
+                ResponseTypeDto::Token => ResponseType::Token,
             })
             .collect::<ResponseTypes>();
 
-        let redirect_uris = redirect_uris.into_iter()
+        let redirect_uris = redirect_uris
+            .into_iter()
             .map(RedirectUri::new)
             .collect::<RedirectUris>();
 
-        let scopes = scopes.into_iter()
-            .map(|scope| (
-                ScopeMethod::new(scope.method),
-                ScopeDescription::new(scope.description)
-            ))
+        let scopes = scopes
+            .into_iter()
+            .map(|scope| {
+                (
+                    ScopeMethod::new(scope.method),
+                    ScopeDescription::new(scope.description),
+                )
+            })
             .collect::<Scopes>();
 
-        let contacts = contacts.into_iter()
-            .map(Address::new)
-            .collect::<Contacts>();
+        let contacts = contacts.into_iter().map(Address::new).collect::<Contacts>();
 
         let jwks = JwkSelectionService::check(jwks, jwks_uri)?;
 
@@ -205,13 +187,12 @@ impl<C, A> RegisterClientService for RegisterClientInteractor<C, A>
             contacts,
             jwks,
             conf_access_token,
-            conf_endpoint
+            conf_endpoint,
         )?;
 
         self.client_registry().register(&client).await?;
 
         Ok(client.into())
-
     }
 }
 
@@ -228,8 +209,9 @@ impl<C, A> UpdateClientInteractor<C, A> {
 }
 
 impl<C, A> DependOnClientRegistry for UpdateClientInteractor<C, A>
-    where A: AccountRepository,
-          C: ClientRegistry
+where
+    A: AccountRepository,
+    C: ClientRegistry,
 {
     type ClientRegistry = C;
 
@@ -239,8 +221,9 @@ impl<C, A> DependOnClientRegistry for UpdateClientInteractor<C, A>
 }
 
 impl<C, A> DependOnAccountRepository for UpdateClientInteractor<C, A>
-    where A: AccountRepository,
-          C: ClientRegistry
+where
+    A: AccountRepository,
+    C: ClientRegistry,
 {
     type AccountRepository = A;
 
@@ -251,11 +234,18 @@ impl<C, A> DependOnAccountRepository for UpdateClientInteractor<C, A>
 
 #[async_trait::async_trait]
 impl<C, A> UpdateClientService for UpdateClientInteractor<C, A>
-  where C: ClientRegistry,
-        A: AccountRepository
+where
+    C: ClientRegistry,
+    A: AccountRepository,
 {
     //noinspection DuplicatedCode
-    async fn update(&self, id: &Uuid, cl_secret: &str, pass_phrase: &str, update: UpdateClientDto) -> Result<ClientDto, ApplicationError> {
+    async fn update(
+        &self,
+        id: &Uuid,
+        cl_secret: &str,
+        pass_phrase: &str,
+        update: UpdateClientDto,
+    ) -> Result<ClientDto, ApplicationError> {
         let client_id = ClientId::new_at_now(*id);
 
         let Some(client) = self.client_registry().find_by_id(&client_id).await? else {
@@ -272,7 +262,7 @@ impl<C, A> UpdateClientService for UpdateClientInteractor<C, A>
                     method: "client_secret_verify",
                     entity: "client",
                     id: format!("{:?}, `in kernel`: {:?}", client_id, e),
-                })
+                });
             }
         }
 
@@ -289,7 +279,7 @@ impl<C, A> UpdateClientService for UpdateClientInteractor<C, A>
                 method: "account_password_verify",
                 entity: "account",
                 id: format!("{:?}, `in kernel`: {:?}", owner_ac.id(), e),
-            })
+            });
         }
 
         let mut before = client.into_destruct();
@@ -308,25 +298,30 @@ impl<C, A> UpdateClientService for UpdateClientInteractor<C, A>
             redirect_uris,
             scopes,
             contacts,
-            jwks
+            jwks,
         } = update;
 
-        before.name   = ClientName::new(name);
-        before.uri    = ClientUri::new(client_uri)?;
-        before.desc   = ClientDescription::new(description);
-        before.logo   = LogoUri::new(logo_uri)?;
-        before.terms  = TermsUri::new(tos_uri)?;
-        before.owner  = UserId::new(owner);
+        before.name = ClientName::new(name);
+        before.uri = ClientUri::new(client_uri)?;
+        before.desc = ClientDescription::new(description);
+        before.logo = LogoUri::new(logo_uri)?;
+        before.terms = TermsUri::new(tos_uri)?;
+        before.owner = UserId::new(owner);
         before.policy = PolicyUri::new(policy_uri)?;
 
         before.auth_method = match auth_method {
-            TokenEndPointAuthMethodDto::ClientSecretPost => TokenEndPointAuthMethod::ClientSecretPost,
-            TokenEndPointAuthMethodDto::ClientSecretBasic => TokenEndPointAuthMethod::ClientSecretBasic,
+            TokenEndPointAuthMethodDto::ClientSecretPost => {
+                TokenEndPointAuthMethod::ClientSecretPost
+            }
+            TokenEndPointAuthMethodDto::ClientSecretBasic => {
+                TokenEndPointAuthMethod::ClientSecretBasic
+            }
             TokenEndPointAuthMethodDto::None => TokenEndPointAuthMethod::None,
-            TokenEndPointAuthMethodDto::PrivateKeyJWT => TokenEndPointAuthMethod::PrivateKeyJWT
+            TokenEndPointAuthMethodDto::PrivateKeyJWT => TokenEndPointAuthMethod::PrivateKeyJWT,
         };
 
-        before.grant_types = grant_types.into_iter()
+        before.grant_types = grant_types
+            .into_iter()
             .map(|types| match types {
                 GrantTypeDto::AuthorizationCode => GrantType::AuthorizationCode,
                 GrantTypeDto::Implicit => GrantType::Implicit,
@@ -334,31 +329,34 @@ impl<C, A> UpdateClientService for UpdateClientInteractor<C, A>
                 GrantTypeDto::ClientCredentials => GrantType::ClientCredentials,
                 GrantTypeDto::RefreshToken => GrantType::RefreshToken,
                 GrantTypeDto::JWTBearer => GrantType::JWTBearer,
-                GrantTypeDto::Saml2Bearer => GrantType::Saml2Bearer
+                GrantTypeDto::Saml2Bearer => GrantType::Saml2Bearer,
             })
             .collect::<GrantTypes>();
 
-        before.response_types = response_types.into_iter()
+        before.response_types = response_types
+            .into_iter()
             .map(|types| match types {
                 ResponseTypeDto::Code => ResponseType::Code,
-                ResponseTypeDto::Token => ResponseType::Token
+                ResponseTypeDto::Token => ResponseType::Token,
             })
             .collect::<ResponseTypes>();
 
-        before.redirect_uris = redirect_uris.into_iter()
+        before.redirect_uris = redirect_uris
+            .into_iter()
             .map(RedirectUri::new)
             .collect::<RedirectUris>();
 
-        before.scopes = scopes.into_iter()
-            .map(|scope| (
-                ScopeMethod::new(scope.method),
-                ScopeDescription::new(scope.description)
-            ))
+        before.scopes = scopes
+            .into_iter()
+            .map(|scope| {
+                (
+                    ScopeMethod::new(scope.method),
+                    ScopeDescription::new(scope.description),
+                )
+            })
             .collect::<Scopes>();
 
-        before.contact = contacts.into_iter()
-            .map(Address::new)
-            .collect::<Contacts>();
+        before.contact = contacts.into_iter().map(Address::new).collect::<Contacts>();
 
         before.jwks = jwks.map(Jwks::new).transpose()?;
 
@@ -370,44 +368,28 @@ impl<C, A> UpdateClientService for UpdateClientInteractor<C, A>
     }
 }
 
-
 // Default Impl
-impl<T> DeleteClientService for T
-    where T: DependOnClientRegistry
-           + DependOnAccountRepository {}
+impl<T> DeleteClientService for T where T: DependOnClientRegistry + DependOnAccountRepository {}
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
-    use mockall::predicate::always;
-    use kernel::prelude::entities::{
-        Account,
-        Address,
-        Client,
-        ClientId,
-        ClientTypes,
-        GrantType,
-        RedirectUri,
-        RegistrationAccessToken,
-        RegistrationEndPoint,
-        ResponseType,
-        ScopeDescription,
-        ScopeMethod,
-        TokenEndPointAuthMethod
-    };
-    use kernel::external::{OffsetDateTime, Uuid};
-    use kernel::interfaces::repository::{ClientRegistry, MockAccountRepository, MockClientRegistry};
     use crate::interactor::{RegisterClientInteractor, UpdateClientInteractor};
     use crate::services::{RegisterClientService, UpdateClientService};
     use crate::transfer::client::{
-        ClientDto,
-        GrantTypeDto,
-        RegisterClientDto,
-        ResponseTypeDto,
-        ScopeDto,
-        TokenEndPointAuthMethodDto,
-        UpdateClientDto
+        ClientDto, GrantTypeDto, RegisterClientDto, ResponseTypeDto, ScopeDto,
+        TokenEndPointAuthMethodDto, UpdateClientDto,
     };
+    use kernel::external::{OffsetDateTime, Uuid};
+    use kernel::interfaces::repository::{
+        ClientRegistry, MockAccountRepository, MockClientRegistry,
+    };
+    use kernel::prelude::entities::{
+        Account, Address, Client, ClientId, ClientTypes, GrantType, RedirectUri,
+        RegistrationAccessToken, RegistrationEndPoint, ResponseType, ScopeDescription, ScopeMethod,
+        TokenEndPointAuthMethod,
+    };
+    use mockall::predicate::always;
+    use std::time::Duration;
 
     fn new_mock_accounts_repo() -> MockAccountRepository {
         let mut mock_accounts_repository = MockAccountRepository::new();
@@ -420,18 +402,22 @@ mod tests {
         let updated_at = OffsetDateTime::now_utc();
         let verified_at = OffsetDateTime::now_utc() - Duration::from_secs(80000);
 
-        mock_accounts_repository.expect_find_by_id()
+        mock_accounts_repository
+            .expect_find_by_id()
             .with(always())
             .returning(move |_| {
-                Ok(Some(Account::new(
-                    user_id,
-                    address,
-                    name,
-                    pass,
-                    created_at,
-                    updated_at,
-                    verified_at
-                ).unwrap()))
+                Ok(Some(
+                    Account::new(
+                        user_id,
+                        address,
+                        name,
+                        pass,
+                        created_at,
+                        updated_at,
+                        verified_at,
+                    )
+                    .unwrap(),
+                ))
             });
 
         mock_accounts_repository
@@ -444,16 +430,16 @@ mod tests {
 
         let mut mock_client_registry = MockClientRegistry::new();
 
-        mock_client_registry.expect_register()
+        mock_client_registry
+            .expect_register()
             .with(always())
             .returning(move |v| {
                 println!("{:#?}", v);
                 Ok(())
             });
 
-        let client_registration = RegisterClientInteractor::new(
-            mock_client_registry, mock_accounts_repository
-        );
+        let client_registration =
+            RegisterClientInteractor::new(mock_client_registry, mock_accounts_repository);
 
         let client_name = "Test Client";
         let client_uri = "https://test.client.example.com/";
@@ -467,18 +453,23 @@ mod tests {
         let response_types = vec![ResponseTypeDto::Code];
         let redirect_uris = vec![
             "https://test.client.example.com/callback",
-            "https://test.client.example.com/callback2"
-        ].into_iter()
-         .map(Into::into)
-         .collect::<Vec<String>>();
+            "https://test.client.example.com/callback2",
+        ]
+        .into_iter()
+        .map(Into::into)
+        .collect::<Vec<String>>();
         let scopes = vec![
             ("read", Some("base user data read")),
             ("write", Some("base user data write")),
-            ("phantom", None)
-        ].into_iter()
-         .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
-         .map(|(method, desc)| ScopeDto { method, description: desc })
-         .collect::<Vec<ScopeDto>>();
+            ("phantom", None),
+        ]
+        .into_iter()
+        .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
+        .map(|(method, desc)| ScopeDto {
+            method,
+            description: desc,
+        })
+        .collect::<Vec<ScopeDto>>();
         let contacts = vec!["test.user@client.com"]
             .into_iter()
             .map(ToOwned::to_owned)
@@ -501,7 +492,7 @@ mod tests {
             scopes,
             contacts,
             jwks: None,
-            jwks_uri
+            jwks_uri,
         };
 
         let regi = client_registration.register(dto).await?;
@@ -518,7 +509,8 @@ mod tests {
 
         let mut mock_client_registry = MockClientRegistry::new();
 
-        mock_client_registry.expect_find_by_id()
+        mock_client_registry
+            .expect_find_by_id()
             .with(always())
             .returning(move |_| {
                 let client_id = ClientId::new_at_now(Uuid::new_v4());
@@ -535,18 +527,20 @@ mod tests {
                 let response_types = vec![ResponseType::Code];
                 let redirect_uris = vec![
                     "https://test.client.example.com/callback",
-                    "https://test.client.example.com/callback2"
-                ].into_iter()
-                    .map(RedirectUri::new)
-                    .collect::<Vec<RedirectUri>>();
+                    "https://test.client.example.com/callback2",
+                ]
+                .into_iter()
+                .map(RedirectUri::new)
+                .collect::<Vec<RedirectUri>>();
                 let scopes = vec![
                     ("read", Some("base user data read")),
                     ("write", Some("base user data write")),
-                    ("phantom", None)
-                ].into_iter()
-                    .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
-                    .map(|(method, desc)| (ScopeMethod::new(method), ScopeDescription::new(desc)))
-                    .collect::<Vec<(ScopeMethod, ScopeDescription)>>();
+                    ("phantom", None),
+                ]
+                .into_iter()
+                .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
+                .map(|(method, desc)| (ScopeMethod::new(method), ScopeDescription::new(desc)))
+                .collect::<Vec<(ScopeMethod, ScopeDescription)>>();
                 let contacts = vec!["test.user@client.com"]
                     .into_iter()
                     .map(Address::new)
@@ -571,25 +565,30 @@ mod tests {
                     contacts,
                     None,
                     reg_token,
-                    reg_endpoint
-                ).unwrap();
+                    reg_endpoint,
+                )
+                .unwrap();
 
                 println!("{:#?}", client);
                 Ok(Some(client))
             });
 
-        mock_client_registry.expect_update()
+        mock_client_registry
+            .expect_update()
             .with(always())
             .returning(move |v| {
                 println!("{:#?}", v);
                 Ok(())
             });
 
-        let before: ClientDto = mock_client_registry.find_by_id(&ClientId::new_at_now(Uuid::new_v4())).await?.unwrap().into();
+        let before: ClientDto = mock_client_registry
+            .find_by_id(&ClientId::new_at_now(Uuid::new_v4()))
+            .await?
+            .unwrap()
+            .into();
 
-        let interactor = UpdateClientInteractor::new(
-            mock_client_registry, mock_accounts_repository
-        );
+        let interactor =
+            UpdateClientInteractor::new(mock_client_registry, mock_accounts_repository);
 
         let update = UpdateClientDto {
             name: "TEST CLIENT MK2".to_string(),
@@ -602,23 +601,32 @@ mod tests {
             auth_method: TokenEndPointAuthMethodDto::None,
             grant_types: vec![GrantTypeDto::AuthorizationCode, GrantTypeDto::Implicit],
             response_types: vec![ResponseTypeDto::Token],
-            redirect_uris: vec!["https://client.test.com/callback"].into_iter().map(Into::into).collect(),
+            redirect_uris: vec!["https://client.test.com/callback"]
+                .into_iter()
+                .map(Into::into)
+                .collect(),
             scopes: vec![
                 ("read", Some("base user data read")),
                 ("write", Some("base user data write")),
-                ("phantom", None)
-            ].into_iter()
-             .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
-             .map(|(method, desc)| ScopeDto { method, description: desc })
-             .collect::<Vec<ScopeDto>>(),
-            contacts: vec!["test.user@client.com"]
+                ("phantom", None),
+            ]
             .into_iter()
-            .map(ToOwned::to_owned)
-            .collect::<Vec<String>>(),
+            .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
+            .map(|(method, desc)| ScopeDto {
+                method,
+                description: desc,
+            })
+            .collect::<Vec<ScopeDto>>(),
+            contacts: vec!["test.user@client.com"]
+                .into_iter()
+                .map(ToOwned::to_owned)
+                .collect::<Vec<String>>(),
             jwks: None,
         };
 
-        let after = interactor.update(&Uuid::new_v4(), "none", "test0000pAssw0rd", update).await?;
+        let after = interactor
+            .update(&Uuid::new_v4(), "none", "test0000pAssw0rd", update)
+            .await?;
 
         assert_ne!(before, after);
 

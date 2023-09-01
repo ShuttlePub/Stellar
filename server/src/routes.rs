@@ -1,12 +1,7 @@
 mod infos;
 
+mod account;
 mod auth;
 mod client;
-mod account;
 
-pub use self::{
-    account::*,
-    auth::*,
-    client::*,
-    infos::*,
-};
+pub use self::{account::*, auth::*, client::*, infos::*};

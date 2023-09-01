@@ -1,28 +1,21 @@
 mod account;
 mod client;
-mod tokens;
-mod pkce;
-mod state;
 mod mfa_code;
+mod pkce;
 mod session;
+mod state;
 mod ticket;
+mod tokens;
 
 pub use self::{
-    account::*,
-    client::*,
+    account::*, client::*, mfa_code::*, pkce::*, redis_pool::*, session::*, state::*, ticket::*,
     tokens::*,
-    pkce::*,
-    state::*,
-    mfa_code::*,
-    session::*,
-    ticket::*,
-    redis_pool::*,
 };
 
 pub(in crate::database) mod redis_pool {
-    use deadpool_redis::{Pool, Connection as RedisConnection};
     use crate::error::DriverError;
-    
+    use deadpool_redis::{Connection as RedisConnection, Pool};
+
     pub struct RedisPoolMng;
 
     impl RedisPoolMng {

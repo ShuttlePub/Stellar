@@ -1,7 +1,4 @@
-mod pending;
 mod accepted;
+mod pending;
 
-pub use self::{
-    pending::*,
-    accepted::*,
-};
+pub use self::{accepted::*, pending::*};

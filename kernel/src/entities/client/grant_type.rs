@@ -1,7 +1,7 @@
+use crate::KernelError;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::str::FromStr;
-use serde::{Deserialize, Serialize};
-use crate::KernelError;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GrantTypes(HashSet<GrantType>);
@@ -33,8 +33,7 @@ impl IntoIterator for GrantTypes {
 
 impl FromIterator<GrantType> for GrantTypes {
     fn from_iter<T: IntoIterator<Item = GrantType>>(iter: T) -> Self {
-        let v = iter.into_iter()
-            .collect::<Vec<GrantType>>();
+        let v = iter.into_iter().collect::<Vec<GrantType>>();
         Self::new(v)
     }
 }
@@ -59,7 +58,7 @@ pub enum GrantType {
     ClientCredentials,
     RefreshToken,
     JWTBearer,
-    Saml2Bearer
+    Saml2Bearer,
 }
 
 impl TryFrom<String> for GrantType {
@@ -80,10 +79,12 @@ impl FromStr for GrantType {
             "refresh_token" => Self::RefreshToken,
             "jwt_bearer" => Self::JWTBearer,
             "saml2_bearer" => Self::Saml2Bearer,
-            _ => return Err(KernelError::InvalidValue {
-                method: "from_str",
-                value: s.to_string(),
-            })
+            _ => {
+                return Err(KernelError::InvalidValue {
+                    method: "from_str",
+                    value: s.to_string(),
+                })
+            }
         })
     }
 }
@@ -97,7 +98,7 @@ impl AsRef<str> for GrantType {
             GrantType::ClientCredentials => "client_credentials",
             GrantType::RefreshToken => "refresh_token",
             GrantType::JWTBearer => "jwt_bearer",
-            GrantType::Saml2Bearer => "saml2_bearer"
+            GrantType::Saml2Bearer => "saml2_bearer",
         }
     }
 }

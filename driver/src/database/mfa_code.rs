@@ -1,13 +1,13 @@
-use deadpool_redis::{Pool, Connection as RedisConnection, redis};
+use crate::DriverError;
+use deadpool_redis::{redis, Connection as RedisConnection, Pool};
 use kernel::external::Uuid;
+use kernel::interfaces::repository::MFACodeVolatileRepository;
 use kernel::prelude::entities::{MFACode, UserId};
 use kernel::KernelError;
-use kernel::interfaces::repository::MFACodeVolatileRepository;
-use crate::DriverError;
 
 #[derive(Clone)]
 pub struct MFACodeVolatileDataBase {
-    pool: Pool
+    pool: Pool,
 }
 
 impl MFACodeVolatileDataBase {
@@ -19,22 +19,19 @@ impl MFACodeVolatileDataBase {
 #[async_trait::async_trait]
 impl MFACodeVolatileRepository for MFACodeVolatileDataBase {
     async fn create(&self, user_id: &UserId, code: &MFACode) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         MFACodeRedisInternal::create(user_id, code, &mut con).await?;
         Ok(())
     }
 
     async fn revoke(&self, user_id: &UserId) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         MFACodeRedisInternal::delete(user_id, &mut con).await?;
         Ok(())
     }
 
     async fn find_by_id(&self, user_id: &UserId) -> Result<Option<MFACode>, KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         let found = MFACodeRedisInternal::find_by_id(user_id, &mut con).await?;
         Ok(found)
     }
@@ -46,22 +43,19 @@ impl MFACodeRedisInternal {
     async fn create(
         user_id: &UserId,
         code: &MFACode,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<(), DriverError> {
         redis::cmd("SET")
             .arg(namespace(user_id))
             .arg(code.as_ref())
-        .arg("EX")
+            .arg("EX")
             .arg(60 * 15)
             .query_async(&mut *con)
             .await?;
         Ok(())
     }
 
-    async fn delete(
-        user_id: &UserId,
-        con: &mut RedisConnection
-    ) -> Result<(), DriverError> {
+    async fn delete(user_id: &UserId, con: &mut RedisConnection) -> Result<(), DriverError> {
         redis::cmd("DEL")
             .arg(namespace(user_id))
             .query_async(&mut *con)
@@ -71,7 +65,7 @@ impl MFACodeRedisInternal {
 
     async fn find_by_id(
         user_id: &UserId,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<Option<MFACode>, DriverError> {
         let code: Option<String> = redis::cmd("GET")
             .arg(namespace(user_id))

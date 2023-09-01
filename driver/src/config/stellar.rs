@@ -1,36 +1,13 @@
-use kernel::{
-    prelude::entities::{
-        TokenEndPointAuthMethod,
-        TermsUri,
-        Scopes,
-        ScopeMethod,
-        ScopeDescription,
-        ResponseTypes,
-        ResponseType,
-        RegistrationEndPoint,
-        RegistrationAccessToken,
-        RedirectUris,
-        RedirectUri,
-        PolicyUri,
-        LogoUri,
-        Jwks,
-        GrantTypes,
-        GrantType,
-        Contacts,
-        ClientUri,
-        ClientTypes,
-        ClientSecret,
-        ClientName,
-        ClientId,
-        ClientDescription,
-        Address,
-        UserId
-    }
-};
-use kernel::prelude::entities::Client;
-use kernel::prelude::services::JwkSelectionService;
 use super::Stellar;
 use crate::DriverError;
+use kernel::prelude::entities::Client;
+use kernel::prelude::entities::{
+    Address, ClientDescription, ClientId, ClientName, ClientSecret, ClientTypes, ClientUri,
+    Contacts, GrantType, GrantTypes, Jwks, LogoUri, PolicyUri, RedirectUri, RedirectUris,
+    RegistrationAccessToken, RegistrationEndPoint, ResponseType, ResponseTypes, ScopeDescription,
+    ScopeMethod, Scopes, TermsUri, TokenEndPointAuthMethod, UserId,
+};
+use kernel::prelude::services::JwkSelectionService;
 
 #[derive(Debug)]
 pub struct StellarClient {
@@ -79,13 +56,18 @@ impl Default for StellarClient {
             auth_method: TokenEndPointAuthMethod::PrivateKeyJWT,
             grant_types: GrantTypes::new(vec![GrantType::AuthorizationCode]),
             response_types: ResponseTypes::new(vec![ResponseType::Code]),
-            redirect_uris: RedirectUris::new(vec![RedirectUri::new("https://stellar.example.com/callback")]),
-            scopes: Scopes::new(vec![
-                ("read", "read user data from stellar"),
-                ("write", "write additional data into user data")
-            ].into_iter()
-             .map(|(m, d)| (ScopeMethod::new(m), ScopeDescription::new(d.to_string())))
-             .collect::<Vec<_>>()),
+            redirect_uris: RedirectUris::new(vec![RedirectUri::new(
+                "https://stellar.example.com/callback",
+            )]),
+            scopes: Scopes::new(
+                vec![
+                    ("read", "read user data from stellar"),
+                    ("write", "write additional data into user data"),
+                ]
+                .into_iter()
+                .map(|(m, d)| (ScopeMethod::new(m), ScopeDescription::new(d.to_string())))
+                .collect::<Vec<_>>(),
+            ),
             contacts: Contacts::new(vec![Address::new("admin.example@stellar.example.com")]),
             jwk: Jwks::new("https://stellar.example.com/.well-known").unwrap(),
             conf_access_token: RegistrationAccessToken::default(),
@@ -102,7 +84,13 @@ impl TryFrom<Stellar> for StellarClient {
             logo_uri: LogoUri::new(value.logo_uri)?,
             tos_uri: TermsUri::new(value.tos_uri)?,
             policy_uri: PolicyUri::new(value.policy_uri)?,
-            contacts: Contacts::new(value.contacts.into_iter().map(Address::new).collect::<Vec<_>>()),
+            contacts: Contacts::new(
+                value
+                    .contacts
+                    .into_iter()
+                    .map(Address::new)
+                    .collect::<Vec<_>>(),
+            ),
             jwk: JwkSelectionService::check(value.jwks, value.jwks_uri)?.unwrap(),
             ..Default::default()
         })
@@ -113,23 +101,24 @@ impl TryFrom<StellarClient> for Client {
     type Error = DriverError;
     fn try_from(value: StellarClient) -> Result<Self, Self::Error> {
         Ok(Self::new(
-            value.client_id, 
-            value.name, 
-            value.client_uri, 
-            value.client_desc, 
-            value.types, 
-            value.logo_uri, 
-            value.tos_uri, 
-            value.owner, 
-            value.policy_uri, 
-            value.auth_method, 
-            value.grant_types, 
-            value.response_types, 
-            value.redirect_uris, 
-            value.scopes, 
-            value.contacts, 
-            value.jwk, 
-            value.conf_access_token, 
-            value.conf_endpoint)?)
+            value.client_id,
+            value.name,
+            value.client_uri,
+            value.client_desc,
+            value.types,
+            value.logo_uri,
+            value.tos_uri,
+            value.owner,
+            value.policy_uri,
+            value.auth_method,
+            value.grant_types,
+            value.response_types,
+            value.redirect_uris,
+            value.scopes,
+            value.contacts,
+            value.jwk,
+            value.conf_access_token,
+            value.conf_endpoint,
+        )?)
     }
 }

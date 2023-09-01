@@ -1,7 +1,4 @@
-mod verify_mail;
 mod blacklist;
+mod verify_mail;
 
-pub use self::{ 
-    verify_mail::*,
-    blacklist::*
-};
+pub use self::{blacklist::*, verify_mail::*};

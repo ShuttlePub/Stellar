@@ -1,10 +1,7 @@
+pub mod controller;
 mod error;
+pub mod extract;
 mod handler;
 pub mod routes;
-pub mod extract;
-pub mod controller;
 
-pub use self::{
-    error::*,
-    handler::Handler,
-};
+pub use self::{error::*, handler::Handler};

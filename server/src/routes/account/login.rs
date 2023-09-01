@@ -1,14 +1,14 @@
-use axum::{Form, extract::State, response::IntoResponse};
-use application::services::{VerifyAccountService, DependOnVerifyAccountService};
-use crate::{Handler, ServerError};
+use self::form::*;
 use crate::controller::Controller;
 use crate::extract::session::Session;
-use self::form::*;
+use crate::{Handler, ServerError};
+use application::services::{DependOnVerifyAccountService, VerifyAccountService};
+use axum::{extract::State, response::IntoResponse, Form};
 
 pub async fn login(
     State(handler): State<Handler>,
     session: Session,
-    Form(input): Form<UserInput>
+    Form(input): Form<UserInput>,
 ) -> Result<impl IntoResponse, ServerError> {
     let req = Request {
         address: input.address,
@@ -19,20 +19,27 @@ pub async fn login(
 
     let res = Controller::new(Transformer, Presenter)
         .transform(req)
-        .handle(|req| async {
-            handler.verify_account_service()
-                .verify(req)
-                .await
-        }).await?;
+        .handle(|req| async { handler.verify_account_service().verify(req).await })
+        .await?;
 
     Ok(res)
 }
 
 mod form {
-    use axum::{http::{HeaderMap, StatusCode}, headers::HeaderValue, http::header::SET_COOKIE};
+    use crate::{
+        controller::{InputPort, OutputPort},
+        extract::session::SESSION_TAG,
+        ServerError,
+    };
+    use application::{
+        transfer::account::VerifyAccountDto, transfer::session::SessionDto, ApplicationError,
+    };
+    use axum::{
+        headers::HeaderValue,
+        http::header::SET_COOKIE,
+        http::{HeaderMap, StatusCode},
+    };
     use serde::Deserialize;
-    use application::{transfer::account::VerifyAccountDto, ApplicationError, transfer::session::SessionDto};
-    use crate::{controller::{InputPort, OutputPort}, extract::session::SESSION_TAG, ServerError};
 
     #[derive(Deserialize)]
     pub struct UserInput {
@@ -45,7 +52,7 @@ mod form {
         pub address: Option<String>,
         pub pass: Option<String>,
         pub code: Option<String>,
-        pub session: Option<String>
+        pub session: Option<String>,
     }
 
     pub struct Transformer;
@@ -69,15 +76,16 @@ mod form {
         fn emit(&self, input: Result<SessionDto, ApplicationError>) -> Self::ViewModel {
             match input {
                 Ok(session) => {
-                    let session = HeaderValue::from_str(format!("{}={}", SESSION_TAG, session.id).as_str())
-                        .map_err(|e| ServerError::Axum(anyhow::Error::new(e)))?;
+                    let session =
+                        HeaderValue::from_str(format!("{}={}", SESSION_TAG, session.id).as_str())
+                            .map_err(|e| ServerError::Axum(anyhow::Error::new(e)))?;
 
                     let mut headers = HeaderMap::new();
                     headers.insert(SET_COOKIE, session);
 
                     Ok((headers, StatusCode::OK))
-                },
-                Err(e) => { Err(e.into()) }
+                }
+                Err(e) => Err(e.into()),
             }
         }
     }

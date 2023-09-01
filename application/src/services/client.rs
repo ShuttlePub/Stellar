@@ -1,13 +1,14 @@
-use kernel::prelude::entities::{ClientId, ClientTypes};
-use kernel::external::Uuid;
-use kernel::interfaces::repository::{AccountRepository, ClientRegistry, DependOnAccountRepository, DependOnClientRegistry};
-use crate::ApplicationError;
 use crate::transfer::client::{ClientDto, RegisterClientDto, UpdateClientDto};
+use crate::ApplicationError;
+use kernel::external::Uuid;
+use kernel::interfaces::repository::{
+    AccountRepository, ClientRegistry, DependOnAccountRepository, DependOnClientRegistry,
+};
+use kernel::prelude::entities::{ClientId, ClientTypes};
 
 #[async_trait::async_trait]
-pub trait RegisterClientService: 'static + Sync + Send
-    + DependOnClientRegistry
-    + DependOnAccountRepository
+pub trait RegisterClientService:
+    'static + Sync + Send + DependOnClientRegistry + DependOnAccountRepository
 {
     async fn register(&self, register: RegisterClientDto) -> Result<ClientDto, ApplicationError>;
 }
@@ -18,11 +19,16 @@ pub trait DependOnRegisterClientService: 'static + Sync + Send {
 }
 
 #[async_trait::async_trait]
-pub trait UpdateClientService: 'static + Sync + Send
-    + DependOnClientRegistry
-    + DependOnAccountRepository
+pub trait UpdateClientService:
+    'static + Sync + Send + DependOnClientRegistry + DependOnAccountRepository
 {
-    async fn update(&self, id: &Uuid, cl_secret: &str, pass_phrase: &str, update: UpdateClientDto) -> Result<ClientDto, ApplicationError>;
+    async fn update(
+        &self,
+        id: &Uuid,
+        cl_secret: &str,
+        pass_phrase: &str,
+        update: UpdateClientDto,
+    ) -> Result<ClientDto, ApplicationError>;
 }
 
 pub trait DependOnUpdateClientService: 'static + Sync + Send {
@@ -31,12 +37,16 @@ pub trait DependOnUpdateClientService: 'static + Sync + Send {
 }
 
 #[async_trait::async_trait]
-pub trait DeleteClientService: 'static + Sync + Send
-    + DependOnClientRegistry
-    + DependOnAccountRepository
+pub trait DeleteClientService:
+    'static + Sync + Send + DependOnClientRegistry + DependOnAccountRepository
 {
     //noinspection DuplicatedCode
-    async fn delete(&self, id: &Uuid, cl_secret: &str, pass_phrase: &str) -> Result<(), ApplicationError> {
+    async fn delete(
+        &self,
+        id: &Uuid,
+        cl_secret: &str,
+        pass_phrase: &str,
+    ) -> Result<(), ApplicationError> {
         let client_id = ClientId::new_at_now(*id);
 
         let Some(client) = self.client_registry().find_by_id(&client_id).await? else {
@@ -53,7 +63,7 @@ pub trait DeleteClientService: 'static + Sync + Send
                     method: "client_secret_verify",
                     entity: "client",
                     id: format!("{:?}, `in kernel`: {:?}", client_id, e),
-                })
+                });
             }
         }
 
@@ -70,12 +80,12 @@ pub trait DeleteClientService: 'static + Sync + Send
                 method: "account_password_verify",
                 entity: "account",
                 id: format!("{:?}, `in kernel`: {:?}", owner_ac.id(), e),
-            })
+            });
         }
 
         self.client_registry().delete(&client_id).await?;
 
-        Ok(()) 
+        Ok(())
     }
 }
 

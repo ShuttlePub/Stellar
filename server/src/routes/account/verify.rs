@@ -1,9 +1,14 @@
-use axum::{response::IntoResponse, http::StatusCode, extract::{State, Query}, Json};
 use application::services::{DependOnVerifyMFACodeService, VerifyMFACodeService};
 use application::transfer::mfa_code::MFAActionDto;
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
 
-use crate::{Handler, ServerError};
 use self::forms::*;
+use crate::{Handler, ServerError};
 
 pub async fn verify(
     State(handler): State<Handler>,
@@ -15,34 +20,28 @@ pub async fn verify(
         code: form.code,
     };
 
-    let accepted = handler
-        .verify_mfa_code_service()
-        .verify(dto)
-        .await?;
+    let accepted = handler.verify_mfa_code_service().verify(dto).await?;
 
-    let res = Response {
-        ticket: accepted.0
-    };
+    let res = Response { ticket: accepted.0 };
 
     Ok((StatusCode::TEMPORARY_REDIRECT, Json(res)))
 }
-
 
 mod forms {
     use serde::{Deserialize, Serialize};
 
     #[derive(Deserialize, Debug)]
     pub struct UserInput {
-        pub code: String
+        pub code: String,
     }
 
     #[derive(Deserialize, Debug)]
     pub struct UserQuery {
-        pub ticket: String
+        pub ticket: String,
     }
 
     #[derive(Serialize, Debug)]
     pub struct Response {
-        pub ticket: String
+        pub ticket: String,
     }
 }

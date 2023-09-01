@@ -1,20 +1,14 @@
+use crate::entities::ResponseType;
+use crate::{
+    entities::{ClientId, LoggedAt, RedirectUri, ScopeMethod, UserId},
+    services::RandomizeService,
+    KernelError,
+};
 use destructure::Destructure;
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
 use try_ref::TryAsRef;
 use uuid::Uuid;
-use crate::{
-    KernelError,
-    services::RandomizeService,
-    entities::{
-        ClientId,
-        LoggedAt,
-        RedirectUri,
-        ScopeMethod,
-        UserId
-    },
-};
-use crate::entities::ResponseType;
 
 use super::claims::ExpiredIn;
 
@@ -77,7 +71,7 @@ impl TryAsRef<UserId> for TokenOwnedUser {
                 method: "try_as_ref",
                 entity: "TokenOwnedUser",
                 id: "None".to_string(),
-            })
+            }),
         }
     }
 }
@@ -103,7 +97,7 @@ impl AuthorizeTokenContext {
     pub fn response_type(&self) -> &ResponseType {
         &self.response_type
     }
-    
+
     pub fn redirect_uri(&self) -> &RedirectUri {
         &self.redirect_uri
     }
@@ -118,7 +112,7 @@ pub struct AuthorizeToken {
     id: AuthorizeTokenId,
     date: LoggedAt,
     owned_by: TokenOwnedUser,
-    ctx: AuthorizeTokenContext
+    ctx: AuthorizeTokenContext,
 }
 
 impl AuthorizeToken {
@@ -132,22 +126,19 @@ impl AuthorizeToken {
         scope: impl Into<Vec<ScopeMethod>>,
         response_type: impl Into<ResponseType>,
         redirect_uri: impl Into<String>,
-        expired_in: impl Into<Duration>
+        expired_in: impl Into<Duration>,
     ) -> Self {
         Self {
             id: AuthorizeTokenId::new(id),
             owned_by: TokenOwnedUser::new(owned_by.into().map(UserId::new)),
-            date: LoggedAt::new(
-                created_at,
-                updated_at
-            ),
+            date: LoggedAt::new(created_at, updated_at),
             ctx: AuthorizeTokenContext {
                 client_id: ClientId::new_at_now(client_id),
                 scopes: scope.into(),
                 response_type: response_type.into(),
                 redirect_uri: RedirectUri::new(redirect_uri),
-                expired_in: ExpiredIn::new(expired_in)
-            }
+                expired_in: ExpiredIn::new(expired_in),
+            },
         }
     }
 

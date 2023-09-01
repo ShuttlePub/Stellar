@@ -1,13 +1,7 @@
-mod client;
 mod account;
-mod token;
+mod client;
 mod time;
+mod token;
 mod volatiles;
 
-pub use self::{
-    client::*,
-    account::*,
-    time::*,
-    token::*,
-    volatiles::*
-};
+pub use self::{account::*, client::*, time::*, token::*, volatiles::*};

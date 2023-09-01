@@ -1,6 +1,6 @@
 use crate::{
-    entities::{Account, UserId, Address, TemporaryAccount},
-    KernelError
+    entities::{Account, Address, TemporaryAccount, UserId},
+    KernelError,
 };
 
 #[cfg_attr(feature = "mock", mockall::automock)]
@@ -18,7 +18,6 @@ pub trait DependOnAccountRepository: 'static + Sync + Send {
     type AccountRepository: AccountRepository;
     fn account_repository(&self) -> &Self::AccountRepository;
 }
-
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]

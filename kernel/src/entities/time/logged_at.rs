@@ -7,17 +7,17 @@ use super::{CreatedAt, UpdatedAt};
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, Destructure)]
 pub struct LoggedAt {
     created_at: CreatedAt,
-    updated_at: UpdatedAt
+    updated_at: UpdatedAt,
 }
 
 impl LoggedAt {
     pub fn new(
         created_at: impl Into<OffsetDateTime>,
-        updated_at: impl Into<OffsetDateTime>
+        updated_at: impl Into<OffsetDateTime>,
     ) -> Self {
         Self {
             created_at: CreatedAt::new(created_at.into()),
-            updated_at: UpdatedAt::new(updated_at.into())
+            updated_at: UpdatedAt::new(updated_at.into()),
         }
     }
 

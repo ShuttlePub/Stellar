@@ -1,8 +1,8 @@
+use crate::KernelError;
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::str::FromStr;
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::KernelError;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(transparent)]
@@ -36,7 +36,7 @@ impl From<UserId> for Uuid {
 
 impl AsRef<[u8]> for UserId {
     fn as_ref(&self) -> &[u8] {
-        self.0.as_ref() 
+        self.0.as_ref()
     }
 }
 

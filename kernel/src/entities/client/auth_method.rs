@@ -1,6 +1,6 @@
-use std::str::FromStr;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use crate::KernelError;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Hash)]
 pub enum TokenEndPointAuthMethod {
@@ -8,7 +8,7 @@ pub enum TokenEndPointAuthMethod {
     ClientSecretBasic,
     None,
 
-    PrivateKeyJWT
+    PrivateKeyJWT,
 }
 
 impl TryFrom<String> for TokenEndPointAuthMethod {
@@ -29,7 +29,7 @@ impl FromStr for TokenEndPointAuthMethod {
             _ => Err(KernelError::InvalidValue {
                 method: "from_str",
                 value: s.to_string(),
-            })
+            }),
         }
     }
 }
@@ -40,7 +40,7 @@ impl AsRef<str> for TokenEndPointAuthMethod {
             TokenEndPointAuthMethod::ClientSecretPost => "client_secret_post",
             TokenEndPointAuthMethod::ClientSecretBasic => "client_secret_basic",
             TokenEndPointAuthMethod::None => "none",
-            TokenEndPointAuthMethod::PrivateKeyJWT => "private_key_jwt"
+            TokenEndPointAuthMethod::PrivateKeyJWT => "private_key_jwt",
         }
     }
 }
@@ -53,17 +53,18 @@ impl From<TokenEndPointAuthMethod> for String {
 
 impl<'de> Deserialize<'de> for TokenEndPointAuthMethod {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let deserialize: &str = Deserialize::deserialize(deserializer)?;
-        Self::from_str(deserialize)
-            .map_err(serde::de::Error::custom)
+        Self::from_str(deserialize).map_err(serde::de::Error::custom)
     }
 }
 
 impl Serialize for TokenEndPointAuthMethod {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         serializer.serialize_str(self.as_ref())
     }

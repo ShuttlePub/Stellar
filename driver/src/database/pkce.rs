@@ -1,13 +1,13 @@
-use deadpool_redis::{Pool, redis};
+use crate::DriverError;
 use deadpool_redis::Connection as RedisConnection;
+use deadpool_redis::{redis, Pool};
+use kernel::interfaces::repository::PKCEVolatileRepository;
 use kernel::prelude::entities::{AuthorizeTokenId, CodeChallenge};
 use kernel::KernelError;
-use kernel::interfaces::repository::PKCEVolatileRepository;
-use crate::DriverError;
 
 #[derive(Clone)]
 pub struct PKCEVolatileDataBase {
-    pool: Pool
+    pool: Pool,
 }
 
 impl PKCEVolatileDataBase {
@@ -18,23 +18,27 @@ impl PKCEVolatileDataBase {
 
 #[async_trait::async_trait]
 impl PKCEVolatileRepository for PKCEVolatileDataBase {
-    async fn save(&self, token_id: &AuthorizeTokenId, code: &CodeChallenge) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+    async fn save(
+        &self,
+        token_id: &AuthorizeTokenId,
+        code: &CodeChallenge,
+    ) -> Result<(), KernelError> {
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         PKCERedisInternal::save(token_id, code, &mut con).await?;
         Ok(())
     }
 
     async fn dele(&self, token_id: &AuthorizeTokenId) -> Result<(), KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         PKCERedisInternal::dele(token_id, &mut con).await?;
         Ok(())
     }
 
-    async fn find(&self, token_id: &AuthorizeTokenId) -> Result<Option<CodeChallenge>, KernelError> {
-        let mut con = self.pool.get().await
-            .map_err(DriverError::from)?;
+    async fn find(
+        &self,
+        token_id: &AuthorizeTokenId,
+    ) -> Result<Option<CodeChallenge>, KernelError> {
+        let mut con = self.pool.get().await.map_err(DriverError::from)?;
         let found = PKCERedisInternal::find(token_id, &mut con).await?;
         Ok(found)
     }
@@ -46,7 +50,7 @@ impl PKCERedisInternal {
     async fn save(
         token_id: &AuthorizeTokenId,
         code: &CodeChallenge,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<(), DriverError> {
         redis::cmd("SET")
             .arg(token_id.as_ref())
@@ -58,7 +62,7 @@ impl PKCERedisInternal {
 
     async fn dele(
         token_id: &AuthorizeTokenId,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<(), DriverError> {
         redis::cmd("DEL")
             .arg(token_id.as_ref())
@@ -69,7 +73,7 @@ impl PKCERedisInternal {
 
     async fn find(
         token_id: &AuthorizeTokenId,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<Option<CodeChallenge>, DriverError> {
         let raw: Option<Vec<u8>> = redis::cmd("GET")
             .arg(token_id.as_ref())
@@ -82,9 +86,9 @@ impl PKCERedisInternal {
 
 #[cfg(test)]
 mod tests {
+    use crate::database::pkce::PKCERedisInternal;
     use deadpool_redis::{Config, Runtime};
     use kernel::prelude::entities::{AuthorizeTokenId, CodeChallenge};
-    use crate::database::pkce::PKCERedisInternal;
 
     //noinspection SpellCheckingInspection
     #[ignore = "It depends on Redis and does not work as is."]

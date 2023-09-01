@@ -1,14 +1,14 @@
-use std::str::FromStr;
+use crate::KernelError;
 use jsonwebkey::JsonWebKey;
 use serde::{Deserialize, Serialize};
-use url::Url;
-use crate::KernelError;
+use std::str::FromStr;
 use try_ref::TryAsRef;
+use url::Url;
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Jwks {
     Uri(String),
-    Key(JsonWebKey)
+    Key(JsonWebKey),
 }
 
 impl Jwks {
@@ -21,15 +21,15 @@ impl Jwks {
                 Err(urle) => Err(KernelError::InvalidValue {
                     method: "parse key and url",
                     value: format!("jwk: {:?}, url: {:?}", jwke, urle),
-                })
-            }
+                }),
+            },
         }
     }
 
     pub fn is_uri(&self) -> bool {
         match self {
             Jwks::Uri(_) => true,
-            Jwks::Key(_) => false
+            Jwks::Key(_) => false,
         }
     }
 }
@@ -42,7 +42,7 @@ impl TryFrom<Jwks> for String {
             Jwks::Key(_) => Err(KernelError::InvalidValue {
                 method: "try convert to url string",
                 value: "this value is jwk object.".to_string(),
-            })
+            }),
         }
     }
 }
@@ -55,7 +55,7 @@ impl TryFrom<Jwks> for JsonWebKey {
             Jwks::Uri(_) => Err(KernelError::InvalidValue {
                 method: "try convert to jwk",
                 value: "this value is uri.".to_string(),
-            })
+            }),
         }
     }
 }
@@ -68,7 +68,7 @@ impl TryAsRef<str> for Jwks {
             Jwks::Key(_) => Err(KernelError::InvalidValue {
                 method: "try convert to url string",
                 value: "this value is jwk object.".to_string(),
-            })
+            }),
         }
     }
 }
@@ -81,7 +81,7 @@ impl TryAsRef<JsonWebKey> for Jwks {
             Jwks::Uri(_) => Err(KernelError::InvalidValue {
                 method: "try convert to jwk",
                 value: "this value is uri.".to_string(),
-            })
+            }),
         }
     }
 }

@@ -1,28 +1,33 @@
-use axum::{extract::{Query, State}, Json, response::IntoResponse};
-use serde::{Deserialize, Deserializer};
+use crate::{Handler, ServerError};
 use application::services::{DependOnPendingAuthorizeTokenService, PendingAuthorizeTokenService};
 use application::transfer::token::CreateAuthorizeTokenDto;
+use axum::{
+    extract::{Query, State},
+    response::IntoResponse,
+    Json,
+};
 use kernel::external::Uuid;
-use crate::{Handler, ServerError};
+use serde::{Deserialize, Deserializer};
 
 pub async fn authorization(
     State(handler): State<Handler>,
-    Query(query): Query<AuthorizationGrantQuery>
+    Query(query): Query<AuthorizationGrantQuery>,
 ) -> Result<impl IntoResponse, ServerError> {
     let AuthorizationGrantQuery {
-        response_type, 
-        client_id, 
-        redirect_uri, 
-        scope, 
-        state, 
-        code_challenge, 
-        code_challenge_method
+        response_type,
+        client_id,
+        redirect_uri,
+        scope,
+        state,
+        code_challenge,
+        code_challenge_method,
     } = query;
 
-    let client_id = Uuid::parse_str(&client_id)?; 
-    
-    let ticket = handler.pending_authorize_token_service().pending(
-        CreateAuthorizeTokenDto {
+    let client_id = Uuid::parse_str(&client_id)?;
+
+    let ticket = handler
+        .pending_authorize_token_service()
+        .pending(CreateAuthorizeTokenDto {
             response_type,
             client_id,
             redirect_uri,
@@ -30,14 +35,13 @@ pub async fn authorization(
             state,
             code_challenge,
             code_challenge_method,
-        }
-    ).await?;
+        })
+        .await?;
     let value = serde_json::json!({
         "ticket": ticket.0
     });
     Ok(Json(value))
 }
-
 
 #[allow(unused)]
 #[derive(Deserialize, Debug)]
@@ -49,23 +53,24 @@ pub struct AuthorizationGrantQuery {
     pub scope: Vec<String>,
     pub state: String,
     pub code_challenge: String,
-    pub code_challenge_method: String
+    pub code_challenge_method: String,
 }
 
 /// This function converts a space-delimited string into an array.
 ///
 /// Defined in [RFC6749 Section 3.3 Access Token Scope](https://datatracker.ietf.org/doc/html/rfc6749#section-3.3)
 fn scope_deserializer<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
-  where D: Deserializer<'de>
+where
+    D: Deserializer<'de>,
 {
     let raw: String = Deserialize::deserialize(deserializer)?;
     println!("{:?}", raw);
-    let scopes = raw.split(' ')
+    let scopes = raw
+        .split(' ')
         .map(|scope| scope.to_string())
         .collect::<Vec<String>>();
     Ok(scopes)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -77,7 +82,7 @@ mod tests {
     struct TestDomain {
         id: u64,
         #[serde(deserialize_with = "super::scope_deserializer")]
-        array: Vec<String>
+        array: Vec<String>,
     }
 
     #[test]

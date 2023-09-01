@@ -1,9 +1,15 @@
+use application::{ApplicationError, ExpectUserAction};
+use axum::{
+    headers::{HeaderMap, HeaderValue},
+    http::header::CONTENT_LOCATION,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
+use driver::DriverError;
+use serde_json::json;
 use std::convert::Infallible;
 use std::fmt::Display;
-use axum::{http::header::CONTENT_LOCATION, headers::{HeaderMap, HeaderValue}, http::StatusCode, Json, response::{IntoResponse, Response}};
-use serde_json::json;
-use application::{ApplicationError, ExpectUserAction};
-use driver::DriverError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ServerError {
@@ -12,10 +18,7 @@ pub enum ServerError {
     #[error(transparent)]
     Driver(#[from] DriverError),
     #[error("invalid value `{value}` in the following {method}.")]
-    InvalidValue {
-        method: &'static str,
-        value: String
-    },
+    InvalidValue { method: &'static str, value: String },
     #[error(transparent)]
     Axum(anyhow::Error),
     #[error(transparent)]
@@ -25,11 +28,14 @@ pub enum ServerError {
     #[error("require user action.")]
     RequireUserAction(ExpectUserAction),
     #[error(transparent)]
-    Infallible(#[from] Infallible)
+    Infallible(#[from] Infallible),
 }
 
 impl serde::de::Error for ServerError {
-    fn custom<T>(msg: T) -> Self where T: Display {
+    fn custom<T>(msg: T) -> Self
+    where
+        T: Display,
+    {
         ServerError::Serde(anyhow::Error::msg(msg.to_string()))
     }
 }
@@ -38,7 +44,7 @@ impl From<ApplicationError> for ServerError {
     fn from(value: ApplicationError) -> Self {
         match value {
             ApplicationError::RequireUserAction(expect) => Self::RequireUserAction(expect),
-            _ => Self::Application(value)
+            _ => Self::Application(value),
         }
     }
 }
@@ -64,27 +70,21 @@ impl From<axum::headers::Error> for ServerError {
 impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
         let msg = match self {
-            ServerError::Axum(e)
-                => e.to_string(),
-            ServerError::Driver(e)
-                => e.to_string(),
-            ServerError::InvalidValue { method, value }
-                => format!("invalid value `{value}` in the following {method}."),
-            ServerError::Serde(e)
-                => e.to_string(),
-            ServerError::RequestParse(e)
-                => e.to_string(),
-            ServerError::Application(e)
-                => e.to_string(),
-            ServerError::Infallible(e)
-                => e.to_string(),
-            ServerError::RequireUserAction(expect)
-                => return require_user_actions(expect).into_response()
+            ServerError::Axum(e) => e.to_string(),
+            ServerError::Driver(e) => e.to_string(),
+            ServerError::InvalidValue { method, value } => {
+                format!("invalid value `{value}` in the following {method}.")
+            }
+            ServerError::Serde(e) => e.to_string(),
+            ServerError::RequestParse(e) => e.to_string(),
+            ServerError::Application(e) => e.to_string(),
+            ServerError::Infallible(e) => e.to_string(),
+            ServerError::RequireUserAction(expect) => {
+                return require_user_actions(expect).into_response()
+            }
         };
 
-        let json = json!({
-            "error": msg
-        });
+        let json = json!({ "error": msg });
 
         (StatusCode::BAD_REQUEST, Json(json)).into_response()
     }
@@ -92,12 +92,17 @@ impl IntoResponse for ServerError {
 
 fn require_user_actions(expect: ExpectUserAction) -> impl IntoResponse {
     match expect {
-        ExpectUserAction::Login => {
-            (StatusCode::FORBIDDEN, HeaderMap::new(), "session expired. please re-login.")
-        },
+        ExpectUserAction::Login => (
+            StatusCode::FORBIDDEN,
+            HeaderMap::new(),
+            "session expired. please re-login.",
+        ),
         ExpectUserAction::MFA => {
             let mut headers = HeaderMap::new();
-            headers.insert(CONTENT_LOCATION, HeaderValue::from_static("/accounts/verify"));
+            headers.insert(
+                CONTENT_LOCATION,
+                HeaderValue::from_static("/accounts/verify"),
+            );
             (StatusCode::ACCEPTED, headers, "accepted login process, We have sent you an email including an authentication code, please add the code to the form and continue the process.")
         }
     }

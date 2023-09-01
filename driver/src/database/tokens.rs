@@ -1,7 +1,4 @@
-mod pending;
 mod authorize;
+mod pending;
 
-pub use self::{
-    pending::*,
-    authorize::*,
-};
+pub use self::{authorize::*, pending::*};

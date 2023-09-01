@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]

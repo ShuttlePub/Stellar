@@ -1,5 +1,5 @@
-use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 use super::Address;
 
@@ -10,7 +10,7 @@ impl Contacts {
     pub fn new(adr: impl Into<Vec<Address>>) -> Self {
         Self(adr.into().into_iter().collect())
     }
-    
+
     pub fn as_ref_vec(&self) -> Vec<&str> {
         self.0.iter().map(AsRef::as_ref).collect()
     }
@@ -32,7 +32,7 @@ impl IntoIterator for Contacts {
 }
 
 impl FromIterator<Address> for Contacts {
-    fn from_iter<T: IntoIterator<Item=Address>>(iter: T) -> Self {
+    fn from_iter<T: IntoIterator<Item = Address>>(iter: T) -> Self {
         let v = iter.into_iter().collect::<Vec<Address>>();
         Self::new(v)
     }

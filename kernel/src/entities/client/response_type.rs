@@ -1,7 +1,7 @@
+use crate::KernelError;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::str::FromStr;
-use serde::{Deserialize, Serialize};
-use crate::KernelError;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ResponseTypes(HashSet<ResponseType>);
@@ -32,9 +32,8 @@ impl IntoIterator for ResponseTypes {
 }
 
 impl FromIterator<ResponseType> for ResponseTypes {
-    fn from_iter<T: IntoIterator<Item=ResponseType>>(iter: T) -> Self {
-        let v = iter.into_iter()
-            .collect::<Vec<ResponseType>>();
+    fn from_iter<T: IntoIterator<Item = ResponseType>>(iter: T) -> Self {
+        let v = iter.into_iter().collect::<Vec<ResponseType>>();
         Self::new(v)
     }
 }
@@ -54,7 +53,7 @@ impl AsRef<HashSet<ResponseType>> for ResponseTypes {
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Deserialize, Serialize)]
 pub enum ResponseType {
     Code,
-    Token
+    Token,
 }
 
 impl PartialEq<String> for ResponseType {
@@ -76,10 +75,12 @@ impl FromStr for ResponseType {
         Ok(match s {
             "code" => Self::Code,
             "token" => Self::Token,
-            _ => return Err(KernelError::InvalidValue {
-                method: "from_str",
-                value: s.to_string(),
-            })
+            _ => {
+                return Err(KernelError::InvalidValue {
+                    method: "from_str",
+                    value: s.to_string(),
+                })
+            }
         })
     }
 }
@@ -88,8 +89,9 @@ impl From<ResponseType> for String {
     fn from(value: ResponseType) -> Self {
         match value {
             ResponseType::Code => "code",
-            ResponseType::Token => "token"
-        }.to_owned()
+            ResponseType::Token => "token",
+        }
+        .to_owned()
     }
 }
 
@@ -97,7 +99,7 @@ impl AsRef<str> for ResponseType {
     fn as_ref(&self) -> &str {
         match self {
             ResponseType::Code => "code",
-            ResponseType::Token => "token"
+            ResponseType::Token => "token",
         }
     }
 }

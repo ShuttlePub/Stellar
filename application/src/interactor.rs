@@ -1,11 +1,6 @@
-mod client;
 mod account;
-mod token;
+mod client;
 mod mfa_code;
+mod token;
 
-pub use self::{
-    account::*,
-    client::*,
-    token::*,
-    mfa_code::*,
-};
+pub use self::{account::*, client::*, mfa_code::*, token::*};

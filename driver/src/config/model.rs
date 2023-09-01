@@ -1,26 +1,27 @@
-use serde::{Deserialize, Serialize};
-use kernel::prelude::entities::{Account, Client, ClientId, UserId};
 use super::{AdminUser, StellarClient};
 use crate::DriverError;
-
+use kernel::prelude::entities::{Account, Client, ClientId, UserId};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct GenIds {
     pub admin_id: UserId,
-    pub stellar_id: ClientId
+    pub stellar_id: ClientId,
 }
 
 impl GenIds {
     pub fn new(admin_id: UserId, stellar_id: ClientId) -> Self {
-        Self { admin_id, stellar_id }
+        Self {
+            admin_id,
+            stellar_id,
+        }
     }
 }
-
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Config {
     pub admin: Admin,
-    pub stellar: Stellar
+    pub stellar: Stellar,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -28,7 +29,7 @@ pub struct Admin {
     pub address: String,
     pub name: String,
     pub pass: String,
-    pub pass_hashed: Option<String>
+    pub pass_hashed: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -48,7 +49,7 @@ impl Default for Admin {
             address: "admin@example.com".into(),
             name: "administrator".into(),
             pass: "administrator".into(),
-            pass_hashed: None
+            pass_hashed: None,
         }
     }
 }
@@ -62,7 +63,7 @@ impl Default for Stellar {
             tos_uri: "https://stellar.example.com/terms".into(),
             policy_uri: "https://stellar.example.com/policy".into(),
             jwks: None,
-            jwks_uri: Some("https://stellar.example.com/.well-known".into())
+            jwks_uri: Some("https://stellar.example.com/.well-known".into()),
         }
     }
 }
@@ -71,7 +72,7 @@ impl Config {
     pub fn formed(
         self,
         admin_id: UserId,
-        stellar_id: ClientId
+        stellar_id: ClientId,
     ) -> Result<(Account, Client), DriverError> {
         let Config { admin, stellar } = self;
 
@@ -87,9 +88,7 @@ impl Config {
 
         Ok((admin, stellar))
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {

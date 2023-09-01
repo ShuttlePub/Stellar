@@ -1,9 +1,8 @@
-use destructure::Destructure;
-use serde::{Serialize, Deserialize};
-use uuid::Uuid;
 use super::account::{Address, UserId};
 use crate::KernelError;
-
+use destructure::Destructure;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 mod auth_method;
 mod client_desc;
@@ -14,6 +13,7 @@ mod client_types;
 mod client_uri;
 mod contacts;
 mod grant_type;
+mod jwt;
 mod keys;
 mod logo_uri;
 mod policy_uri;
@@ -23,28 +23,12 @@ mod regi_endpoint;
 mod response_type;
 mod scope;
 mod tos_uri;
-mod jwt;
 
 pub use self::{
-    auth_method::*,
-    client_desc::*,
-    client_id::*,
-    client_name::*,
-    client_secret::*,
-    client_types::*,
-    client_uri::*,
-    contacts::*,
-    grant_type::*,
-    keys::*,
-    logo_uri::*,
-    policy_uri::*,
-    redirect::*,
-    regi_access_token::*,
-    regi_endpoint::*,
-    response_type::*,
-    scope::*,
+    auth_method::*, client_desc::*, client_id::*, client_name::*, client_secret::*,
+    client_types::*, client_uri::*, contacts::*, grant_type::*, jwt::*, keys::*, logo_uri::*,
+    policy_uri::*, redirect::*, regi_access_token::*, regi_endpoint::*, response_type::*, scope::*,
     tos_uri::*,
-    jwt::*
 };
 
 /// Client.
@@ -111,13 +95,10 @@ impl Client {
             response_types: ResponseTypes::new(response_types),
             redirect_uris: RedirectUris::new(redirect_uris),
             scopes: Scopes::new(scopes),
-            contact: Contacts::new(contacts.into()
-                .into_iter()
-                .collect::<Vec<_>>()
-            ),
+            contact: Contacts::new(contacts.into().into_iter().collect::<Vec<_>>()),
             jwks: jwk.into(),
             conf_token: RegistrationAccessToken::new(conf_access_token),
-            conf_endpoint: RegistrationEndPoint::new(conf_endpoint)
+            conf_endpoint: RegistrationEndPoint::new(conf_endpoint),
         })
     }
 }

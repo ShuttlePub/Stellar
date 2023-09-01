@@ -1,13 +1,13 @@
-use deadpool_redis::{Pool, redis, Connection as RedisConnection};
-use kernel::prelude::entities::{AuthorizeToken, AuthorizeTokenId};
-use kernel::interfaces::repository::AuthorizeTokenRepository;
-use kernel::KernelError;
 use crate::database::RedisPoolMng;
 use crate::DriverError;
+use deadpool_redis::{redis, Connection as RedisConnection, Pool};
+use kernel::interfaces::repository::AuthorizeTokenRepository;
+use kernel::prelude::entities::{AuthorizeToken, AuthorizeTokenId};
+use kernel::KernelError;
 
 #[derive(Clone)]
 pub struct AuthorizeTokenVolatileDataBase {
-    pool: Pool
+    pool: Pool,
 }
 
 impl AuthorizeTokenVolatileDataBase {
@@ -48,7 +48,7 @@ impl AuthorizeTokenRedisInternal {
     pub async fn save(
         id: &AuthorizeTokenId,
         token: &AuthorizeToken,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<(), DriverError> {
         redis::cmd("SET")
             .arg(namespace(id))
@@ -60,10 +60,7 @@ impl AuthorizeTokenRedisInternal {
         Ok(())
     }
 
-    pub async fn dele(
-        id: &AuthorizeTokenId,
-        con: &mut RedisConnection
-    ) -> Result<(), DriverError> {
+    pub async fn dele(id: &AuthorizeTokenId, con: &mut RedisConnection) -> Result<(), DriverError> {
         redis::cmd("DEL")
             .arg(namespace(id))
             .query_async(&mut *con)
@@ -73,7 +70,7 @@ impl AuthorizeTokenRedisInternal {
 
     pub async fn find(
         id: &AuthorizeTokenId,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<Option<AuthorizeToken>, DriverError> {
         let raw: Option<String> = redis::cmd("GET")
             .arg(namespace(id))
@@ -90,13 +87,14 @@ fn namespace(key: impl AsRef<str>) -> String {
     format!("{}-accepted-authz-token", key.as_ref())
 }
 
-
 #[cfg(test)]
 mod tests {
-    use deadpool_redis::{Config, Runtime};
-    use kernel::prelude::entities::{AuthorizeToken, AuthorizeTokenId, ClientId, ResponseType, ScopeMethod};
-    use kernel::external::{Duration, OffsetDateTime, Uuid};
     use super::AuthorizeTokenRedisInternal;
+    use deadpool_redis::{Config, Runtime};
+    use kernel::external::{Duration, OffsetDateTime, Uuid};
+    use kernel::prelude::entities::{
+        AuthorizeToken, AuthorizeTokenId, ClientId, ResponseType, ScopeMethod,
+    };
 
     #[ignore = "It depends on Redis and does not work as is."]
     #[tokio::test]
@@ -122,7 +120,7 @@ mod tests {
             scopes,
             response_type,
             redirect_uri,
-            expired_in
+            expired_in,
         );
 
         let cfg = Config::from_url("redis://localhost:6379/");

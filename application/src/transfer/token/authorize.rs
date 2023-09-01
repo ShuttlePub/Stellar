@@ -1,5 +1,7 @@
-use kernel::prelude::entities::{AuthorizeToken, DestructAuthorizeToken, DestructAuthorizeTokenContext};
 use kernel::external::Uuid;
+use kernel::prelude::entities::{
+    AuthorizeToken, DestructAuthorizeToken, DestructAuthorizeTokenContext,
+};
 
 #[derive(Debug)]
 pub struct AuthorizeTokenDto {
@@ -15,13 +17,9 @@ impl AuthorizeTokenDto {
     pub fn from_with(
         origin: AuthorizeToken,
         token_type: impl Into<String>,
-        state: impl Into<String>
+        state: impl Into<String>,
     ) -> Self {
-        let DestructAuthorizeToken {
-            id,
-            ctx,
-            ..
-        } = origin.into_destruct();
+        let DestructAuthorizeToken { id, ctx, .. } = origin.into_destruct();
         let DestructAuthorizeTokenContext {
             scopes,
             response_type,
@@ -48,11 +46,11 @@ pub struct CreateAuthorizeTokenDto {
     pub scope: Vec<String>,
     pub state: String,
     pub code_challenge: String,
-    pub code_challenge_method: String
+    pub code_challenge_method: String,
 }
 
 #[derive(Debug)]
 pub struct AcceptUserFormDto {
     pub address: String,
-    pub pass: String
+    pub pass: String,
 }

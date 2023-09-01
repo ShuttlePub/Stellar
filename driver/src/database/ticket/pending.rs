@@ -1,13 +1,13 @@
-use deadpool_redis::{Pool, Connection as RedisConnection, redis};
-use kernel::prelude::entities::{TicketId, UserId};
-use kernel::KernelError;
-use kernel::interfaces::repository::PendingActionVolatileRepository;
 use crate::database::RedisPoolMng;
 use crate::DriverError;
+use deadpool_redis::{redis, Connection as RedisConnection, Pool};
+use kernel::interfaces::repository::PendingActionVolatileRepository;
+use kernel::prelude::entities::{TicketId, UserId};
+use kernel::KernelError;
 
 #[derive(Clone)]
 pub struct PendingActionVolatileDataBase {
-    pool: Pool
+    pool: Pool,
 }
 
 impl PendingActionVolatileDataBase {
@@ -41,7 +41,6 @@ impl PendingActionVolatileRepository for PendingActionVolatileDataBase {
     }
 }
 
-
 pub(in crate::database) struct PendingActionRedisInternal;
 
 // noinspection DuplicatedCode
@@ -49,7 +48,7 @@ impl PendingActionRedisInternal {
     pub async fn create(
         ticket: &TicketId,
         user_id: &UserId,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<(), DriverError> {
         redis::cmd("SET")
             .arg(namespace(ticket))
@@ -62,10 +61,7 @@ impl PendingActionRedisInternal {
         Ok(())
     }
 
-    pub async fn revoke(
-        ticket: &TicketId,
-        con: &mut RedisConnection
-    ) -> Result<(), DriverError> {
+    pub async fn revoke(ticket: &TicketId, con: &mut RedisConnection) -> Result<(), DriverError> {
         redis::cmd("DEL")
             .arg(namespace(ticket))
             .query_async(&mut *con)
@@ -75,15 +71,13 @@ impl PendingActionRedisInternal {
 
     pub async fn find(
         ticket: &TicketId,
-        con: &mut RedisConnection
+        con: &mut RedisConnection,
     ) -> Result<Option<UserId>, DriverError> {
         let raw: Option<Vec<u8>> = redis::cmd("GET")
             .arg(namespace(ticket))
             .query_async(&mut *con)
             .await?;
-        let user_id = raw
-            .map(TryInto::try_into)
-            .transpose()?;
+        let user_id = raw.map(TryInto::try_into).transpose()?;
         Ok(user_id)
     }
 }

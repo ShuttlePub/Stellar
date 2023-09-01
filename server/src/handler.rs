@@ -1,61 +1,37 @@
 use application::{
+    interactor::{RegisterClientInteractor, UpdateClientInteractor},
     services::{
-        DependOnCreateNonVerifiedAccountService,
-        DependOnCreateAccountService,
-        DependOnDeleteAccountService,
-        DependOnUpdateAccountService,
-        DependOnRegisterClientService,
-        DependOnUpdateClientService,
-        DependOnPendingAuthorizeTokenService,
-        DependOnAcceptAuthorizeTokenService,
-        DependOnRejectAuthorizeTokenService,
-        DependOnVerifyAccountService,
-        DependOnVerifyMFACodeService
-    },
-    interactor::{
-        RegisterClientInteractor,
-        UpdateClientInteractor
+        DependOnAcceptAuthorizeTokenService, DependOnCreateAccountService,
+        DependOnCreateNonVerifiedAccountService, DependOnDeleteAccountService,
+        DependOnPendingAuthorizeTokenService, DependOnRegisterClientService,
+        DependOnRejectAuthorizeTokenService, DependOnUpdateAccountService,
+        DependOnUpdateClientService, DependOnVerifyAccountService, DependOnVerifyMFACodeService,
     },
 };
 use kernel::interfaces::{
     repository::{
-        DependOnAccountRepository,
-        DependOnClientRegistry,
+        DependOnAcceptedActionVolatileRepository, DependOnAccountRepository,
+        DependOnAuthorizeTokenRepository, DependOnClientRegistry,
+        DependOnMFACodeVolatileRepository, DependOnPKCEVolatileRepository,
+        DependOnPendingActionVolatileRepository, DependOnPendingAuthorizeTokenRepository,
+        DependOnSessionVolatileRepository, DependOnStateVolatileRepository,
         DependOnTemporaryAccountRepository,
-        DependOnAuthorizeTokenRepository,
-        DependOnPendingAuthorizeTokenRepository,
-        DependOnPKCEVolatileRepository,
-        DependOnStateVolatileRepository,
-        DependOnAcceptedActionVolatileRepository,
-        DependOnMFACodeVolatileRepository,
-        DependOnPendingActionVolatileRepository,
-        DependOnSessionVolatileRepository
     },
-    transport::{
-        DependOnVerificationMailTransporter
-    },
+    transport::DependOnVerificationMailTransporter,
 };
 
+use crate::ServerError;
 #[allow(unused_imports)]
 use driver::{
     database::{
-        AccountDataBase,
-        AuthorizeTokenVolatileDataBase,
-        ClientDataBase,
-        NonVerifiedAccountDataBase,
-        PendingAuthorizeTokenVolatileDataBase,
-        PKCEVolatileDataBase,
-        StateVolatileDataBase,
-        AcceptedActionVolatileDataBase,
-        MFACodeVolatileDataBase,
-        PendingActionVolatileDataBase,
-        SessionVolatileDataBase
+        AcceptedActionVolatileDataBase, AccountDataBase, AuthorizeTokenVolatileDataBase,
+        ClientDataBase, MFACodeVolatileDataBase, NonVerifiedAccountDataBase, PKCEVolatileDataBase,
+        PendingActionVolatileDataBase, PendingAuthorizeTokenVolatileDataBase,
+        SessionVolatileDataBase, StateVolatileDataBase,
     },
-    DataBaseDriver,
-    SmtpDriver,
     transport::VerificationMailer,
+    DataBaseDriver, SmtpDriver,
 };
-use crate::ServerError;
 
 #[cfg(debug_assertions)]
 use self::mock::MockVerificationMailer;
@@ -84,7 +60,7 @@ pub struct Handler {
     mailer: MockVerificationMailer,
 
     client_reg: ClientRegisterer,
-    client_upd: UpdateClientInteractor<ClientDataBase, AccountDataBase>
+    client_upd: UpdateClientInteractor<ClientDataBase, AccountDataBase>,
 }
 
 impl Handler {
@@ -135,7 +111,7 @@ impl Handler {
             mailer,
 
             client_reg,
-            client_upd
+            client_upd,
         })
     }
 }
@@ -155,8 +131,6 @@ impl DependOnClientRegistry for Handler {
         &self.clients
     }
 }
-
-
 
 impl DependOnTemporaryAccountRepository for Handler {
     type TemporaryAccountRepository = NonVerifiedAccountDataBase;
@@ -273,14 +247,14 @@ impl DependOnDeleteAccountService for Handler {
 impl DependOnVerifyAccountService for Handler {
     type VerifyAccountService = Self;
     fn verify_account_service(&self) -> &Self::VerifyAccountService {
-       self
+        self
     }
 }
 
 impl DependOnVerifyMFACodeService for Handler {
     type VerifyMFACodeService = Self;
     fn verify_mfa_code_service(&self) -> &Self::VerifyMFACodeService {
-       self
+        self
     }
 }
 
@@ -319,13 +293,12 @@ impl DependOnRejectAuthorizeTokenService for Handler {
     }
 }
 
-
 #[cfg(debug_assertions)]
 mod mock {
     use axum::async_trait;
+    use kernel::interfaces::transport::VerificationMailTransporter;
     use kernel::prelude::entities::{Address, MFACode};
     use kernel::KernelError;
-    use kernel::interfaces::transport::VerificationMailTransporter;
 
     #[derive(Clone)]
     pub struct MockVerificationMailer;

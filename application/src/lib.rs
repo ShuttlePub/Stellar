@@ -1,6 +1,6 @@
-pub mod interactor;
-pub mod transfer;
-pub mod services;
 mod error;
+pub mod interactor;
+pub mod services;
+pub mod transfer;
 
 pub use self::error::*;

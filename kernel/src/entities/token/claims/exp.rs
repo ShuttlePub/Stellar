@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
@@ -12,7 +12,7 @@ impl ExpiredIn {
     pub fn is_expired(&self) -> bool {
         self.0 < OffsetDateTime::now_utc()
     }
-    
+
     pub fn as_ref_i64(&self) -> i64 {
         self.0.unix_timestamp()
     }

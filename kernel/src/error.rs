@@ -7,10 +7,7 @@ pub enum KernelError {
         id: String,
     },
     #[error("invalid value `{value}` in the following {method}.")]
-    InvalidValue {
-        method: &'static str,
-        value: String
-    },
+    InvalidValue { method: &'static str, value: String },
     #[error(transparent)]
     JsonWebToken(anyhow::Error),
     #[error(transparent)]
@@ -26,7 +23,7 @@ pub enum KernelError {
     #[error(transparent)]
     Driver(anyhow::Error),
     #[error(transparent)]
-    External(anyhow::Error)
+    External(anyhow::Error),
 }
 
 impl From<jsonwebtoken::errors::Error> for KernelError {
@@ -37,12 +34,15 @@ impl From<jsonwebtoken::errors::Error> for KernelError {
 
 impl From<base64::DecodeError> for KernelError {
     fn from(value: base64::DecodeError) -> Self {
-       Self::Base64Decode(anyhow::Error::new(value))
+        Self::Base64Decode(anyhow::Error::new(value))
     }
 }
 
 impl serde::ser::Error for KernelError {
-    fn custom<T>(msg: T) -> Self where T: std::fmt::Display {
+    fn custom<T>(msg: T) -> Self
+    where
+        T: std::fmt::Display,
+    {
         Self::Serde(anyhow::Error::msg(msg.to_string()))
     }
 }

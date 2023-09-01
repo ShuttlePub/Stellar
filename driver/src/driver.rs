@@ -1,8 +1,8 @@
-use std::time::Duration;
-use deadpool_redis::{Pool as RedisPool, Config};
-use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport};
-use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 use crate::config;
+use deadpool_redis::{Config, Pool as RedisPool};
+use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport};
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use std::time::Duration;
 
 use crate::DriverError;
 
@@ -18,9 +18,7 @@ impl DataBaseDriver {
             .connect(&url)
             .await?;
 
-        sqlx::migrate!("../migrations")
-            .run(&pool)
-            .await?;
+        sqlx::migrate!("../migrations").run(&pool).await?;
 
         config::initialize(pool.clone()).await?;
 
@@ -50,7 +48,8 @@ impl DataBaseDriver {
 pub struct SmtpDriver;
 
 impl SmtpDriver {
-    pub fn setup_lettre() -> Result<lettre::AsyncSmtpTransport<lettre::Tokio1Executor>, DriverError> {
+    pub fn setup_lettre() -> Result<lettre::AsyncSmtpTransport<lettre::Tokio1Executor>, DriverError>
+    {
         let (relay, address, pass) = Self::lettre_env_setup();
         let cred = Credentials::new(address, pass);
         let mailer = AsyncSmtpTransport::<lettre::Tokio1Executor>::relay(&relay)?

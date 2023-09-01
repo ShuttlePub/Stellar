@@ -1,22 +1,16 @@
 mod a_gen;
 mod a_load;
-mod model;
 mod admin;
+mod model;
 mod stellar;
 
-use self::{
-    a_gen::*,
-    a_load::*,
-    model::*,
-    admin::*,
-    stellar::*,
-};
+use self::{a_gen::*, a_load::*, admin::*, model::*, stellar::*};
 
-use sqlx::{Pool, Postgres};
-use once_cell::sync::Lazy;
-use kernel::interfaces::repository::{AccountRepository, ClientRegistry};
 use crate::database::{AccountDataBase, ClientDataBase};
 use crate::DriverError;
+use kernel::interfaces::repository::{AccountRepository, ClientRegistry};
+use once_cell::sync::Lazy;
+use sqlx::{Pool, Postgres};
 
 pub(in crate::config) mod constants {
     pub const CONFIG: &str = "stellar.toml";
@@ -24,11 +18,8 @@ pub(in crate::config) mod constants {
     pub const CACHED: &str = "stellar.c.bin";
 }
 
-static BASE: Lazy<String> = Lazy::new(|| {
-    dotenvy::var("STELLAR_CONF_DIR")
-        .unwrap_or("./".to_string())
-});
-
+static BASE: Lazy<String> =
+    Lazy::new(|| dotenvy::var("STELLAR_CONF_DIR").unwrap_or("./".to_string()));
 
 pub async fn initialize(pool: Pool<Postgres>) -> Result<(), DriverError> {
     let account_database = AccountDataBase::new(pool.clone());

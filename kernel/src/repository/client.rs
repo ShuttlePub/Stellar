@@ -1,5 +1,8 @@
-use crate::{entities::{Client, ClientId}, KernelError};
 use crate::entities::ClientName;
+use crate::{
+    entities::{Client, ClientId},
+    KernelError,
+};
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]

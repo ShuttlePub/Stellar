@@ -16,13 +16,13 @@ impl PartialEq<str> for State {
 }
 
 impl From<State> for String {
-    fn from(value: State) -> Self { 
-        value.0 
+    fn from(value: State) -> Self {
+        value.0
     }
 }
 
 impl AsRef<str> for State {
     fn as_ref(&self) -> &str {
-       &self.0 
+        &self.0
     }
 }

@@ -14,7 +14,6 @@ pub trait DependOnPendingActionVolatileRepository: 'static + Sync + Send {
     fn pending_action_volatile_repository(&self) -> &Self::PendingActionVolatileRepository;
 }
 
-
 #[async_trait::async_trait]
 pub trait AcceptedActionVolatileRepository: 'static + Sync + Send {
     async fn create(&self, ticket: &TicketId, user_id: &UserId) -> Result<(), KernelError>;

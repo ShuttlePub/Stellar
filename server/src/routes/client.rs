@@ -1,6 +1,4 @@
-mod register;
 mod forms;
+mod register;
 
-pub use self::{
-    register::*
-};
+pub use self::register::*;

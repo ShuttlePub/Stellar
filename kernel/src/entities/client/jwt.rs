@@ -1,8 +1,8 @@
+use crate::KernelError;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
-use crate::KernelError;
 
 #[derive(Debug, Hash, Deserialize, Serialize)]
 pub struct ClientSignJwt(String);
@@ -17,7 +17,7 @@ pub struct JwtClaims {
     aud: String,
     exp: i64,
     jti: String,
-    iat: i64
+    iat: i64,
 }
 
 impl ClientSignJwt {
@@ -54,11 +54,10 @@ impl ClientDecodeJwt {
     }
 
     pub fn exp(&self) -> Result<OffsetDateTime, KernelError> {
-        OffsetDateTime::from_unix_timestamp(self.0.exp)
-            .map_err(|e| KernelError::InvalidValue {
-                method: "try_ref_exp",
-                value: e.to_string(),
-            })
+        OffsetDateTime::from_unix_timestamp(self.0.exp).map_err(|e| KernelError::InvalidValue {
+            method: "try_ref_exp",
+            value: e.to_string(),
+        })
     }
 
     pub fn jti(&self) -> &str {
@@ -106,21 +105,21 @@ impl JwtClaims {
 
 impl From<ClientSignJwt> for String {
     fn from(value: ClientSignJwt) -> Self {
-       value.0
+        value.0
     }
 }
 
 impl AsRef<String> for ClientSignJwt {
     fn as_ref(&self) -> &String {
-       &self.0
+        &self.0
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::entities::{ClientId, ClientSignJwt, TicketId, UserId};
     use time::{Duration, OffsetDateTime};
     use uuid::Uuid;
-    use crate::entities::{ClientId, ClientSignJwt, TicketId, UserId};
 
     #[test]
     fn jwt() -> anyhow::Result<()> {
@@ -169,10 +168,10 @@ nQIDAQAB
 
         let mut jwt = ClientSignJwt::claims();
         jwt.iss(client_id)
-           .sub(user_id)
-           .aud("https://shuttle.pub/stellar")
-           .exp(OffsetDateTime::now_utc() + Duration::days(90))
-           .jti(ticket);
+            .sub(user_id)
+            .aud("https://shuttle.pub/stellar")
+            .exp(OffsetDateTime::now_utc() + Duration::days(90))
+            .jti(ticket);
         let enc = jwt.encode(test_privkey)?;
 
         println!("{:?}", enc);

@@ -1,6 +1,6 @@
+use crate::KernelError;
 use serde::{Deserialize, Serialize};
 use url::Url;
-use crate::KernelError;
 
 #[derive(Debug, Clone, Hash, Deserialize, Serialize)]
 pub struct PolicyUri(Url);
@@ -8,11 +8,12 @@ pub struct PolicyUri(Url);
 impl PolicyUri {
     pub fn new(uri: impl AsRef<str>) -> Result<Self, KernelError> {
         let uri = uri.as_ref();
-        Ok(Self(Url::parse(uri)
-            .map_err(|e| KernelError::InvalidValue {
+        Ok(Self(Url::parse(uri).map_err(|e| {
+            KernelError::InvalidValue {
                 method: "PolicyUri init",
                 value: format!("value: {:?}, serde: {:?}", uri, e),
-            })?))
+            }
+        })?))
     }
 }
 

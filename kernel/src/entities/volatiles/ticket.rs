@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::services::RandomizeService;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct TicketId(String);

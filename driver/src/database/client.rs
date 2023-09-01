@@ -1,18 +1,21 @@
-use std::collections::HashMap;
-use sqlx::{PgConnection, Pool, Postgres};
-use sqlx::types::Json;
-use kernel::prelude::entities::{Address, Client, ClientId, ClientName, ClientSecret, ClientTypes, GrantType, RedirectUri, ResponseType, ScopeDescription, ScopeMethod, TokenEndPointAuthMethod};
-use kernel::external::{JsonWebKey, OffsetDateTime, Uuid};
-use kernel::KernelError;
-use kernel::interfaces::repository::ClientRegistry;
-use try_ref::TryAsRef;
-use merge_opt::merge_opt_i2;
-use kernel::prelude::services::JwkSelectionService;
 use crate::DriverError;
+use kernel::external::{JsonWebKey, OffsetDateTime, Uuid};
+use kernel::interfaces::repository::ClientRegistry;
+use kernel::prelude::entities::{
+    Address, Client, ClientId, ClientName, ClientSecret, ClientTypes, GrantType, RedirectUri,
+    ResponseType, ScopeDescription, ScopeMethod, TokenEndPointAuthMethod,
+};
+use kernel::prelude::services::JwkSelectionService;
+use kernel::KernelError;
+use merge_opt::merge_opt_i2;
+use sqlx::types::Json;
+use sqlx::{PgConnection, Pool, Postgres};
+use std::collections::HashMap;
+use try_ref::TryAsRef;
 
 #[derive(Clone)]
 pub struct ClientDataBase {
-    pool: Pool<Postgres>
+    pool: Pool<Postgres>,
 }
 
 impl ClientDataBase {
@@ -24,65 +27,53 @@ impl ClientDataBase {
 #[async_trait::async_trait]
 impl ClientRegistry for ClientDataBase {
     async fn register(&self, client: &Client) -> Result<(), KernelError> {
-        let mut transaction = self.pool.begin().await
-            .map_err(DriverError::SqlX)?;
+        let mut transaction = self.pool.begin().await.map_err(DriverError::SqlX)?;
 
         if let Err(r) = PgClientInternal::insert(client, &mut transaction).await {
-            transaction.rollback().await
-                .map_err(DriverError::SqlX)?;
-            return Err(KernelError::Driver(anyhow::Error::new(r)))
+            transaction.rollback().await.map_err(DriverError::SqlX)?;
+            return Err(KernelError::Driver(anyhow::Error::new(r)));
         }
 
-        transaction.commit().await
-            .map_err(DriverError::SqlX)?;
+        transaction.commit().await.map_err(DriverError::SqlX)?;
 
         Ok(())
     }
 
     async fn delete(&self, id: &ClientId) -> Result<(), KernelError> {
-        let mut transaction = self.pool.begin().await
-            .map_err(DriverError::SqlX)?;
+        let mut transaction = self.pool.begin().await.map_err(DriverError::SqlX)?;
         if let Err(r) = PgClientInternal::delete(id, &mut transaction).await {
-            transaction.rollback().await
-                .map_err(DriverError::SqlX)?;
-            return Err(KernelError::Driver(anyhow::Error::new(r)))
+            transaction.rollback().await.map_err(DriverError::SqlX)?;
+            return Err(KernelError::Driver(anyhow::Error::new(r)));
         }
 
-        transaction.commit().await
-            .map_err(DriverError::SqlX)?;
+        transaction.commit().await.map_err(DriverError::SqlX)?;
 
         Ok(())
     }
 
     async fn update(&self, client: &Client) -> Result<(), KernelError> {
-        let mut transaction = self.pool.begin().await
-            .map_err(DriverError::SqlX)?;
+        let mut transaction = self.pool.begin().await.map_err(DriverError::SqlX)?;
 
         if let Err(r) = PgClientInternal::update(client, &mut transaction).await {
-            transaction.rollback().await
-                .map_err(DriverError::SqlX)?;
-            return Err(KernelError::Driver(anyhow::Error::new(r)))
+            transaction.rollback().await.map_err(DriverError::SqlX)?;
+            return Err(KernelError::Driver(anyhow::Error::new(r)));
         }
 
-        transaction.commit().await
-            .map_err(DriverError::SqlX)?;
+        transaction.commit().await.map_err(DriverError::SqlX)?;
 
         Ok(())
     }
 
     async fn find_by_id(&self, id: &ClientId) -> Result<Option<Client>, KernelError> {
-        let mut con = self.pool.acquire().await
-            .map_err(DriverError::SqlX)?;
+        let mut con = self.pool.acquire().await.map_err(DriverError::SqlX)?;
         let client = PgClientInternal::find_by_id(id, &mut con).await?;
         Ok(client)
     }
 
     async fn find_by_name(&self, name: &ClientName) -> Result<Option<Client>, KernelError> {
-        let mut con = self.pool.acquire().await
-            .map_err(DriverError::SqlX)?;
+        let mut con = self.pool.acquire().await.map_err(DriverError::SqlX)?;
         let client = PgClientInternal::find_by_name(name, &mut con).await?;
         Ok(client)
-
     }
 }
 
@@ -108,49 +99,51 @@ struct ClientRow {
     redirect_uris: Vec<String>,
     scope: Json<HashMap<String, Option<String>>>,
     registration_token: String,
-    registration_endpoint: String
+    registration_endpoint: String,
 }
 
 impl TryInto<Client> for ClientRow {
     type Error = DriverError;
     fn try_into(self) -> Result<Client, Self::Error> {
         Ok(Client::new(
-            ClientId::new(
-                self.client_id,
-                self.client_id_iat
-            ),
+            ClientId::new(self.client_id, self.client_id_iat),
             self.client_name,
             self.client_uri,
             self.description,
             ClientTypes::new(merge_opt_i2(
                 self.client_secret,
                 self.client_secret_exp,
-                |secret, exp| {
-                    ClientSecret::new(secret?, exp?).into()
-                })),
+                |secret, exp| ClientSecret::new(secret?, exp?).into(),
+            )),
             self.logo_uri,
             self.tos_uri,
             self.owner,
             self.policy_uri,
             TokenEndPointAuthMethod::try_from(self.auth_method)?,
-            self.grant_types.into_iter()
+            self.grant_types
+                .into_iter()
                 .map(TryFrom::try_from)
                 .collect::<Result<Vec<GrantType>, KernelError>>()?,
-            self.response_types.into_iter()
+            self.response_types
+                .into_iter()
                 .map(TryFrom::try_from)
                 .collect::<Result<Vec<ResponseType>, KernelError>>()?,
-            self.redirect_uris.into_iter()
+            self.redirect_uris
+                .into_iter()
                 .map(RedirectUri::new)
                 .collect::<Vec<_>>(),
-            self.scope.0.into_iter()
+            self.scope
+                .0
+                .into_iter()
                 .map(|scope| (ScopeMethod::new(scope.0), ScopeDescription::new(scope.1)))
                 .collect::<Vec<_>>(),
-            self.contact.into_iter()
+            self.contact
+                .into_iter()
                 .map(Address::new)
                 .collect::<Vec<_>>(),
             JwkSelectionService::check(self.jwks.map(|json| json.to_string()), self.jwks_uri)?,
             self.registration_token,
-            self.registration_endpoint
+            self.registration_endpoint,
         )?)
     }
 }
@@ -161,7 +154,8 @@ impl PgClientInternal {
     //noinspection DuplicatedCode
     async fn insert(client: &Client, con: &mut PgConnection) -> Result<(), DriverError> {
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             INSERT INTO clients(
               client_id,
               client_id_iat,
@@ -172,7 +166,8 @@ impl PgClientInternal {
               $2,
               $3
             )
-        "#)
+        "#,
+        )
         .bind(client.id().id())
         .bind(client.id().issued_at())
         .bind(client.name().as_ref())
@@ -180,7 +175,8 @@ impl PgClientInternal {
         .await?;
 
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             INSERT INTO client_metadata(
               description,
               owner,
@@ -200,7 +196,8 @@ impl PgClientInternal {
               $7,
               $8
             )
-        "#)
+        "#,
+        )
         .bind(client.description().as_ref())
         .bind(AsRef::<Uuid>::as_ref(client.owner()))
         .bind(client.id().id())
@@ -209,10 +206,12 @@ impl PgClientInternal {
         .bind(client.contacts().as_ref_vec())
         .bind(client.tos_uri().as_ref())
         .bind(client.policy_uri().as_ref())
-        .execute(&mut *con).await?;
+        .execute(&mut *con)
+        .await?;
 
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             INSERT INTO client_cert(
               client_id,
               client_secret,
@@ -228,19 +227,38 @@ impl PgClientInternal {
               $5::GRANT_TYPE[],
               $6::RESPONSE_TYPE[]
             )
-        "#)
+        "#,
+        )
         .bind(client.id().id())
-        .bind(client.types().try_as_ref().ok()
-            .map(|secret| secret.secret()))
-        .bind(client.types().try_as_ref().ok()
-            .map(|secret| secret.expires_at()))
+        .bind(
+            client
+                .types()
+                .try_as_ref()
+                .ok()
+                .map(|secret| secret.secret()),
+        )
+        .bind(
+            client
+                .types()
+                .try_as_ref()
+                .ok()
+                .map(|secret| secret.expires_at()),
+        )
         .bind(client.auth_method().as_ref())
-        .bind(client.grant_types().iter()
-            .map(AsRef::as_ref)
-            .collect::<Vec<_>>())
-        .bind(client.response_types().iter()
-            .map(AsRef::as_ref)
-            .collect::<Vec<_>>())
+        .bind(
+            client
+                .grant_types()
+                .iter()
+                .map(AsRef::as_ref)
+                .collect::<Vec<_>>(),
+        )
+        .bind(
+            client
+                .response_types()
+                .iter()
+                .map(AsRef::as_ref)
+                .collect::<Vec<_>>(),
+        )
         .execute(&mut *con)
         .await?;
 
@@ -248,13 +266,15 @@ impl PgClientInternal {
             let key = serde_json::to_value(TryAsRef::<JsonWebKey>::try_as_ref(jwks)?)?;
 
             // language=SQL
-            sqlx::query(r#"
+            sqlx::query(
+                r#"
                 INSERT INTO client_jwks(
                   client_id, jwks
                 ) VALUES (
                   $1, $2
                 )
-            "#)
+            "#,
+            )
             .bind(client.id().id())
             .bind(key)
             .execute(&mut *con)
@@ -265,13 +285,15 @@ impl PgClientInternal {
             let key = TryAsRef::<str>::try_as_ref(jwks_uri)?;
 
             // language=SQL
-            sqlx::query(r#"
+            sqlx::query(
+                r#"
                 INSERT INTO client_jwks_uri(
                   client_id, jwks_uri
                 ) VALUES (
                   $1, $2
                 )
-            "#)
+            "#,
+            )
             .bind(client.id().id())
             .bind(key)
             .execute(&mut *con)
@@ -279,23 +301,30 @@ impl PgClientInternal {
         }
 
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             INSERT INTO client_redirect_uris(
               client_id, uri
             ) VALUES (
               $1, $2
             )
 
-        "#)
+        "#,
+        )
         .bind(client.id().id())
-        .bind(client.redirect_uris().iter()
-            .map(AsRef::as_ref)
-            .collect::<Vec<_>>())
+        .bind(
+            client
+                .redirect_uris()
+                .iter()
+                .map(AsRef::as_ref)
+                .collect::<Vec<_>>(),
+        )
         .execute(&mut *con)
         .await?;
 
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             INSERT INTO client_scopes(
               client_id,
               scope
@@ -303,21 +332,26 @@ impl PgClientInternal {
             SELECT
               $1,
               $2
-        "#)
+        "#,
+        )
         .bind(client.id().id())
-        .bind(serde_json::to_value(client.scopes())
-            .map_err(|e| KernelError::External(anyhow::Error::new(e)))?)
+        .bind(
+            serde_json::to_value(client.scopes())
+                .map_err(|e| KernelError::External(anyhow::Error::new(e)))?,
+        )
         .execute(&mut *con)
         .await?;
 
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             INSERT INTO client_configuration_policy(
               client_id, endpoint, token
             ) VALUES (
               $1, $2, $3
             )
-        "#)
+        "#,
+        )
         .bind(client.id().id())
         .bind(client.conf_endpoint().as_ref())
         .bind(client.conf_token().as_ref())
@@ -329,9 +363,11 @@ impl PgClientInternal {
 
     async fn delete(id: &ClientId, con: &mut PgConnection) -> Result<(), DriverError> {
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             DELETE FROM clients WHERE client_id = $1
-        "#)
+        "#,
+        )
         .bind(id.id())
         .execute(&mut *con)
         .await?;
@@ -341,20 +377,23 @@ impl PgClientInternal {
     //noinspection DuplicatedCode
     async fn update(client: &Client, con: &mut PgConnection) -> Result<(), DriverError> {
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             UPDATE clients
               SET
                 client_name = $1
             WHERE
               client_id = $2
-        "#)
+        "#,
+        )
         .bind(client.name().as_ref())
         .bind(client.id().id())
         .execute(&mut *con)
         .await?;
 
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             UPDATE client_metadata
               SET
                 owner = $1,
@@ -364,7 +403,8 @@ impl PgClientInternal {
                 tos_uri = $5,
                 policy_uri = $6
             WHERE client_id = $7
-        "#)
+        "#,
+        )
         .bind(AsRef::<Uuid>::as_ref(client.owner()))
         .bind(client.client_uri().as_ref())
         .bind(client.logo_uri().as_ref())
@@ -376,7 +416,8 @@ impl PgClientInternal {
         .await?;
 
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             UPDATE client_cert
               SET
                 client_secret = $1,
@@ -386,18 +427,37 @@ impl PgClientInternal {
                 response_types = $5::RESPONSE_TYPE[]
             WHERE
               client_id = $6
-        "#)
-        .bind(client.types().try_as_ref().ok()
-            .map(|secret| secret.secret()))
-        .bind(client.types().try_as_ref().ok()
-            .map(|secret| secret.expires_at()))
+        "#,
+        )
+        .bind(
+            client
+                .types()
+                .try_as_ref()
+                .ok()
+                .map(|secret| secret.secret()),
+        )
+        .bind(
+            client
+                .types()
+                .try_as_ref()
+                .ok()
+                .map(|secret| secret.expires_at()),
+        )
         .bind(client.auth_method().as_ref())
-        .bind(client.grant_types().iter()
-            .map(AsRef::as_ref)
-            .collect::<Vec<_>>())
-        .bind(client.response_types().iter()
-            .map(AsRef::as_ref)
-            .collect::<Vec<_>>())
+        .bind(
+            client
+                .grant_types()
+                .iter()
+                .map(AsRef::as_ref)
+                .collect::<Vec<_>>(),
+        )
+        .bind(
+            client
+                .response_types()
+                .iter()
+                .map(AsRef::as_ref)
+                .collect::<Vec<_>>(),
+        )
         .bind(client.id().id())
         .execute(&mut *con)
         .await?;
@@ -406,7 +466,8 @@ impl PgClientInternal {
             let key = serde_json::to_value(TryAsRef::<JsonWebKey>::try_as_ref(jwks)?)?;
 
             // language=SQL
-            sqlx::query(r#"
+            sqlx::query(
+                r#"
                 INSERT INTO client_jwks(
                   client_id, jwks
                 ) VALUES (
@@ -416,7 +477,8 @@ impl PgClientInternal {
                   DO UPDATE
                   SET
                     jwks = $2
-            "#)
+            "#,
+            )
             .bind(client.id().id())
             .bind(key)
             .execute(&mut *con)
@@ -427,7 +489,8 @@ impl PgClientInternal {
             let key = TryAsRef::<str>::try_as_ref(jwks_uri)?;
 
             // language=SQL
-            sqlx::query(r#"
+            sqlx::query(
+                r#"
                 INSERT INTO client_jwks_uri(
                   client_id, jwks_uri
                 ) VALUES (
@@ -437,7 +500,8 @@ impl PgClientInternal {
                   DO UPDATE
                   SET
                     jwks_uri = $2
-            "#)
+            "#,
+            )
             .bind(client.id().id())
             .bind(key)
             .execute(&mut *con)
@@ -445,30 +509,40 @@ impl PgClientInternal {
         }
 
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             UPDATE client_redirect_uris
               SET
                 uri = $1
             WHERE
               client_id = $2
-        "#)
-        .bind(client.response_types().iter()
-            .map(AsRef::as_ref)
-            .collect::<Vec<_>>())
+        "#,
+        )
+        .bind(
+            client
+                .response_types()
+                .iter()
+                .map(AsRef::as_ref)
+                .collect::<Vec<_>>(),
+        )
         .bind(client.id().id())
         .execute(&mut *con)
         .await?;
 
         // language=SQL
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             UPDATE client_scopes
               SET
                 scope = $1
             WHERE
               client_id = $2
-        "#)
-        .bind(serde_json::to_value(client.scopes())
-            .map_err(|e| KernelError::External(anyhow::Error::new(e)))?)
+        "#,
+        )
+        .bind(
+            serde_json::to_value(client.scopes())
+                .map_err(|e| KernelError::External(anyhow::Error::new(e)))?,
+        )
         .bind(client.id().id())
         .execute(&mut *con)
         .await?;
@@ -476,10 +550,14 @@ impl PgClientInternal {
         Ok(())
     }
 
-    async fn find_by_id(id: &ClientId, con: &mut PgConnection) -> Result<Option<Client>, DriverError> {
+    async fn find_by_id(
+        id: &ClientId,
+        con: &mut PgConnection,
+    ) -> Result<Option<Client>, DriverError> {
         // Note: L444-446 See https://github.com/launchbadge/sqlx/issues/298
         // language=SQL
-        let fetched = sqlx::query_as::<_, ClientRow>(r#"
+        let fetched = sqlx::query_as::<_, ClientRow>(
+            r#"
             SELECT
               c.client_id,
               c.client_id_iat,
@@ -512,22 +590,24 @@ impl PgClientInternal {
               LEFT OUTER JOIN client_jwks           cjk on c.client_id = cjk.client_id
               LEFT OUTER JOIN client_jwks_uri       cju on c.client_id = cju.client_id
             WHERE c.client_id = $1
-        "#)
+        "#,
+        )
         .bind(id.id())
         .fetch_optional(&mut *con)
         .await?
-            .map(|row| -> Result<Client, DriverError> {
-                row.try_into()
-            })
-            .transpose()?;
+        .map(|row| -> Result<Client, DriverError> { row.try_into() })
+        .transpose()?;
         Ok(fetched)
     }
 
-
-    async fn find_by_name(name: &ClientName, con: &mut PgConnection) -> Result<Option<Client>, DriverError> {
+    async fn find_by_name(
+        name: &ClientName,
+        con: &mut PgConnection,
+    ) -> Result<Option<Client>, DriverError> {
         // Note: L444-446 See https://github.com/launchbadge/sqlx/issues/298
         // language=SQL
-        let fetched = sqlx::query_as::<_, ClientRow>(r#"
+        let fetched = sqlx::query_as::<_, ClientRow>(
+            r#"
             SELECT
               c.client_id,
               c.client_id_iat,
@@ -560,28 +640,30 @@ impl PgClientInternal {
               LEFT OUTER JOIN client_jwks           cjk on c.client_id = cjk.client_id
               LEFT OUTER JOIN client_jwks_uri       cju on c.client_id = cju.client_id
             WHERE c.client_name = $1
-        "#)
+        "#,
+        )
         .bind(name.as_ref())
         .fetch_optional(&mut *con)
         .await?
-            .map(|row| -> Result<Client, DriverError> {
-                row.try_into()
-            })
-            .transpose()?;
+        .map(|row| -> Result<Client, DriverError> { row.try_into() })
+        .transpose()?;
         Ok(fetched)
     }
-
 }
 
 #[cfg(test)]
 mod tests {
-    use std::time::{Duration, Instant};
-    use sqlx::{PgConnection, Pool, Postgres};
-    use sqlx::postgres::PgPoolOptions;
-    use kernel::prelude::entities::{Account, Address, Client, ClientId, ClientSecret, ClientTypes, ClientUri, Contacts, GrantType, Jwks, RedirectUri, RedirectUris, RegistrationAccessToken, RegistrationEndPoint, ResponseType, ScopeDescription, ScopeMethod, Scopes, TokenEndPointAuthMethod, UserId};
-    use kernel::external::{OffsetDateTime, Uuid};
     use crate::database::account::PgAccountInternal;
     use crate::database::client::PgClientInternal;
+    use kernel::external::{OffsetDateTime, Uuid};
+    use kernel::prelude::entities::{
+        Account, Address, Client, ClientId, ClientSecret, ClientTypes, ClientUri, Contacts,
+        GrantType, Jwks, RedirectUri, RedirectUris, RegistrationAccessToken, RegistrationEndPoint,
+        ResponseType, ScopeDescription, ScopeMethod, Scopes, TokenEndPointAuthMethod, UserId,
+    };
+    use sqlx::postgres::PgPoolOptions;
+    use sqlx::{PgConnection, Pool, Postgres};
+    use std::time::{Duration, Instant};
 
     async fn test_pool() -> anyhow::Result<Pool<Postgres>> {
         dotenvy::dotenv().ok();
@@ -612,17 +694,24 @@ mod tests {
         let response_types = vec![ResponseType::Code];
         let redirect_uris = vec![
             "https://test.client.example.com/callback",
-            "https://test.client.example.com/callback2"
-        ].into_iter()
-            .map(RedirectUri::new)
-            .collect::<RedirectUris>();
+            "https://test.client.example.com/callback2",
+        ]
+        .into_iter()
+        .map(RedirectUri::new)
+        .collect::<RedirectUris>();
         let scopes = vec![
             ("read", Some("base user data read")),
             ("write", Some("base user data write")),
-            ("phantom", None)
-        ].into_iter()
-            .map(|(method, desc)| (ScopeMethod::new(method), ScopeDescription::new(desc.map(ToOwned::to_owned))))
-            .collect::<Scopes>();
+            ("phantom", None),
+        ]
+        .into_iter()
+        .map(|(method, desc)| {
+            (
+                ScopeMethod::new(method),
+                ScopeDescription::new(desc.map(ToOwned::to_owned)),
+            )
+        })
+        .collect::<Scopes>();
         let contacts = vec!["test.user@client.com"]
             .into_iter()
             .map(Address::new)
@@ -638,7 +727,7 @@ mod tests {
             "test0000pAssw0rd",
             OffsetDateTime::now_utc(),
             OffsetDateTime::now_utc(),
-            OffsetDateTime::now_utc()
+            OffsetDateTime::now_utc(),
         )?;
 
         let reg = Client::new(
@@ -659,7 +748,7 @@ mod tests {
             contacts,
             jwks,
             regi_token,
-            regi_endpoint
+            regi_endpoint,
         )?;
 
         let timer = Instant::now();
@@ -667,7 +756,10 @@ mod tests {
         PgAccountInternal::create(&dummy_account, con).await?;
         PgClientInternal::insert(&reg, con).await?;
 
-        println!("account + client insert time: {}ms", timer.elapsed().as_millis());
+        println!(
+            "account + client insert time: {}ms",
+            timer.elapsed().as_millis()
+        );
 
         Ok(reg)
     }

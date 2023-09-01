@@ -1,4 +1,7 @@
-use crate::{entities::{MFACode, Address}, KernelError};
+use crate::{
+    entities::{Address, MFACode},
+    KernelError,
+};
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait::async_trait]

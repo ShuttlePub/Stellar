@@ -1,7 +1,4 @@
-mod authorize;
 mod access;
+mod authorize;
 
-pub use self::{
-    authorize::*,
-    access::*,
-};
+pub use self::{access::*, authorize::*};

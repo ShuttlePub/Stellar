@@ -1,9 +1,5 @@
-mod claims;
 mod access;
 mod authorize;
+mod claims;
 
-pub use self::{
-    claims::*,
-    access::*,
-    authorize::*
-};
+pub use self::{access::*, authorize::*, claims::*};

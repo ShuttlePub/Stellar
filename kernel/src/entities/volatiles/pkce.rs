@@ -1,7 +1,7 @@
-use base64::{Engine, prelude::BASE64_URL_SAFE};
-use sha2::{Sha256, Digest};
-use serde::{Deserialize, Serialize};
 use crate::KernelError;
+use base64::{prelude::BASE64_URL_SAFE, Engine};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Deserialize, Serialize)]
 pub struct CodeChallenge(Vec<u8>);
@@ -13,7 +13,8 @@ impl CodeChallenge {
     /// - If you do not need the decoding process,
     ///   consider using `From<Vec<u8>>` instead.
     pub fn new(code: impl Into<String>) -> Result<Self, KernelError> {
-        let code = BASE64_URL_SAFE.decode(code.into())?
+        let code = BASE64_URL_SAFE
+            .decode(code.into())?
             .into_iter()
             .collect::<Vec<u8>>();
         Ok(Self(code))
@@ -27,7 +28,7 @@ impl CodeChallenge {
             return Err(KernelError::InvalidValue {
                 method: "pkce_code_verify",
                 value: format!("{:?}", self.0),
-            })
+            });
         }
         Ok(())
     }
@@ -47,18 +48,17 @@ impl From<CodeChallenge> for Vec<u8> {
 
 impl AsRef<[u8]> for CodeChallenge {
     fn as_ref(&self) -> &[u8] {
-       &self.0
+        &self.0
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use base64::Engine;
-    use base64::prelude::BASE64_URL_SAFE;
-    use sha2::{Digest, Sha256};
     use crate::entities::volatiles::pkce::CodeChallenge;
     use crate::services::RandomizeService;
+    use base64::prelude::BASE64_URL_SAFE;
+    use base64::Engine;
+    use sha2::{Digest, Sha256};
 
     struct TestDomain(String);
 
@@ -70,7 +70,7 @@ mod tests {
 
     impl From<TestDomain> for String {
         fn from(value: TestDomain) -> Self {
-           value.0
+            value.0
         }
     }
 

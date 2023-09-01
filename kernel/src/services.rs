@@ -1,7 +1,4 @@
-mod rand;
 mod jwk;
+mod rand;
 
-pub use self::{
-    rand::*,
-    jwk::*
-};
+pub use self::{jwk::*, rand::*};

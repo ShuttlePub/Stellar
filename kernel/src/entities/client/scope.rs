@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
-use try_ref::TryAsRef;
 use crate::KernelError;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use try_ref::TryAsRef;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Scopes(HashMap<ScopeMethod, ScopeDescription>);
@@ -18,10 +18,9 @@ impl Scopes {
 
 impl From<Scopes> for HashMap<String, Option<String>> {
     fn from(value: Scopes) -> Self {
-        value.into_iter()
-            .map(|(method, desc)| {
-                (method.into(), desc.into())
-            })
+        value
+            .into_iter()
+            .map(|(method, desc)| (method.into(), desc.into()))
             .collect::<HashMap<String, Option<String>>>()
     }
 }
@@ -48,8 +47,9 @@ impl IntoIterator for Scopes {
 }
 
 impl FromIterator<(ScopeMethod, ScopeDescription)> for Scopes {
-    fn from_iter<T: IntoIterator<Item=(ScopeMethod, ScopeDescription)>>(iter: T) -> Self {
-        let v = iter.into_iter()
+    fn from_iter<T: IntoIterator<Item = (ScopeMethod, ScopeDescription)>>(iter: T) -> Self {
+        let v = iter
+            .into_iter()
             .collect::<Vec<(ScopeMethod, ScopeDescription)>>();
         Self::new(v)
     }
@@ -85,7 +85,7 @@ impl ScopeDescription {
     }
 }
 
-impl From<ScopeDescription> for Option<String>  {
+impl From<ScopeDescription> for Option<String> {
     fn from(value: ScopeDescription) -> Self {
         value.0
     }
@@ -99,7 +99,7 @@ impl TryAsRef<str> for ScopeDescription {
             None => Err(KernelError::InvalidValue {
                 method: "try_as_ref",
                 value: "scope description".to_string(),
-            })
+            }),
         }
     }
 }

@@ -44,7 +44,6 @@ pub trait InputPort<I>: 'static + Sync + Send {
     fn emit(&self, input: I) -> Self::Dto;
 }
 
-
 /// This Trait is mainly responsible for converting the `Dto` output
 /// from the Application Layer (a.k.a UseCase Layer) Service into a `ViewModel`. `(UseCaseOutput -> ViewModel)`
 ///
@@ -109,7 +108,6 @@ pub trait OutputPort<I>: 'static + Sync + Send {
     fn emit(&self, input: I) -> Self::ViewModel;
 }
 
-
 /// This is a Controller defined in the Clean Architecture.
 ///
 /// ### Note
@@ -128,12 +126,13 @@ pub struct Controller<T, P, I, D, O> {
     presenter: P,
     _i: PhantomData<I>,
     _t: PhantomData<D>,
-    _o: PhantomData<O>
+    _o: PhantomData<O>,
 }
 
 impl<T, P, I, D, O> Controller<T, P, I, D, O>
-    where T: InputPort<I, Dto = D>,
-          P: OutputPort<O>
+where
+    T: InputPort<I, Dto = D>,
+    P: OutputPort<O>,
 {
     /// Initialize controller.
     ///
@@ -142,7 +141,13 @@ impl<T, P, I, D, O> Controller<T, P, I, D, O>
     /// + `presenter`   - Struct implemented [`OutputPort`].
     ///
     pub fn new(transformer: T, presenter: P) -> Self {
-        Self { transformer, presenter, _i: PhantomData, _t: PhantomData, _o: PhantomData }
+        Self {
+            transformer,
+            presenter,
+            _i: PhantomData,
+            _t: PhantomData,
+            _o: PhantomData,
+        }
     }
 
     /// Receive ViewModel value.
@@ -150,7 +155,12 @@ impl<T, P, I, D, O> Controller<T, P, I, D, O>
     /// ## Argument
     /// + `input` - Value of ViewModel.
     pub fn transform(self, input: I) -> Transformed<T, P, I, D, O> {
-        Transformed { trans: self.transformer.emit(input), controller: self, _i: PhantomData, _o: PhantomData }
+        Transformed {
+            trans: self.transformer.emit(input),
+            controller: self,
+            _i: PhantomData,
+            _o: PhantomData,
+        }
     }
 
     fn present(self) -> P {
@@ -162,12 +172,13 @@ pub struct Transformed<T, P, I, D, O> {
     trans: D,
     controller: Controller<T, P, I, D, O>,
     _i: PhantomData<I>,
-    _o: PhantomData<O>
+    _o: PhantomData<O>,
 }
 
 impl<T, P, I, D, O> Transformed<T, P, I, D, O>
-    where T: InputPort<I, Dto = D>,
-          P: OutputPort<O>
+where
+    T: InputPort<I, Dto = D>,
+    P: OutputPort<O>,
 {
     /// The value received by [`Controller::transform`] is transformed based
     /// on the argument `transformer` received during [`Controller::new`],
@@ -177,21 +188,20 @@ impl<T, P, I, D, O> Transformed<T, P, I, D, O>
     ///
     /// Image as `ViewModel -> Controller::transform -> |Dto| { closure } -> presenter -> ViewModel`
     pub async fn handle<F, Fut>(self, f: F) -> P::ViewModel
-        where F: FnOnce(D) -> Fut,
-              Fut: IntoFuture<Output = O>
+    where
+        F: FnOnce(D) -> Fut,
+        Fut: IntoFuture<Output = O>,
     {
         self.controller.present().emit(f(self.trans).await)
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
     use super::{Controller, InputPort, OutputPort};
 
     pub struct RequestForm {
-        name: String
+        name: String,
     }
 
     pub struct TransformerA;
@@ -209,7 +219,7 @@ mod tests {
     #[derive(Debug, serde::Serialize)]
     pub struct PresentationalDataA {
         id: String,
-        name: String
+        name: String,
     }
 
     pub struct PresenterA;
@@ -218,15 +228,11 @@ mod tests {
         type ViewModel = anyhow::Result<PresentationalDataA>;
         fn emit(&self, input: anyhow::Result<DataDto>) -> Self::ViewModel {
             match input {
-                Ok(input) => {
-                    Ok(PresentationalDataA {
-                        id: input.0,
-                        name: input.1
-                    })
-                },
-                Err(_) => {
-                    Err(anyhow::Error::msg("error"))
-                }
+                Ok(input) => Ok(PresentationalDataA {
+                    id: input.0,
+                    name: input.1,
+                }),
+                Err(_) => Err(anyhow::Error::msg("error")),
             }
         }
     }
@@ -234,7 +240,7 @@ mod tests {
     #[tokio::test]
     pub async fn controller() -> anyhow::Result<()> {
         let input = RequestForm {
-            name: "Test Man".to_string()
+            name: "Test Man".to_string(),
         };
 
         pub async fn handling(input: DataDto) -> anyhow::Result<DataDto> {
@@ -243,9 +249,8 @@ mod tests {
 
         let res = Controller::new(TransformerA, PresenterA)
             .transform(input)
-            .handle(|input| async {
-                handling(input).await
-            }).await?;
+            .handle(|input| async { handling(input).await })
+            .await?;
 
         println!("{}", serde_json::to_string(&res)?);
         Ok(())

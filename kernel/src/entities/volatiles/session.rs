@@ -1,38 +1,34 @@
-mod session_id;
 mod est;
+mod session_id;
 
+pub use self::{est::*, session_id::*};
 use destructure::Destructure;
-pub use self::{
-    session_id::*,
-    est::*,
-};
 
+use crate::entities::{ExpiredIn, UserId};
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
-use crate::entities::{ExpiredIn, UserId};
-
 
 #[derive(Debug, Clone, Hash, Deserialize, Serialize, Destructure)]
 pub struct Session {
     id: SessionId,
     usr: UserId,
     exp: ExpiredIn,
-    est: EstablishedAt
+    est: EstablishedAt,
 }
 
 impl Session {
     pub fn new(
-        id:  impl Into<String>,
+        id: impl Into<String>,
         usr: impl Into<Uuid>,
         exp: impl Into<Duration>,
-        est: impl Into<OffsetDateTime>
+        est: impl Into<OffsetDateTime>,
     ) -> Self {
         Self {
             id: SessionId::new(id),
             usr: UserId::new(usr),
             exp: ExpiredIn::new(exp),
-            est: EstablishedAt::new(est)
+            est: EstablishedAt::new(est),
         }
     }
 }

@@ -1,7 +1,4 @@
-mod mail;
 mod blacklist;
+mod mail;
 
-pub use self::{
-    mail::*,
-    blacklist::*
-};
+pub use self::{blacklist::*, mail::*};

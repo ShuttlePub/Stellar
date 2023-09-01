@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use kernel::prelude::entities::{Account, Address, CreatedAt, Password, UserId, UserName};
 use super::Admin;
 use crate::DriverError;
+use kernel::prelude::entities::{Account, Address, CreatedAt, Password, UserId, UserName};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Hash, Deserialize, Serialize)]
 pub struct AdminUser {
@@ -24,7 +24,8 @@ impl TryFrom<Admin> for AdminUser {
             user_id: UserId::default(),
             name: UserName::new(value.name),
             address: Address::new(value.address),
-            pass: value.pass_hashed
+            pass: value
+                .pass_hashed
                 .map(Password::new_unchecked)
                 .unwrap_or(Password::new(value.pass)?),
         })
@@ -36,12 +37,13 @@ impl TryFrom<AdminUser> for Account {
     fn try_from(value: AdminUser) -> Result<Self, Self::Error> {
         let created_at = CreatedAt::default();
         Ok(Self::new(
-            value.user_id, 
-            value.address, 
-            value.name, 
-            value.pass, 
-            created_at, 
-            created_at, 
-            created_at)?)
+            value.user_id,
+            value.address,
+            value.name,
+            value.pass,
+            created_at,
+            created_at,
+            created_at,
+        )?)
     }
 }

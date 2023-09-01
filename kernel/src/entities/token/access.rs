@@ -1,18 +1,11 @@
+use crate::entities::{ClientId, LoggedAt, ScopeMethod, UserId};
+use crate::services::RandomizeService;
 use destructure::Destructure;
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
-use crate::entities::{ClientId, LoggedAt, ScopeMethod, UserId};
-use crate::services::RandomizeService;
 
-use super::claims::{
-    Audience,
-    ExpiredIn,
-    IssuedAt,
-    Issuer,
-    NotBefore,
-    Subject
-};
+use super::claims::{Audience, ExpiredIn, IssuedAt, Issuer, NotBefore, Subject};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct AccessTokenId(String);
@@ -46,7 +39,7 @@ impl Default for AccessTokenId {
 pub struct AccessToken {
     id: AccessTokenId,
     date: LoggedAt,
-    ctx: AccessTokenContext
+    ctx: AccessTokenContext,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure)]
@@ -112,10 +105,7 @@ impl AccessToken {
     ) -> Self {
         Self {
             id: AccessTokenId::new(id),
-            date: LoggedAt::new(
-                created_at,
-                updated_at
-            ),
+            date: LoggedAt::new(created_at, updated_at),
             ctx: AccessTokenContext {
                 scope: scoped.into(),
                 client_id: ClientId::new_at_now(linked_client),
@@ -125,8 +115,8 @@ impl AccessToken {
                 nbf: NotBefore::default(),
                 sub: Subject::new(subject),
                 aud: Audience::new(audience),
-                iss: Issuer::new(issuer)
-            }
+                iss: Issuer::new(issuer),
+            },
         }
     }
 

@@ -1,25 +1,28 @@
-use std::fmt::Display;
 use destructure::Destructure;
+use std::fmt::Display;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Deserialize, Serialize, Destructure)]
 pub struct ClientId {
     id: Uuid,
-    issued_at: OffsetDateTime
+    issued_at: OffsetDateTime,
 }
 
 impl ClientId {
     pub fn new(id: impl Into<Uuid>, iat: impl Into<OffsetDateTime>) -> Self {
-        Self { id: id.into(), issued_at: iat.into() }
+        Self {
+            id: id.into(),
+            issued_at: iat.into(),
+        }
     }
 
     pub fn new_at_now(id: impl Into<Uuid>) -> Self {
         Self {
             id: id.into(),
-            issued_at: OffsetDateTime::now_utc()
+            issued_at: OffsetDateTime::now_utc(),
         }
     }
 

@@ -1,12 +1,16 @@
-use kernel::{interfaces::transport::VerificationMailTransporter, prelude::entities::{MFACode, Address}, KernelError};
-use lettre::{Message, message::Mailbox, AsyncTransport};
+use kernel::{
+    interfaces::transport::VerificationMailTransporter,
+    prelude::entities::{Address, MFACode},
+    KernelError,
+};
+use lettre::{message::Mailbox, AsyncTransport, Message};
 use once_cell::sync::Lazy;
 
 use crate::{DriverError, SmtpPool};
 
 #[derive(Clone)]
 pub struct VerificationMailer {
-    mailer: SmtpPool
+    mailer: SmtpPool,
 }
 
 impl VerificationMailer {
@@ -25,10 +29,18 @@ impl VerificationMailTransporter for VerificationMailer {
 
 pub(in crate::transport) struct SmtpInternal;
 
-static MB: Lazy<Mailbox> = Lazy::new(|| "Stellar <support@shuttle.pub>".parse().expect("cannot parse `MailBox`"));
+static MB: Lazy<Mailbox> = Lazy::new(|| {
+    "Stellar <support@shuttle.pub>"
+        .parse()
+        .expect("cannot parse `MailBox`")
+});
 
 impl SmtpInternal {
-    pub async fn send(address: &Address, code: &MFACode, mailer: &SmtpPool) -> Result<(), DriverError> {
+    pub async fn send(
+        address: &Address,
+        code: &MFACode,
+        mailer: &SmtpPool,
+    ) -> Result<(), DriverError> {
         let msg = Message::builder()
             .from(MB.clone())
             .to(address.as_ref().parse()?)
@@ -43,7 +55,7 @@ impl SmtpInternal {
 
 #[cfg(test)]
 mod tests {
-    use kernel::prelude::entities::{MFACode, Address};
+    use kernel::prelude::entities::{Address, MFACode};
     use lettre::transport::smtp::authentication::Credentials;
 
     use crate::SmtpPool;
@@ -60,9 +72,7 @@ mod tests {
         let cred_pass = dotenvy::var("SMTP_CREDENTIAL_PASSWORD")
             .expect("`SMTP_CREDENTIAL_PASSWORD` does not set! This value required.");
         let cred = Credentials::new(cred_address, cred_pass);
-        let mailer = SmtpPool::relay(&relay)?
-            .credentials(cred)
-            .build();
+        let mailer = SmtpPool::relay(&relay)?.credentials(cred).build();
 
         Ok(mailer)
     }
