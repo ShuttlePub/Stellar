@@ -1,7 +1,7 @@
 version: '3'
 services:
   postgres_db:
-    image: postgres:15.2-alpine
+    image: postgres:15.4-alpine
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
@@ -17,7 +17,7 @@ services:
         max-size: "5m"
         max-file: "3"
   redis:
-    image: redis:7.0.9-alpine
+    image: redis:7.2.0-alpine
     volumes:
       - cache-data:/data
     ports:
