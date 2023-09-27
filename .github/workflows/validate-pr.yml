@@ -1,0 +1,9 @@
+name: Validate PR title
+
+on:
+  pull_request:
+    
+jobs:
+  validate:
+    uses: ShuttlePub/workflows/.github/workflows/validate-pr.yml@main
+  
