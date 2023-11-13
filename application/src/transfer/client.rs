@@ -6,7 +6,7 @@ use kernel::prelude::entities::{
 };
 
 #[derive(Debug)]
-#[cfg_attr(test, derive(Eq, PartialEq))]
+#[cfg_attr(feature = "integration", derive(Eq, PartialEq))]
 pub struct ClientDto {
     pub id: Uuid,
     pub id_iat: OffsetDateTime,
