@@ -5,9 +5,7 @@ use application::transfer::client::{
     TokenEndPointAuthMethodDto, UpdateClientDto,
 };
 use kernel::external::{OffsetDateTime, Uuid};
-use kernel::interfaces::repository::{
-    ClientRegistry, MockAccountRepository, MockClientRegistry,
-};
+use kernel::interfaces::repository::{ClientRegistry, MockAccountRepository, MockClientRegistry};
 use kernel::prelude::entities::{
     Account, Address, Client, ClientId, ClientTypes, GrantType, RedirectUri,
     RegistrationAccessToken, RegistrationEndPoint, ResponseType, ScopeDescription, ScopeMethod,
@@ -41,7 +39,7 @@ fn new_mock_accounts_repo() -> MockAccountRepository {
                     updated_at,
                     verified_at,
                 )
-                    .unwrap(),
+                .unwrap(),
             ))
         });
 
@@ -80,21 +78,21 @@ async fn test_register() -> anyhow::Result<()> {
         "https://test.client.example.com/callback",
         "https://test.client.example.com/callback2",
     ]
-        .into_iter()
-        .map(Into::into)
-        .collect::<Vec<String>>();
+    .into_iter()
+    .map(Into::into)
+    .collect::<Vec<String>>();
     let scopes = vec![
         ("read", Some("base user data read")),
         ("write", Some("base user data write")),
         ("phantom", None),
     ]
-        .into_iter()
-        .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
-        .map(|(method, desc)| ScopeDto {
-            method,
-            description: desc,
-        })
-        .collect::<Vec<ScopeDto>>();
+    .into_iter()
+    .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
+    .map(|(method, desc)| ScopeDto {
+        method,
+        description: desc,
+    })
+    .collect::<Vec<ScopeDto>>();
     let contacts = vec!["test.user@client.com"]
         .into_iter()
         .map(ToOwned::to_owned)
@@ -154,18 +152,18 @@ async fn test_update() -> anyhow::Result<()> {
                 "https://test.client.example.com/callback",
                 "https://test.client.example.com/callback2",
             ]
-                .into_iter()
-                .map(RedirectUri::new)
-                .collect::<Vec<RedirectUri>>();
+            .into_iter()
+            .map(RedirectUri::new)
+            .collect::<Vec<RedirectUri>>();
             let scopes = vec![
                 ("read", Some("base user data read")),
                 ("write", Some("base user data write")),
                 ("phantom", None),
             ]
-                .into_iter()
-                .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
-                .map(|(method, desc)| (ScopeMethod::new(method), ScopeDescription::new(desc)))
-                .collect::<Vec<(ScopeMethod, ScopeDescription)>>();
+            .into_iter()
+            .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
+            .map(|(method, desc)| (ScopeMethod::new(method), ScopeDescription::new(desc)))
+            .collect::<Vec<(ScopeMethod, ScopeDescription)>>();
             let contacts = vec!["test.user@client.com"]
                 .into_iter()
                 .map(Address::new)
@@ -192,7 +190,7 @@ async fn test_update() -> anyhow::Result<()> {
                 reg_token,
                 reg_endpoint,
             )
-                .unwrap();
+            .unwrap();
 
             println!("{:#?}", client);
             Ok(Some(client))
@@ -212,8 +210,7 @@ async fn test_update() -> anyhow::Result<()> {
         .unwrap()
         .into();
 
-    let interactor =
-        UpdateClientInteractor::new(mock_client_registry, mock_accounts_repository);
+    let interactor = UpdateClientInteractor::new(mock_client_registry, mock_accounts_repository);
 
     let update = UpdateClientDto {
         name: "TEST CLIENT MK2".to_string(),
@@ -235,13 +232,13 @@ async fn test_update() -> anyhow::Result<()> {
             ("write", Some("base user data write")),
             ("phantom", None),
         ]
-            .into_iter()
-            .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
-            .map(|(method, desc)| ScopeDto {
-                method,
-                description: desc,
-            })
-            .collect::<Vec<ScopeDto>>(),
+        .into_iter()
+        .map(|(method, desc)| (method.to_string(), desc.map(ToOwned::to_owned)))
+        .map(|(method, desc)| ScopeDto {
+            method,
+            description: desc,
+        })
+        .collect::<Vec<ScopeDto>>(),
         contacts: vec!["test.user@client.com"]
             .into_iter()
             .map(ToOwned::to_owned)
