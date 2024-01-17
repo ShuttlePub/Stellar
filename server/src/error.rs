@@ -5,7 +5,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use axum_extra::headers::{HeaderValue, HeaderMap};
+use axum_extra::headers::{HeaderMap, HeaderValue};
 use driver::DriverError;
 use serde_json::json;
 use std::convert::Infallible;

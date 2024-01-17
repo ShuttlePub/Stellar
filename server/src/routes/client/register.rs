@@ -1,8 +1,8 @@
 use super::forms::RegistrationForm;
 use crate::{Handler, ServerError};
-use axum::Json;
 use axum::extract::State;
 use axum::response::IntoResponse;
+use axum::Json;
 use axum_extra::headers::{authorization::Bearer, Authorization};
 use axum_extra::typed_header::TypedHeader;
 

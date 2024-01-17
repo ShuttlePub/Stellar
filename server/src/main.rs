@@ -1,4 +1,3 @@
-use std::net::SocketAddr;
 use axum::{
     http::StatusCode,
     response::IntoResponse,
@@ -9,6 +8,7 @@ use server::{
     routes::{authorization, decision, login, signup, stellar_info, verify},
     Handler,
 };
+use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
