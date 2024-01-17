@@ -8,7 +8,7 @@ pub struct Scopes(HashMap<ScopeMethod, ScopeDescription>);
 
 impl Scopes {
     pub fn new(values: impl Into<Vec<(ScopeMethod, ScopeDescription)>>) -> Self {
-        Self(HashMap::from_iter(values.into().into_iter()))
+        Self(HashMap::from_iter(values.into()))
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (&ScopeMethod, &ScopeDescription)> {

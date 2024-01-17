@@ -35,10 +35,10 @@ mod form {
         transfer::account::VerifyAccountDto, transfer::session::SessionDto, ApplicationError,
     };
     use axum::{
-        headers::HeaderValue,
         http::header::SET_COOKIE,
         http::{HeaderMap, StatusCode},
     };
+    use axum_extra::headers::HeaderValue;
     use serde::Deserialize;
 
     #[derive(Deserialize)]

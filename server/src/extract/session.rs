@@ -1,8 +1,8 @@
 use crate::ServerError;
 use axum::extract::FromRequestParts;
-use axum::headers::Cookie;
+use axum_extra::{headers::Cookie, typed_header::TypedHeader};
 use axum::http::request::Parts;
-use axum::{RequestPartsExt, TypedHeader};
+use axum::RequestPartsExt;
 
 pub const SESSION_TAG: &str = "stellar_session";
 
