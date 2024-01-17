@@ -1,15 +1,14 @@
-use std::net::SocketAddr;
-
 use axum::{
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
-    Router, Server,
+    Router,
 };
 use server::{
     routes::{authorization, decision, login, signup, stellar_info, verify},
     Handler,
 };
+use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
@@ -62,11 +61,11 @@ async fn main() -> anyhow::Result<()> {
         .with_state(handler);
 
     let bind = SocketAddr::from(([0, 0, 0, 0], 3854));
+    let tcpl = tokio::net::TcpListener::bind(bind).await?;
 
     tracing::info!("Stellar Starting...");
 
-    Server::bind(&bind)
-        .serve(app.into_make_service())
+    axum::serve(tcpl, app.into_make_service())
         .with_graceful_shutdown(exit())
         .await?;
 

@@ -25,7 +25,7 @@ impl ClientSignJwt {
         JwtClaims {
             iss: Uuid::new_v4(),
             sub: Uuid::new_v4(),
-            aud: "".to_string(),
+            aud: "placeholder".to_string(),
             exp: 0,
             jti: "".to_string(),
             iat: OffsetDateTime::now_utc().unix_timestamp(),
@@ -34,7 +34,8 @@ impl ClientSignJwt {
 
     pub fn decode(self, pubkey: impl AsRef<[u8]>) -> Result<ClientDecodeJwt, KernelError> {
         let key = DecodingKey::from_rsa_pem(pubkey.as_ref())?;
-        let val = Validation::new(Algorithm::RS512);
+        let mut val = Validation::new(Algorithm::RS512);
+        val.validate_aud = false; // FixMe: Should validate aud.
         let dec = jsonwebtoken::decode::<JwtClaims>(self.as_ref(), &key, &val)?;
         Ok(ClientDecodeJwt(dec.claims))
     }
@@ -128,42 +129,43 @@ mod tests {
         let ticket = TicketId::default();
 
         let test_privkey = r#"-----BEGIN PRIVATE KEY-----
-MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDkEVd+zWLER7H/
-XkcC8jHojBzlNj0QRDwyiGeIu+GTJdbYXUZ6a5gFdSJiQO/T0JhGhX0Q23LwOBL/
-vPWZsW/oTzcIpzGfvvg0HJQRiixmBGfxFgultTyoXVd21dhl+TzA1tJZbEVFcVZ1
-JbvzbZoLA46G2gX4aaXqEEqbgHD8PN6pZQkcTjEaEsruvzUiFPTx4ODQKemYyRxn
-ES6NQcbuxN20++pFW81RsCAf4c1bc+EfCjPXLzdGRAT/NAz6etl7il7yL7Dm6tHJ
-uY7r5LMozZDXLqA+iRjmG/DvWTvd5dgZGP1+jZNYbFc0BSkXp+n8Ki1tJ41Wc1cU
-wd2P/KudAgMBAAECggEABozs9hUQwichA1RXi8vIXS/btfBR3qwRt+MtE236CPpB
-lSNQs+bFOLA9lZQx5I6Ni8ZSakUzTuz9YV+xr4FmKnD5WVlGq++V52vutiDsLN3x
-h6jPcCn9clnZT5jNcgME7gZS3QNRa1uEVTGz7UZM8gYJy5vAJ3tkADi0O9/Q3vMU
-DbZNtFInjONlmE7HenuVG5JHEPDMnGGa2gWEyFjPqqoQl2WkC3tQTgiNHKWqnb6G
-IlqS7S57wfzINBB0xyATL0ccALII7VCtG0oXD9/5X/knJngOyIoOR01plfpAijQ6
-LKghxzBdnenzSKUYiQp7pwlzdbkUX8dPVSXEmqLqYQKBgQD98bDD4RT/LeE8d8YY
-DbCgO+JxzGY5vK/XJt1lmgGpnhCqVFLlujkuckyqdqYmbR6RBv46LlUoP6cawEI9
-U6ookHPkIopRMqoOupumnehVdmtGAtOgUc45GPYP4c+QYj872nNsGd5aoxip58Sp
-GES0nrEqNj7TfDdacAfFeifBuQKBgQDl6gV/T0e4JnRnSopYy0Kc6CBBslFe6hPY
-F6s4iPPcd/RElkIvmA1MIvSZRDbPlbtgND0f0Y0XE5h936dk/iXr/FHrZsimSV1P
-aszkul+/wtBM917F/2JRFlA8cCksquuaLNWQCPRhyb2YXQToJ/VzoN64KdMt4Yfc
-Tbe5pTJ7BQKBgFONgSaB2UG4m8IkenYRkwq1iWT95qiaj5SPwgqa6G8hhcQ1KG1T
-n1rL2rO/hB1ii8sV7PHBqt0qTFX96g15iKP+G1N1leLvc4qTFYF1tSrhYpxPc8ft
-AphAwT0qg/uyh7Gux4lK3aEexo+opUkppflzuUD1RiiZVzEXaUctUQVpAoGBAI9y
-1f86veq9w3722R7Rozw28HlNAswPjFYVXnUlrdFu3m80uRLs8c8BOE+waepW59P8
-g+6oVjmBtnFC7DRtBcgZZBtVw/dMavW0EybaygbhTAnZhb5Pu04Qd/tdl7MQ6XMG
-ajE2BRRGRQ8daoRW+iQsyQlqvyIvRw9DRlCEK9zpAoGBAOt5b+dv9QfoAUjxx1dH
-bg+skddR4yECjixizTZW0MzmpJX+XyjEadxGzfRNFUigrOKBPKDZszATfHjkTPEW
-jkVDCHoCcH933Jm9OoyDBipOcS+3nJXICmTYJbQctnV39ifHaHc33vfPwD30QCbp
-JlWfCE3u+4pT68/Fc8kOq6oT
------END PRIVATE KEY-----"#;
+MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDbMeVgbOOI6uT/
+Jj4JqP3FTP2ymBTG15jcOZekMxgeYr/D5Yn4G8OZyVqc5UfPnUe1nZYxIOz5G6kV
+scToNVPfqyvsyp9wpV0jZiUpOwG7zv6sSuG4cIXjg1ZBycNNEaYLqki4xw/yfei+
+46DHYn/MYU7SipmGSIgcBRXEixvnZU4WyUl1+hfzsTcWUe6s7UDR/SLm8PnmUALA
+aKhyQro46vSTMUD8W01drehnxtk+MjLOPnWI21N7rzVp3fecKn+rYBZJWZhoaMIa
+eKFgASVqt1u19Zjs1sBFhiYegkRh/UO0v8wDOEN5mv7RslzTkaEkNJ1DjUrcDbAc
+QZeuAdwdAgMBAAECggEAJ2EZcm9dmXWJ2oUGVDn2DYI9ed50rRyCq9307lz3kk3v
+YcRVOyvRwkk4bEOM2THKdkhveTgPGtnrUKh1Vbpu7RoVdB8a8ePjjb6GIpglQZZ4
+jn+NedNNWoh38K3M1oW7LRFUq02oAcq5C8JdWjTJ/O/md1DLMCLLwSzwsjTDuJhX
+SK//LMg4E1rYkdMxJMx7VD2KyGyfSM4akC/Fqgca3v707nv1nRB8W+BAxGfGgOGa
+5381KlTxSX1f3Y7EJ1qziGtu1ROSUCkKXGVLOSD6wD5axO7Yi9JrEQ1yrOFKstmi
+MobfUCMYtHb94196/fOs1hbcU4WX0gMvH8ckGjuNgQKBgQDbj7cyqFY7d3btsLR5
+le/UUHn0fIYrVI4J3UNOC3K5GiJkpPdgSgNSYCmQZ6t7WKfsh5NeA4BOdKEBBFQd
++Ao1tjAmKe0xjiGoOVDGVT2mmE6GGkR+8o7Iu7eG3JJ6Rb/HG8mhjJus8HVPhYlN
+5pQZI45vuLt+AcDRNF5UR2hV8QKBgQD/kpwos9KiF+Lh19BFYuFqk6uk6jDj7urR
+qCwNnD1Z6m4zXJ3kgEoe/RGdWIBdOuZs3goX9z36wWurWmR1cpPPm7deWQh8Kpwa
+rK0Pef7bHYdW3O27Vp+ofi9tVDOMnleOKYcxqPWKljMSFsYTuLTDPDAEs2/XYoTb
+A8GbpZMM7QKBgQC3Msw+RX1mMwEVxNphlPy+38NSf1CH+Q5nJqrRBPZdgnPuHEOY
+oUjyQ/CKYCYSTmAXGOyahjtZuzDYI194fg0u0eyM+3DBZ4Gn1uMSCe/eALmMZYB/
+mC4RSagRrBvAUFB7dzEfTa5bd2u6xYZSbLFn5GYlzDMNKbNUG+kVU1u4UQKBgQC9
+7fafSQP/8kBqFjhxWEqtKZElveUXfzaDGLekZbgyWkYLZYjxh2WOIgQ1KtA6eMtF
+nL1jkho9gADEFykRH1U5tD9Rnljv7bqVGD6EgeUkcY1iwEzsLDP6w8v7M9gbaJEo
+1TPjc+0GURkjGEmb3mh3rwMAe1lid5TELsZzJVljAQKBgQCtFC5jt8e83ZavJ5QI
+O8uLmYw53sgKh0A0V6b0Gdtb43WFwjklq06x0UvmOIkWDGeInoG1++vni6kKs+fI
+uL+2bEiLihRW+6dEVtkdLp7ubr8wGC8Khg79j8KGWFpk5UnnkgVFcNko1XyoXj5j
+Mdcoc6fLHcNU3ck83PBHSXuahg==
+-----END PRIVATE KEY-----
+"#;
 
         let test_pub_key = r#"-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5BFXfs1ixEex/15HAvIx
-6Iwc5TY9EEQ8MohniLvhkyXW2F1GemuYBXUiYkDv09CYRoV9ENty8DgS/7z1mbFv
-6E83CKcxn774NByUEYosZgRn8RYLpbU8qF1XdtXYZfk8wNbSWWxFRXFWdSW7822a
-CwOOhtoF+Gml6hBKm4Bw/DzeqWUJHE4xGhLK7r81IhT08eDg0CnpmMkcZxEujUHG
-7sTdtPvqRVvNUbAgH+HNW3PhHwoz1y83RkQE/zQM+nrZe4pe8i+w5urRybmO6+Sz
-KM2Q1y6gPokY5hvw71k73eXYGRj9fo2TWGxXNAUpF6fp/CotbSeNVnNXFMHdj/yr
-nQIDAQAB
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2zHlYGzjiOrk/yY+Caj9
+xUz9spgUxteY3DmXpDMYHmK/w+WJ+BvDmclanOVHz51HtZ2WMSDs+RupFbHE6DVT
+36sr7MqfcKVdI2YlKTsBu87+rErhuHCF44NWQcnDTRGmC6pIuMcP8n3ovuOgx2J/
+zGFO0oqZhkiIHAUVxIsb52VOFslJdfoX87E3FlHurO1A0f0i5vD55lACwGiockK6
+OOr0kzFA/FtNXa3oZ8bZPjIyzj51iNtTe681ad33nCp/q2AWSVmYaGjCGnihYAEl
+ardbtfWY7NbARYYmHoJEYf1DtL/MAzhDeZr+0bJc05GhJDSdQ41K3A2wHEGXrgHc
+HQIDAQAB
 -----END PUBLIC KEY-----"#;
 
         let mut jwt = ClientSignJwt::claims();

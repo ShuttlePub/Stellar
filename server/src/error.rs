@@ -1,11 +1,11 @@
 use application::{ApplicationError, ExpectUserAction};
 use axum::{
-    headers::{HeaderMap, HeaderValue},
     http::header::CONTENT_LOCATION,
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
+use axum_extra::headers::{HeaderMap, HeaderValue};
 use driver::DriverError;
 use serde_json::json;
 use std::convert::Infallible;
@@ -61,8 +61,8 @@ impl From<axum::Error> for ServerError {
     }
 }
 
-impl From<axum::headers::Error> for ServerError {
-    fn from(e: axum::headers::Error) -> Self {
+impl From<axum_extra::headers::Error> for ServerError {
+    fn from(e: axum_extra::headers::Error) -> Self {
         Self::Axum(anyhow::Error::new(e))
     }
 }
