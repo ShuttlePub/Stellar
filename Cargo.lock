@@ -268,9 +268,9 @@ dependencies = [
 
 [[package]]
 name = "blake3"
-version = "1.5.0"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0231f06152bf547e9c2b5194f247cd97aacf6dcd8b15d8e5ec0663f64580da87"
+checksum = "30cca6d3674597c30ddf2c587bf8d9d65c9a84d2326d941cc79c9842dfe0ef52"
 dependencies = [
  "arrayref",
  "arrayvec",
@@ -542,9 +542,9 @@ dependencies = [
 
 [[package]]
 name = "destructure"
-version = "0.5.5"
+version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c462ef160356591828566abc5d6e20065e48f5717c1ef509df105127251fb9c"
+checksum = "cfd72fa5c0aa087c0ce4f7039c664b106d638a61a6088663415b34bf4e803881"
 dependencies = [
  "quote",
  "syn 2.0.48",
