@@ -32,4 +32,4 @@ application = { path = "../application" }
 kernel = { path = "../kernel" }
 
 [dev-dependencies]
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1.37.0", features = ["full"] }
