@@ -13,4 +13,4 @@ anyhow = "1"
 thiserror = "1"
 
 # feat(lib)!: transfer from `thiserror` and `anyhow`
-error-stack = "0.4.1"
+error-stack = "0.5.0"
